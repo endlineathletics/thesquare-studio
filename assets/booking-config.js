@@ -9,6 +9,5 @@ window.BOOKING = {
   days: 30,                 // 오늘부터 며칠 뒤까지 예약 가능
   spaces: {
     badminton: { name: '배드민턴센터', unit: '1코트 1시간', price: 52800, courts: ['코트 1', '코트 2', '코트 3'] },
-    yoga:      { name: '요가센터',     unit: '공간 전체 1시간', price: 100000, courts: ['공간 전체'] },
   },
 };

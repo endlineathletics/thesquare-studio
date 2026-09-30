@@ -10,7 +10,6 @@ const NOTIFY_EMAIL = '';   // 새 예약 알림을 받을 이메일 (비워두�
 
 const SPACES = {
   badminton: { name: '배드민턴센터', price: 52800, courts: ['코트 1', '코트 2', '코트 3'] },
-  yoga:      { name: '요가센터',     price: 100000, courts: ['공간 전체'] },
 };
 const HEADER = ['접수시각', '신청번호', '공간', '날짜', '코트', '시작', '종료', '이름', '연락처', '인원', '요청사항', '금액', '상태'];
 
