@@ -626,3 +626,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .guardian .ck input{width:18px;height:18px;margin-top:2px;accent-color:var(--blue);flex:none}
 .fld.err .ck{color:#d0342c}
 .ap-days button i[hidden]{display:none}
+
+.price-grid.two{grid-template-columns:repeat(2,1fr)}
+@media (max-width:1020px){.price-grid.two{grid-template-columns:1fr}}
