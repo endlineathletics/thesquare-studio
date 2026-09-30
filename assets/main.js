@@ -13,7 +13,8 @@
     const place = () => {
       if (window.innerWidth <= 640) { fab.style.bottom = ''; return; }   // 모바일은 화면 오른쪽 아래 고정
       const heroBottom = top.offsetTop + top.offsetHeight;
-      const off = Math.max(20, Math.min(window.innerHeight - heroBottom + 28, window.innerHeight * 0.45));
+      const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fab-gap')) || 32;
+      const off = Math.max(gap, Math.min(window.innerHeight - heroBottom + gap, window.innerHeight * 0.45));
       fab.style.bottom = off + 'px';
     };
     place();
