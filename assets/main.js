@@ -7,6 +7,19 @@
   onScroll();
   document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
 
+  /* floating apply button — sits at the main banner's bottom-right, then stays fixed there */
+  const fab = document.querySelector('.apply-fab');
+  if (fab && top) {
+    const place = () => {
+      if (window.innerWidth <= 640) { fab.style.bottom = ''; return; }   // 모바일은 화면 오른쪽 아래 고정
+      const heroBottom = top.offsetTop + top.offsetHeight;
+      const off = Math.max(20, Math.min(window.innerHeight - heroBottom + 28, window.innerHeight * 0.45));
+      fab.style.bottom = off + 'px';
+    };
+    place();
+    window.addEventListener('resize', place);
+  }
+
   /* active menu */
   const page = document.body.dataset.page;
   document.querySelectorAll('#menu a').forEach(a => {

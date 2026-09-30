@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>배드민턴 수강신청 — THE SQUARE STUDIO</title>
+<meta name="description" content="THE SQUARE STUDIO 배드민턴 수강신청 · 성인 오전반 · 유소년반 · 성인 저녁반">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%2306101f%22/%3E%3Cg fill=%22none%22 stroke=%22%230058FC%22 stroke-width=%227%22 transform=%22translate(12 12) scale(.76)%22%3E%3Crect x=%223.3%22 y=%223.3%22 width=%2293.4%22 height=%2293.4%22/%3E%3Cpath d=%22M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="assets/style.css?v=20261001h">
+</head>
+<body data-page="badminton" data-apply="badminton">
+
+<nav class="nav" id="nav">
+  <a href="index.html" class="brand" aria-label="THE SQUARE STUDIO 홈">
+    <svg class="logo" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg>
+    <div class="wm">THE S<span class="q">Q</span>UARE<small>STUDIO</small></div>
+  </a>
+  <div class="menu" id="menu">
+    <a href="about.html" data-page="about">소개</a>
+    <a href="badminton.html" data-page="badminton">배드민턴</a>
+    <a href="yoga.html" data-page="yoga">요가</a>
+    <a href="rental.html" data-page="rental">대관</a>
+    <a href="contact.html" data-page="contact">문의</a>
+  </div>
+  <a href="contact.html" class="btn">상담 문의 <span class="arr">→</span></a>
+  <button class="burger" id="burger" aria-label="메뉴">☰</button>
+</nav>
+
+<header class="page-hero short">
+  <img src="images/badminton-coach.jpg" alt="">
+  <div class="wrap">
+    <div class="eyebrow">BADMINTON ACADEMY · 수강신청</div>
+    <h1>Apply<span>.</span></h1>
+    <p>성인 · 유소년 배드민턴 수강신청</p>
+  </div>
+</header>
+
+<section class="bg-soft tight">
+  <div class="wrap">
+    <div id="applyWrap">
+    <form class="apply" id="applyForm" novalidate>
+      <div class="ap-card">
+      <div class="ap-sec">
+        <div class="ap-h"><b>01</b>기본 정보</div>
+        <div class="ap-grid">
+          <div class="fld" data-f="name"><span class="lb">이름<i>*</i></span><input type="text" name="name" autocomplete="name" maxlength="30" placeholder="홍길동"><span class="msg">이름을 입력해주세요.</span></div>
+          <div class="fld" data-f="gender"><span class="lb">성별<i>*</i></span>
+            <div class="seg"><label><input type="radio" name="gender" value="남"><span>남</span></label><label><input type="radio" name="gender" value="여"><span>여</span></label></div>
+            <span class="msg">성별을 선택해주세요.</span></div>
+          <div class="fld" data-f="age"><span class="lb">나이 (만 나이)<i>*</i></span><input type="number" name="age" inputmode="numeric" min="3" max="99" placeholder="예: 34"><span class="msg">나이를 숫자로 입력해주세요.</span></div>
+          <div class="fld" data-f="phone"><span class="lb">연락처 (휴대폰)<i>*</i></span><input type="tel" name="phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+            <span class="hint">유소년반 · 만 14세 미만은 보호자 휴대폰 번호를 입력해주세요.</span><span class="msg">휴대폰 번호를 정확히 입력해주세요.</span></div>
+          <div class="fld full" data-f="region"><span class="lb">거주 지역<i>*</i></span><input type="text" name="region" list="regions" maxlength="40" placeholder="예: 서울 금천구 가산동">
+            <datalist id="regions"><option value="서울 금천구"><option value="서울 구로구"><option value="서울 영등포구"><option value="서울 관악구"><option value="서울 동작구"><option value="경기 광명시"><option value="경기 안양시"></datalist>
+            <span class="msg">거주 지역을 입력해주세요.</span></div>
+          <div class="guardian" id="guardianBox" hidden>
+            <div class="g-h">만 14세 미만 신청 · 법정대리인(보호자) 동의</div>
+            <div class="ap-grid">
+              <div class="fld" data-f="gName"><span class="lb">보호자 성명<i>*</i></span><input type="text" name="gName" maxlength="30" autocomplete="off" placeholder="보호자 이름"><span class="msg">보호자 성명을 입력해주세요.</span></div>
+              <div class="fld" data-f="gRel"><span class="lb">신청자와의 관계<i>*</i></span><select name="gRel"><option value="">선택해주세요</option><option>부</option><option>모</option><option>기타 법정대리인</option></select><span class="msg">관계를 선택해주세요.</span></div>
+              <div class="fld full" data-f="gAgree"><label class="ck"><input type="checkbox" name="gAgree"> [필수] 본인은 신청 아동의 법정대리인으로서 아동의 개인정보 수집·이용 및 알림 수신에 동의합니다.</label><span class="msg">법정대리인 동의가 필요합니다.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ap-sec">
+        <div class="ap-h"><b>02</b>배드민턴 정보</div>
+        <div class="ap-grid">
+          <div class="fld" data-f="grade"><span class="lb">급수<i>*</i></span><select name="grade"><option value="">선택해주세요</option><option>입문 (급수 없음)</option><option>초심</option><option>D조</option><option>C조</option><option>B조</option><option>A조</option><option>준자강</option><option>자강</option><option>선수 출신</option></select><span class="msg">급수를 선택해주세요.</span></div>
+          <div class="fld" data-f="experience"><span class="lb">배드민턴 경력<i>*</i></span><select name="experience"><option value="">선택해주세요</option><option>처음이에요 (경력 없음)</option><option>6개월 미만</option><option>6개월 ~ 1년</option><option>1 ~ 3년</option><option>3 ~ 5년</option><option>5년 이상</option></select><span class="msg">경력을 선택해주세요.</span></div>
+        </div>
+      </div>
+      <div class="ap-sec">
+        <div class="ap-h"><b>03</b>희망 시간 &amp; 코치 <small>반을 고른 뒤 타임과 코치를 선택하세요</small></div>
+        <div class="fld" data-f="preference">
+          <div class="grp" id="prefGroups"></div>
+          <span class="msg">희망하는 반을 선택해주세요.</span>
+          <div class="sub-pick" id="prefSub" hidden>
+            <div><span class="lb2">희망 타임 (1타임 = 1시간)</span><div class="chips2" id="prefTimes"></div></div>
+            <div><span class="lb2">희망 코치</span><div class="chips2" id="prefCoach"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ap-sec">
+        <div class="ap-h"><b>04</b>동의</div>
+        <div class="fld" data-f="agree">
+          <div class="agree-box">
+            <label class="ck"><input type="checkbox" name="agree"> [필수] 개인정보 수집·이용 및 알림(카카오 알림톡·문자) 수신에 동의합니다.</label>
+            <details><summary>자세히 보기</summary>
+              <table>
+                <tr><th>수집 항목</th><td>이름, 성별, 나이, 휴대폰 번호, 급수, 배드민턴 경력, 희망 반·시간·코치, 거주 지역 (만 14세 미만인 경우 법정대리인 성명·관계)</td></tr>
+                <tr><th>이용 목적</th><td>수강 상담·등록 및 반 배정, 접수 결과·수업 관련 안내(카카오 알림톡 또는 문자) 발송</td></tr>
+                <tr><th>보유 기간</th><td>상담 종료 또는 수강 종료 후 1년까지 보관 후 파기 (관계 법령에 따라 보관이 필요한 경우 해당 기간)</td></tr>
+              </table>
+              동의를 거부할 수 있으나, 거부 시 온라인 수강신청이 제한됩니다.
+            </details>
+          </div>
+          <span class="msg">개인정보 수집·이용 및 알림 수신에 동의해주세요.</span>
+        </div>
+      </div>
+      </div>
+      <aside class="ap-side">
+        <div class="ap-sum">
+          <h3>APPLICATION</h3>
+          <div class="ttl">배드민턴 수강신청</div>
+          <dl id="sumList"></dl>
+        </div>
+        <button type="submit" class="bk-submit" id="applySubmit">수강신청 완료하기</button>
+        <p class="bk-msg err" id="applyErr" role="alert"></p>
+        <p class="ap-note">신청이 접수되면 확인 후 담당자가 연락드려 반 배정과 등록을 안내해드립니다. 문의 02-6956-1861</p>
+      </aside>
+    </form>
+    </div>
+    <div class="ap-done" id="applyDone" hidden></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand"><svg class="logo big" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg><div><div class="wordmark">THE S<span class="q">Q</span>UARE</div><div class="sub"><i></i>PREMIUM INDOOR SPORTS STUDIO<i></i></div></div></div>
+    <div class="foot-links">
+      <a href="about.html">소개</a><a href="badminton.html">배드민턴</a><a href="yoga.html">요가</a><a href="rental.html">대관</a><a href="contact.html">문의</a>
+      <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
+    </div>
+    <div class="foot-row">
+      <span>THE SQUARE STUDIO — Premium Indoor Sports Studio</span>
+      <span>퍼블릭가산 A동 2층 CA 201호 · 가산디지털단지역 도보 5분</span>
+      <span>© 2026 THE SQUARE STUDIO</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/schedule.js?v=20261001h"></script>
+<script src="assets/apply-config.js?v=20261001h"></script>
+<script src="assets/main.js?v=20261001h"></script>
+<script src="assets/apply.js?v=20261001h"></script>
+</body>
+</html>

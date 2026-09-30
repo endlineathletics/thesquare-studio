@@ -46,12 +46,12 @@ window.YOGA_SCHEDULE = [
 
 /* 배드민턴 — cells 순서: 월, 화, 수, 목 · 세 번째 값은 색상 분류(BD_CATS 키) */
 window.BD_CATS = {
-  am_mw: { label: '성인 오전반 · 월·수', c: '#0058FC', bg: '#e6eeff' },
-  am_tt: { label: '성인 오전반 · 화·목', c: '#1a9fd6', bg: '#e0f3fb' },
-  jr_mw: { label: '유소년반 · 월·수',    c: '#12a38a', bg: '#e2f6f2' },
-  jr_tt: { label: '유소년반 · 화·목',    c: '#6f9a12', bg: '#f0f9dc' },
-  pm_mw: { label: '성인 저녁반 · 월·수', c: '#06101f', bg: '#e6e9f1' },
-  pm_tt: { label: '성인 저녁반 · 화·목', c: '#7a5ce0', bg: '#efebff' },
+  am_mw: { label: '성인 오전반 · 월·수', c: '#0058FC', bg: '#e6eeff', price: '월 25만원' },
+  am_tt: { label: '성인 오전반 · 화·목', c: '#1a9fd6', bg: '#e0f3fb', price: '월 25만원' },
+  jr_mw: { label: '유소년반 · 월·수',    c: '#12a38a', bg: '#e2f6f2', price: '월 15만원' },
+  jr_tt: { label: '유소년반 · 화·목',    c: '#6f9a12', bg: '#f0f9dc', price: '월 15만원' },
+  pm_mw: { label: '성인 저녁반 · 월·수', c: '#06101f', bg: '#e6e9f1', price: '월 35만원' },
+  pm_tt: { label: '성인 저녁반 · 화·목', c: '#7a5ce0', bg: '#efebff', price: '월 35만원' },
 };
 window.bdCat = function (name) { return name.includes('유소년') ? 'jr_mw' : name.includes('저녁') ? 'pm_mw' : 'am_mw'; };
 
