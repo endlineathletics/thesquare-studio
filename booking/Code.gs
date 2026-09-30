@@ -9,9 +9,28 @@
 const SHEET_NAME = '예약';
 const NOTIFY_EMAIL = '';   // 새 예약 알림을 받을 이메일 (비워두면 알림 없음)
 
+/* 공간별 설정 — assets/booking-config.js 와 똑같이 맞춰야 합니다.
+   slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸 "시작-종료" */
+const HOURLY_ = Array.from({ length: 24 }, (_, h) => `${('0' + h).slice(-2)}:00-${('0' + (h + 1)).slice(-2)}:00`);
+const YOGA_DAY_ = ['13:30-14:20', '14:30-15:20', '15:30-16:20', '16:30-17:20'];
+const YOGA_FRI_EVE_ = ['17:30-18:20', '18:30-19:20', '19:30-20:20', '20:30-21:20'];
 const SPACES = {
-  badminton: { name: '배드민턴센터', price: 52800, courts: ['코트 1', '코트 2', '코트 3'] },
+  badminton: { name: '배드민턴센터', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
+               slots: [HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_] },
+  yoga:      { name: '요가센터', price: 100000, courts: ['공간 전체'],
+               slots: [[], YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_.concat(YOGA_FRI_EVE_), []] },
 };
+const BOOKING_DAYS = 30;   // 오늘부터 며칠 뒤까지 예약 가능 (booking-config.js days 와 동일)
+const MAX_ITEMS = 72;      // 한 번에 신청할 수 있는 최대 시간 수 (booking-config.js maxItems 와 동일)
+const own_ = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+/** 그 날짜(yyyy-MM-dd, 한국시간)의 {시작: 종료} */
+function slotMap_(sp, date) {
+  const wd = new Date(date + 'T12:00:00+09:00').getUTCDay();
+  const m = Object.create(null);
+  (sp.slots[wd] || []).forEach(s => { const [a, b] = s.split('-'); m[a] = b; });
+  return m;
+}
 const HEADER = ['접수시각', '신청번호', '공간', '날짜', '코트', '시작', '종료', '이름', '연락처', '인원', '요청사항', '금액', '상태'];
 
 function sheet_() {
@@ -26,7 +45,6 @@ function sheet_() {
   return sh;
 }
 
-const pad_ = n => ('0' + n).slice(-2);
 const out_ = obj => ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 
 /** 시트 수식 주입 방지: 사용자가 입력한 글자가 = + - @ 로 시작하면 앞에 ' 를 붙여 글자로 저장 */
@@ -52,18 +70,18 @@ function notify_(subject, body) {
   }
 }
 
-/** space+date 에 이미 잡힌 [{court, hour}] */
+/** space+date 에 이미 잡힌 [{court, start}] */
 function taken_(spaceKey, date) {
   const sp = SPACES[spaceKey];
   const rows = sheet_().getDataRange().getDisplayValues().slice(1);
   return rows
     .filter(r => r[2] === sp.name && r[3] === date && r[12] !== '취소')
-    .map(r => ({ court: sp.courts.indexOf(r[4]), hour: parseInt(r[5], 10) }));
+    .map(r => ({ court: sp.courts.indexOf(r[4]), start: r[5] }));
 }
 
 function doGet(e) {
   const p = e.parameter || {};
-  if (p.action === 'slots' && SPACES[p.space] && /^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) {
+  if (p.action === 'slots' && own_(SPACES, p.space) && /^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) {
     return out_({ ok: true, slots: taken_(p.space, p.date) });
   }
   return out_({ ok: false, error: 'bad_request' });
@@ -73,20 +91,27 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, error: 'bad_json' }); }
   if (d.action === 'apply') return apply_(d);
-  const sp = SPACES[d.space];
+  const sp = own_(SPACES, d.space) ? SPACES[d.space] : null;
   const name = String(d.name || '').trim().slice(0, 40);
   const phone = String(d.phone || '').trim().slice(0, 20);
-  const items = Array.isArray(d.items) ? d.items.slice(0, 72) : [];
+  if (Array.isArray(d.items) && d.items.length > MAX_ITEMS) return out_({ ok: false, error: 'too_many', max: MAX_ITEMS });
+  const items = Array.isArray(d.items) ? d.items : [];
   const today = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
+  const lastDay = Utilities.formatDate(new Date(Date.now() + (BOOKING_DAYS - 1) * 86400000), 'Asia/Seoul', 'yyyy-MM-dd');
+  const nowHM = Utilities.formatDate(new Date(), 'Asia/Seoul', 'HH:mm');
   if (!sp || !name || !/^[0-9\-+ ]{9,}$/.test(phone) || !items.length) return out_({ ok: false, error: 'invalid' });
   const seen = {};
   for (const it of items) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(it.date) || it.date < today ||
-        !Number.isInteger(it.hour) || it.hour < 0 || it.hour > 23 ||
+    if (!it || typeof it !== 'object') return out_({ ok: false, error: 'invalid_item' });
+    const map = /^\d{4}-\d{2}-\d{2}$/.test(it.date) ? slotMap_(sp, it.date) : {};
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(it.date) || it.date < today || it.date > lastDay ||
+        typeof it.start !== 'string' || !/^\d{2}:\d{2}$/.test(it.start) || !own_(map, it.start) ||
+        (it.date === today && it.start <= nowHM) ||
         !Number.isInteger(it.court) || it.court < 0 || it.court >= sp.courts.length) {
       return out_({ ok: false, error: 'invalid_item' });
     }
-    const k = `${it.date}|${it.court}|${it.hour}`;
+    it.end = map[it.start];                       // 종료 시각은 서버 설정으로 결정
+    const k = `${it.date}|${it.court}|${it.start}`;
     if (seen[k]) return out_({ ok: false, error: 'invalid_item' });
     seen[k] = true;
   }
@@ -99,14 +124,14 @@ function doPost(e) {
     const byDate = {};
     items.forEach(it => {
       byDate[it.date] = byDate[it.date] || taken_(d.space, it.date);
-      if (byDate[it.date].some(t => t.court === it.court && t.hour === it.hour)) conflicts.push(it);
+      if (byDate[it.date].some(t => t.court === it.court && t.start === it.start)) conflicts.push({ date: it.date, court: it.court, start: it.start });
     });
     if (conflicts.length) return out_({ ok: false, error: 'conflict', conflicts });
 
     id = nextId_('TS');
     const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
     const rows = items.map(it => [
-      now, id, sp.name, "'" + it.date, sp.courts[it.court], "'" + pad_(it.hour) + ':00', "'" + pad_(it.hour + 1) + ':00',
+      now, id, sp.name, "'" + it.date, sp.courts[it.court], "'" + it.start, "'" + it.end,
       name, "'" + phone, String(d.people || '').slice(0, 10), String(d.memo || '').slice(0, 500), sp.price, '신청',
     ].map(safe_));
     const sh = sheet_();
@@ -115,7 +140,7 @@ function doPost(e) {
     lock.releaseLock();
   }
   notify_(`[THE SQUARE] 새 대관 예약 신청 ${id}`,
-    `${sp.name}\n` + items.map(it => `- ${it.date} ${sp.courts[it.court]} ${pad_(it.hour)}:00~${pad_(it.hour + 1)}:00`).join('\n') +
+    `${sp.name}\n` + items.map(it => `- ${it.date} ${sp.courts[it.court]} ${it.start}~${it.end}`).join('\n') +
     `\n합계: ${(items.length * sp.price).toLocaleString()}원\n이름: ${name}\n연락처: ${phone}\n인원: ${d.people || '-'}\n요청사항: ${d.memo || '-'}`);
   return out_({ ok: true, id });
 }

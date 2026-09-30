@@ -629,3 +629,5 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 
 .price-grid.two{grid-template-columns:repeat(2,1fr)}
 @media (max-width:1020px){.price-grid.two{grid-template-columns:1fr}}
+.bk-dates button:disabled{cursor:not-allowed;opacity:.35;background:repeating-linear-gradient(135deg,#f7f8fa 0 6px,#eef0f4 6px 12px)}
+.bk-none{grid-column:1 / -1;padding:22px 0;color:var(--ink-3);font-size:14px}
