@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>THE SQUARE 요가 시간표 (이미지용)</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1350px;background:#f6f4ef;font-family:'Pretendard',sans-serif;color:#0d0f14;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .poster{position:relative;width:1080px;height:1350px;padding:56px 56px 44px;display:flex;flex-direction:column}
+  .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .brand{display:flex;align-items:center;gap:12px;font:700 19px 'Montserrat';letter-spacing:.08em}
+  .brand svg{width:34px;height:34px}
+  .brand small{display:block;font-size:9px;letter-spacing:.3em;opacity:.6;margin-top:2px}
+  .pill{background:#0058FC;color:#fff;font:700 12px 'Inter';letter-spacing:.2em;padding:8px 12px}
+  h1{font-family:'Anton';font-weight:400;font-size:104px;line-height:1;text-transform:uppercase;margin-top:30px;letter-spacing:-.005em}
+  h1 span{color:#0058FC}
+  .sub{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;padding-bottom:18px}
+  .sub p{font-size:19px;font-weight:700;letter-spacing:-.02em}
+  .sub p em{font-style:normal;color:#0058FC}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;max-width:520px}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#4a4f5c}
+  .legend i{width:10px;height:10px;display:inline-block}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff;border:2px solid #0d0f14}
+  th,td{border-bottom:1px solid #e3e6ec;border-right:1px solid #e3e6ec;vertical-align:middle}
+  th:last-child,td:last-child{border-right:0}
+  thead th{background:#0d0f14;color:#fff;font-size:17px;font-weight:800;padding:12px 0 10px}
+  thead th small{display:block;font:600 9px 'Inter';letter-spacing:.25em;opacity:.55;margin-top:2px}
+  .time{width:104px;padding:0 12px;font:600 12px 'Inter';color:#4a4f5c}
+  .time b{display:block;font-size:15px;color:#0d0f14}
+  .cls{height:64px;padding:0 10px;display:flex;flex-direction:column;justify-content:center;border-left:4px solid var(--c);background:var(--bg)}
+  .cls b{font-size:14.5px;font-weight:800;letter-spacing:-.03em;line-height:1.2}
+  .cls span{font-size:11.5px;color:#4a4f5c;margin-top:2px}
+  .band{text-align:center;background:repeating-linear-gradient(135deg,#f4f6f9 0 10px,#eceff4 10px 20px);color:#8a8f9c;font-weight:800;font-size:14px;letter-spacing:.3em}
+  .band small{display:block;font-size:11px;letter-spacing:0;font-weight:600;margin-top:3px}
+  .band.row{height:52px}
+  .empty{background:#fafbfc}
+  .sect th{background:#f4f6f9;color:#0d0f14;text-align:left;padding:6px 12px;font:700 10px 'Inter';letter-spacing:.3em}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;padding-top:20px}
+  .foot .l{font-size:14px;color:#4a4f5c;line-height:1.7}
+  .foot .l b{color:#0d0f14}
+  .foot .r{text-align:right}
+  .foot .r small{display:block;font-size:12px;color:#4a4f5c;font-weight:600}
+  .foot .r strong{font:700 30px 'Inter';letter-spacing:-.03em}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 100 100" fill="none" stroke="#0058FC" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg>
+      <div class="wm">THE S<span style="color:#0058FC">Q</span>UARE<small>STUDIO</small></div>
+    </div>
+    <span class="pill">WEEKLY · MON – FRI</span>
+  </div>
+  <h1>Yoga<br>Timetable<span>.</span></h1>
+  <div class="sub">
+    <p>평일 <em>07:30 – 21:20</em> · 수업 50분</p>
+    <div class="legend" id="legend"></div>
+  </div>
+  <table id="tt"></table>
+  <div class="foot">
+    <div class="l">예약 취소는 앱에서 <b>수업 3시간 전</b>까지 가능<br>퍼블릭가산 A동 2층 CA 201호 · 가산디지털단지역 도보 5분 · @the__square_studio</div>
+    <div class="r"><small>상담 및 등록 문의</small><strong>02-6956-1861</strong></div>
+  </div>
+</div>
+<script src="../assets/schedule.js"></script>
+<script>
+  const D = ['월','화','수','목','금'], E = ['MON','TUE','WED','THU','FRI'];
+  const cats = YOGA_CATS, data = YOGA_SCHEDULE;
+  document.getElementById('legend').innerHTML = Object.values(cats).map(c => `<span><i style="background:${c.c}"></i>${c.label}</span>`).join('');
+  let h = '<thead><tr><th class="time"></th>' + D.map((d,i)=>`<th>${d}<small>${E[i]}</small></th>`).join('') + '</tr></thead><tbody>';
+  const skip = {};
+  data.forEach((s, r) => {
+    if (s.section) { h += `<tr class="sect"><th colspan="6">${s.section}</th></tr>`; return; }
+    h += `<tr><td class="time"><b>${s.time}</b>– ${s.end}</td>`;
+    if (s.band) { h += `<td colspan="5" class="band row">${s.band}<small>${s.note||''}</small></td>`; }
+    else s.cells.forEach((cell, c) => {
+      if (skip[r+','+c]) return;
+      if (cell === 'R') {
+        let n = 1; while (data[r+n] && data[r+n].cells && data[r+n].cells[c] === 'R') { skip[(r+n)+','+c] = 1; n++; }
+        h += `<td class="band" rowspan="${n}">대관</td>`;
+      } else if (!cell) h += '<td class="empty"></td>';
+      else { const k = yogaCat(cell[0]), cc = cats[k]; h += `<td><div class="cls" style="--c:${cc.c};--bg:${cc.bg}"><b>${cell[0]}</b><span>${cell[1]}</span></div></td>`; }
+    });
+    h += '</tr>';
+  });
+  document.getElementById('tt').innerHTML = h + '</tbody>';
+</script>
+</body>
+</html>
