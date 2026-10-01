@@ -1,7 +1,7 @@
 /* ============================================================
    대관 예약 설정
-   - api: 구글 Apps Script 웹앱 URL (booking/SETUP.md 참고).
-          비워두면 "문자로 예약 신청" 방식으로 동작합니다.
+   - api: 대관 신청을 받는 주소. 지금은 THE SQUARE 관리프로그램(thesquare-admin)의 /api/site
+          (관리자 > 대관 화면으로 바로 들어감). 비워두면 "문자로 예약 신청" 방식으로 동작합니다.
    - slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸. "시작-종료" 형식.
             booking/Code.gs 의 SPACES 와 똑같이 맞춰야 합니다.
    ============================================================ */
@@ -13,7 +13,7 @@
   const YOGA_FRI_EVE = ['17:30-18:20', '18:30-19:20', '19:30-20:20', '20:30-21:20'];
 
   window.BOOKING = {
-    api: '',
+    api: 'https://thesquare-admin-production.up.railway.app/api/site',
     phone: '010-7576-1861',
     days: 30,                 // 오늘부터 며칠 뒤까지 예약 가능 (Code.gs BOOKING_DAYS 와 동일)
     maxItems: 72,             // 한 번에 신청할 수 있는 최대 시간 수 (Code.gs MAX_ITEMS 와 동일)
