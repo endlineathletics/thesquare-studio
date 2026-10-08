@@ -27,6 +27,21 @@
     if (a.dataset.page === page) a.classList.add('on');
   });
 
+  /* 대관 / 레슨 탭: 누르면 그 구역으로 스크롤, 스크롤하면 지금 구역 탭이 켜짐 */
+  const tabs = document.getElementById('secTabs');
+  if (tabs) {
+    const links = [...tabs.querySelectorAll('a')];
+    const targets = links.map(a => document.querySelector(a.getAttribute('href')));
+    const sync = () => {
+      const y = window.scrollY + tabs.getBoundingClientRect().bottom + 80;
+      let cur = 0;
+      targets.forEach((t, i) => { if (t && t.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle('on', i === cur));
+    };
+    window.addEventListener('scroll', sync, { passive: true });
+    sync();
+  }
+
   /* reveal */
   const io = new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }

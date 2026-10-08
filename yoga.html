@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261008b">
+<link rel="stylesheet" href="assets/style.css?v=20261008c">
 </head>
 <body data-page="yoga">
 
@@ -23,7 +23,6 @@
     <a href="about.html" data-page="about">소개</a>
     <a href="badminton.html" data-page="badminton">배드민턴</a>
     <a href="yoga.html" data-page="yoga">요가</a>
-    <a href="rental.html" data-page="rental">대관</a>
     <a href="contact.html" data-page="contact">문의</a>
   </div>
   <a href="contact.html" class="btn">상담 문의 <span class="arr">→</span></a>
@@ -39,9 +38,74 @@
   </div>
 </header>
 
-<section>
+<div class="sec-tabs" id="secTabs">
   <div class="wrap">
-    <div class="shead rv"><span class="c">A</span>요가 · Yoga<span class="l"></span></div>
+    <a href="#rental" class="on"><small>RENTAL</small>대관</a>
+    <a href="#class"><small>LESSON</small>레슨</a>
+  </div>
+</div>
+
+<!-- 대관 -->
+<section class="bg-soft" id="rental">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">A</span>대관 · Rental<span class="l"></span></div>
+    <div class="tt-top rv">
+      <h2 class="h-display">Book the<br>studio<span class="blue">.</span></h2>
+      <p class="lead">요가 스튜디오 전체를 평일 13:30–17:20, 금요일 17:30–21:20에 대관할 수 있어요(주말 제외).<br>날짜와 시간을 선택해 예약을 신청하시면 확인 후 연락드립니다. 대관 문의 <a href="tel:010-7576-1861"><b>010-7576-1861</b></a></p>
+    </div>
+
+    <div class="bk rv" id="bk">
+      <div class="bk-tabs" role="tablist">
+        <button type="button" class="bk-tab on" data-space="yoga" role="tab" aria-selected="true">
+          <b>요가센터</b><span>공간 전체 대관 · 평일 오후 · 금 저녁</span><em>1시간 100,000원</em>
+        </button>
+      </div>
+
+      <div class="bk-body">
+        <div class="bk-main">
+          <div class="bk-step"><b>01</b>날짜 선택</div>
+          <div class="bk-dates" id="bkDates"></div>
+          <div class="bk-court" id="bkCourtWrap">
+            <div class="bk-step"><b>02</b>코트 선택</div>
+            <div class="bk-courts" id="bkCourts"></div>
+          </div>
+          <div class="bk-step"><b id="bkTimeNo">03</b>시간 선택 <small id="bkTimeNote">여러 시간 선택 가능 · 24시간 운영</small></div>
+          <div class="bk-legend"><span><i class="l-free"></i>예약 가능</span><span><i class="l-on"></i>선택</span><span><i class="l-off"></i>예약 불가</span></div>
+          <div class="bk-slots" id="bkSlots"></div>
+        </div>
+
+        <aside class="bk-side">
+          <div class="bk-sum">
+            <div class="bk-sum-h">예약 내역</div>
+            <ul id="bkList"><li class="empty">선택한 시간이 없습니다.</li></ul>
+            <div class="bk-total"><span>합계</span><b id="bkTotal">0원</b></div>
+          </div>
+          <form class="bk-form" id="bkForm" novalidate>
+            <label>이름 *<input name="name" required autocomplete="name"></label>
+            <label>연락처 *<input name="phone" type="tel" required inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
+            <label>인원<input name="people" type="number" min="1" inputmode="numeric" placeholder="예: 8"></label>
+            <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
+            <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
+            <button type="submit" class="bk-submit" id="bkSubmit" disabled>예약 신청</button>
+            <p class="bk-msg" id="bkMsg" role="status"></p>
+          </form>
+        </aside>
+      </div>
+    </div>
+
+    <div class="steps rv">
+      <div class="step"><b>01</b><h4>날짜 · 시간 선택</h4><p>날짜와 시간을 선택하세요. 요가 수업 시간은 제외돼요.</p></div>
+      <div class="step"><b>02</b><h4>예약 신청</h4><p>이름과 연락처를 남기고 예약을 신청합니다.</p></div>
+      <div class="step"><b>03</b><h4>확인 연락</h4><p>확인 후 연락드려 결제 방법과 함께 예약을 확정합니다.</p></div>
+      <div class="step"><b>04</b><h4>이용</h4><p>예약한 시간에 방문해 공간을 이용하세요.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 레슨 -->
+<section id="class">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">B</span>요가 · Yoga<span class="l"></span></div>
     <div class="intro rv">
       <h2 class="h-kr">높은 층고, 깊은 호흡.<br><span class="blue">더 넓은 공간</span>에서 만나는 요가.</h2>
       <p class="lead">이른 아침부터 퇴근 후 저녁까지, 빈야사·하타·아쉬탕가부터 테라피·교정, 필라테스, 핫요가까지. 8명의 강사진과 함께 오늘의 컨디션에 맞는 수업을 골라보세요.</p>
@@ -62,7 +126,7 @@
 <!-- B. 수강료 -->
 <section class="bg-soft" id="price">
   <div class="wrap">
-    <div class="shead rv"><span class="c">B</span>수강료 · Price<span class="l"></span></div>
+    <div class="shead rv"><span class="c">C</span>수강료 · Price<span class="l"></span></div>
     <div class="intro rv">
       <h2 class="h-kr">원하는 만큼,<br><span class="blue">부담 없이</span> 시작하세요.</h2>
       <p class="lead">시간표의 다양한 수업을 수강권으로 이용할 수 있습니다. 클래스별 정원 20명으로 쾌적하게 운영합니다.</p>
@@ -87,7 +151,7 @@
 
 <section id="schedule">
   <div class="wrap">
-    <div class="shead rv"><span class="c">C</span>시간표 · Timetable<span class="l"></span></div>
+    <div class="shead rv"><span class="c">D</span>시간표 · Timetable<span class="l"></span></div>
     <div data-timetable="yoga" class="rv">
       <div class="tt-top">
         <h2 class="h-display">Weekly<br>Schedule<span class="blue">.</span></h2>
@@ -105,7 +169,7 @@
     </div>
 
     <div class="rv" style="margin-top:56px">
-      <div class="shead" style="margin-bottom:0"><span class="c">D</span>강사진 · Instructors<span class="l"></span></div>
+      <div class="shead" style="margin-bottom:0"><span class="c">E</span>강사진 · Instructors<span class="l"></span></div>
       <div class="instructors">
         <span>이진선<small>THERAPY · ASHTANGA</small></span>
         <span>안유림<small>VINYASA · HATHA</small></span>
@@ -136,7 +200,7 @@
   <div class="wrap">
     <div class="foot-brand"><svg class="logo big" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg><div><div class="wordmark">THE S<span class="q">Q</span>UARE</div><div class="sub"><i></i>PREMIUM INDOOR SPORTS STUDIO<i></i></div></div></div>
     <div class="foot-links">
-      <a href="about.html">소개</a><a href="badminton.html">배드민턴</a><a href="yoga.html">요가</a><a href="rental.html">대관</a><a href="contact.html">문의</a>
+      <a href="about.html">소개</a><a href="badminton.html">배드민턴</a><a href="yoga.html">요가</a><a href="contact.html">문의</a>
       <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
     </div>
     <div class="foot-biz">
@@ -151,7 +215,9 @@
   </div>
 </footer>
 
-<script src="assets/schedule.js?v=20261008b"></script>
-<script src="assets/main.js?v=20261008b"></script>
+<script src="assets/schedule.js?v=20261008c"></script>
+<script src="assets/booking-config.js?v=20261008c"></script>
+<script src="assets/main.js?v=20261008c"></script>
+<script src="assets/booking.js?v=20261008c"></script>
 </body>
 </html>
