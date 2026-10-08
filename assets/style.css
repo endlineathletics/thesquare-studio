@@ -316,9 +316,9 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .sec-tabs a small{font:700 12px 'Montserrat';letter-spacing:.16em}
 .sec-tabs a.on{color:var(--ink);border-bottom-color:var(--blue)}
 .sec-tabs a.on small{color:var(--blue)}
-#rental,#coaches,#class{scroll-margin-top:60px}
+#rental,#coaches,#class,#academy{scroll-margin-top:60px}
 .bk-tabs .bk-tab:only-child{cursor:default}
-@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class{scroll-margin-top:50px}}
+@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy{scroll-margin-top:50px}}
 
 /* ---------- 강사진 (포스터형 3열, 사진 5:7) ---------- */
 .ct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:56px 24px;align-items:start}
@@ -335,6 +335,34 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ct-grid .coach details .cv{border-left-color:var(--line);color:var(--ink-2)}
 @media (max-width:1020px){.ct-grid{grid-template-columns:1fr 1fr;gap:44px 18px}.ct-title{grid-column:1 / -1}}
 @media (max-width:640px){.ct-grid{gap:34px 12px}.ct-grid .coach .photo{aspect-ratio:5/7}.ct-grid .coach .kr{font-size:15px}.ct-grid .coach .cv,.ct-grid .coach details{font-size:12px}.ct-grid .coach .sns{flex-direction:column;gap:6px;font-size:11.5px}}
+
+/* ---------- 배드민턴 아카데미 시간표 (깔끔한 표) ---------- */
+.atb{border:1px solid var(--line);background:#fff}
+.atb-h,.atb-r{display:grid;grid-template-columns:200px 1fr 1fr}
+.atb-h{border-bottom:1px solid var(--ink)}
+.atb-h b{padding:18px 24px;font-size:15px;font-weight:800;letter-spacing:.02em;border-left:1px solid var(--line)}
+.atb-r + .atb-r{border-top:1px solid var(--line)}
+.atb-l{padding:26px 24px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.atb-l small{font:700 11px 'Inter';letter-spacing:.22em;color:var(--blue)}
+.atb-l b{font-size:22px;font-weight:800;letter-spacing:-.03em}
+.atb-l span{font-size:14px;color:var(--ink-2);font-weight:600}
+.atb-c{padding:26px 24px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.atb-d{display:none}
+.atb-t{font:700 clamp(22px,2.4vw,30px) 'Inter';letter-spacing:-.03em}
+.atb-t i{font-style:normal;color:var(--ink-2);font-weight:400;margin:0 6px}
+.atb-n{font-size:13px;color:var(--ink-2)}
+.atb-co{margin-top:6px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.atb-co em{font-style:normal;font:700 10.5px 'Inter';letter-spacing:.12em;color:var(--blue);border:1px solid currentColor;padding:2px 6px}
+@media (max-width:720px){
+  .atb-h{display:none}
+  .atb-r{grid-template-columns:1fr 1fr}
+  .atb-l{grid-column:1 / -1;flex-direction:row;align-items:baseline;gap:10px;padding:16px 16px 4px}
+  .atb-c{border-left:0;padding:12px 16px 18px}
+  .atb-c + .atb-c{border-left:1px solid var(--line)}
+  .atb-d{display:block;font-size:12px;font-weight:800;color:var(--blue)}
+  .atb-t{font-size:18px}.atb-t i{margin:0 3px}
+  .atb-co{font-size:13px;flex-direction:column;align-items:flex-start;gap:4px}
+}
 
 /* reveal */
 .rv{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.8,.2,1)}
