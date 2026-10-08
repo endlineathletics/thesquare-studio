@@ -583,8 +583,9 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .apply-fab:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(6,16,31,.1),0 1px 2px rgba(6,16,31,.14),0 6px 12px rgba(6,16,31,.14)}
 
 /* 천천히 위아래로 떠다니기. transform 대신 translate 를 써서 hover·숨김 효과와 안 겹침 */
-@keyframes fab-float{0%,100%{translate:0 0}50%{translate:0 -10px}}
-.apply-fab{animation:fab-float 2.8s ease-in-out infinite}
+/* 2.8초 동안 한 번 오르내리고 0.5초 쉼 (전체 3.3초) */
+@keyframes fab-float{0%{translate:0 0}42%{translate:0 -10px}85%,100%{translate:0 0}}
+.apply-fab{animation:fab-float 3.3s ease-in-out infinite}
 .apply-fab:hover,.apply-fab:focus-visible,.apply-fab.hide{animation:none}
 @media (prefers-reduced-motion:reduce){.apply-fab{animation:none}}
 .apply-fab.hide{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(16px)}
