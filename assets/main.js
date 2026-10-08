@@ -132,12 +132,3 @@
     setDay(day);
   });
 })();
-
-// 결제하기: 센터가 결제 시스템(PG)을 연결하기 전까지는 안내만 띄운다 (연결하면 #pay-btn 의 href 를 바꾸거나 이 버튼을 PG 위젯으로 교체)
-(function () {
-  var b = document.getElementById('pay-btn');
-  if (b && b.getAttribute('href') === '#') b.addEventListener('click', function (e) {
-    e.preventDefault();
-    alert('온라인 결제는 준비 중이에요.\n결제 문의: 02-6956-1861');
-  });
-})();

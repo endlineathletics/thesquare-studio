@@ -224,7 +224,7 @@
       done(v, r.id, 'ok');
     } catch (err) {
       $('applyErr').textContent = `접수 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
-      btn.disabled = false; btn.textContent = '수강신청 완료하기';
+      btn.disabled = false; btn.textContent = '다음';
     }
     sending = false;
   });
@@ -252,21 +252,23 @@
     const text = receipt(v, id);
     const box = $('applyDone');
     const msg = mode === 'ok'
-      ? (CFG.alimtalk ? `입력하신 번호(${esc(v.phone)})로 접수 완료 알림톡이 발송됩니다.<br>확인 후 담당자가 연락드리겠습니다.`
-                      : `확인 후 담당자가 ${esc(v.phone)}로 연락드리겠습니다.`)
+      ? `신청 내용을 확인하시고 아래 <b>결제하기</b>를 눌러 결제를 진행해주세요.<br>` +
+        (CFG.alimtalk ? `입력하신 번호(${esc(v.phone)})로 접수 완료 알림톡이 발송됩니다.` : `확인 후 담당자가 ${esc(v.phone)}로 연락드리겠습니다.`)
       : `아래 신청 내용을 복사해 인스타그램 DM으로 보내주시거나<br>${esc(CFG.phone)}로 전화 주시면 바로 접수해드립니다.`;
     box.innerHTML = `<div class="ok">${mode === 'ok' ? '✓' : '!'}</div>
-      <h2>${mode === 'ok' ? '수강신청이 접수되었습니다' : '신청 내용을 보내주세요'}</h2>
+      <h2>${mode === 'ok' ? '신청 내용 확인' : '신청 내용을 보내주세요'}</h2>
       <p>${msg}</p>
       <div class="receipt">${esc(text)}</div>
       <div class="acts">
-        ${mode === 'ok' ? '' : `<button type="button" class="pri" id="copyReceipt">내용 복사</button>
+        ${mode === 'ok' ? `<a class="pri" id="payBtn" href="${esc(CFG.payUrl || '#')}"${CFG.payUrl ? ' target="_blank" rel="noopener"' : ''}>결제하기</a>` : `<button type="button" class="pri" id="copyReceipt">내용 복사</button>
         <a href="${esc(CFG.instagram)}" target="_blank" rel="noopener">인스타그램 DM</a>
         <a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>`}
         <a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>
       </div>`;
     const cp = $('copyReceipt');
     if (cp) cp.onclick = () => copyText(text, box.querySelector('.receipt'), cp);
+    const pay = $('payBtn');      // 결제 시스템 주소(CFG.payUrl)가 없으면 안내만
+    if (pay && !CFG.payUrl) pay.onclick = ev => { ev.preventDefault(); alert(`온라인 결제는 준비 중이에요.\n결제 문의: ${CFG.phone}`); };
     $('applyWrap').hidden = true;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
