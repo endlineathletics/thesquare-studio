@@ -7,19 +7,7 @@
   onScroll();
   document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
 
-  /* floating apply button — sits at the main banner's bottom-right, then stays fixed there */
-  const fab = document.querySelector('.apply-fab');
-  if (fab && top) {
-    const place = () => {
-      if (window.innerWidth <= 640) { fab.style.bottom = ''; return; }   // 모바일은 화면 오른쪽 아래 고정
-      const heroBottom = top.offsetTop + top.offsetHeight;
-      const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fab-gap')) || 32;
-      const off = Math.max(gap, Math.min(window.innerHeight - heroBottom + gap, window.innerHeight * 0.45));
-      fab.style.bottom = off + 'px';
-    };
-    place();
-    window.addEventListener('resize', place);
-  }
+  const fab = document.querySelector('.apply-fab');   // 수강신청 버튼: 화면 크기와 상관없이 오른쪽 아래 고정 (CSS)
 
   /* active menu */
   const page = document.body.dataset.page;
