@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>THE SQUARE STUDIO — Premium Indoor Sports Studio</title>
-<meta name="description" content="THE SQUARE STUDIO · 가산디지털단지역 도보 5분 프리미엄 실내 체육관. 성인·유소년 배드민턴 아카데미, 요가, 배드민턴 코트·요가센터 대관.">
+<title>결제하기 — THE SQUARE STUDIO</title>
+<meta name="description" content="THE SQUARE STUDIO 수강료 · 대관료 결제.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%2306101f%22/%3E%3Cg fill=%22none%22 stroke=%22%230058FC%22 stroke-width=%227%22 transform=%22translate(12 12) scale(.76)%22%3E%3Crect x=%223.3%22 y=%223.3%22 width=%2293.4%22 height=%2293.4%22/%3E%3Cpath d=%22M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="assets/style.css?v=20261008a">
 </head>
-<body data-page="home">
+<body data-page="payment">
 
 <nav class="nav" id="nav">
   <a href="index.html" class="brand" aria-label="THE SQUARE STUDIO 홈">
@@ -27,65 +27,37 @@
     <a href="contact.html" data-page="contact">문의</a>
     <a href="payment.html" data-page="payment">결제하기</a>
   </div>
-  <a href="contact.html" class="btn">상담 문의 <span class="arr">→</span></a>
+  <a href="tel:02-6956-1861" class="btn">전화 상담 <span class="arr">→</span></a>
   <button class="burger" id="burger" aria-label="메뉴">☰</button>
 </nav>
 
-<header class="hero">
-  <a class="panel" href="badminton.html" aria-label="배드민턴 페이지로">
-    <img src="images/hero-badminton.jpg" alt="점프 스매시를 하는 배드민턴 선수">
-    <div class="word">Badminton</div>
-    <div class="meta">
-      <div class="glass"><div class="k">— ACADEMY · RENTAL</div><div class="v">성인 · 유소년<br>배드민턴 아카데미</div></div>
-      <span class="go">→</span>
-    </div>
-  </a>
-  <a class="panel" href="yoga.html" aria-label="요가 페이지로">
-    <img src="images/hero-yoga.jpg" alt="요가 동작을 하는 여성">
-    <div class="word">Yoga</div>
-    <div class="meta">
-      <div class="glass"><div class="k">— BODY · MIND</div><div class="v">평일 07:30 – 21:20<br>프리미엄 요가 클래스</div></div>
-      <span class="go">→</span>
-    </div>
-  </a>
-  <div class="hero-tag">PLAY · TRAIN · CREATE</div>
+<header class="page-hero short warm">
+  <img src="images/lounge.jpg" alt="THE SQUARE 라운지">
+  <div class="wrap">
+    <div class="eyebrow">PAYMENT</div>
+    <h1>Payment</h1>
+  </div>
 </header>
 
 <section>
   <div class="wrap">
-    <div class="shead rv"><span class="c">THE SQUARE</span>Premium Indoor Sports Studio<span class="l"></span></div>
-    <div class="home-intro rv">
-      <h2 class="h-kr">고급스럽고 편안한 공간,<br><span class="blue">더스퀘어</span></h2>
-      <div>
-        <p class="lead">단순히 운동하는 공간을 넘어<br>운동과 휴식, 공간의 품격까지 함께 경험할 수 있는 곳.</p>
-        <a href="about.html" class="btn dark" style="margin-top:22px">더스퀘어 소개 <span class="arr">→</span></a>
+    <div class="shead rv"><span class="c">P</span>결제 · Payment<span class="l"></span></div>
+    <h2 class="h-kr rv">수강료 · 대관료를<br><span class="blue">온라인으로 결제</span>하세요.</h2>
+    <div class="pay-box rv">
+      <div class="h-kr">결제 전 확인해주세요</div>
+      <div class="pay-steps">
+        <div><b>STEP 1</b>수강신청 · 대관 예약 후 담당자에게 반 배정 · 금액 안내를 받아주세요.</div>
+        <div><b>STEP 2</b>안내받은 금액을 아래 결제하기 버튼으로 결제해주세요.</div>
+        <div><b>STEP 3</b>결제가 확인되면 문자로 안내해드립니다.</div>
       </div>
+      <!-- 결제 시스템(PG) 연결 자리: 센터에서 결제 버튼·위젯 코드를 아래 #pay-widget 안에 넣으면 됩니다. -->
+      <div id="pay-widget">
+        <a class="btn dark pay-btn" href="#" id="pay-btn">결제하기 <span class="arr">→</span></a>
+      </div>
+      <p class="lead" style="margin-top:18px;font-size:14px">결제 · 환불 문의 <a href="tel:02-6956-1861"><b>02-6956-1861</b></a></p>
     </div>
-
-    <div class="tiles">
-      <a href="about.html" class="tile rv"><img src="images/lounge.jpg" alt=""><div class="t"><div><b>About</b><small>소개</small></div><span class="go">→</span></div></a>
-      <a href="badminton.html" class="tile rv"><img src="images/badminton-smash.jpg" alt="" style="object-position:72% center"><div class="t"><div><b>Badminton</b><small>배드민턴 아카데미</small></div><span class="go">→</span></div></a>
-      <a href="yoga.html" class="tile rv"><img src="images/yoga-class.jpg" alt=""><div class="t"><div><b>Yoga</b><small>요가 클래스</small></div><span class="go">→</span></div></a>
-      <a href="rental.html" class="tile rv"><img src="images/doubles.jpg" alt=""><div class="t"><div><b>Rental</b><small>코트 · 요가 대관</small></div><span class="go">→</span></div></a>
-    </div>
-
-    <a href="badminton.html#youth" class="promo-strip rv">
-      <span class="promo-tag">OPEN PROMOTION</span>
-      <p>프리미엄 유소년 배드민턴 아카데미 · 정규등록 <s>20만원</s> <em>15</em>만원</p>
-      <span class="go" style="background:var(--blue);color:#fff">→</span>
-    </a>
   </div>
 </section>
-
-<div class="cta-band">
-  <div class="wrap">
-    <h2 class="h-display">Start your play<span class="blue">.</span></h2>
-    <div class="nums">
-      <a href="tel:02-6956-1861"><small>레슨 상담 · 등록</small><b>02-6956-1861</b></a>
-      <a href="tel:010-7576-1861"><small>대관 문의</small><b>010-7576-1861</b></a>
-    </div>
-  </div>
-</div>
 
 <footer>
   <div class="wrap">
