@@ -263,7 +263,7 @@
         ${mode === 'ok' ? `<a class="pri" id="payBtn" href="${esc(CFG.payUrl || '#')}"${CFG.payUrl ? ' target="_blank" rel="noopener"' : ''}>결제하기</a>` : `<button type="button" class="pri" id="copyReceipt">내용 복사</button>
         <a href="${esc(CFG.instagram)}" target="_blank" rel="noopener">인스타그램 DM</a>
         <a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>`}
-        <a href="${TYPE === 'badminton' ? 'index' : TYPE}.html">${TYPE_NAME} 페이지로</a>
+        <a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>
       </div>`;
     const cp = $('copyReceipt');
     if (cp) cp.onclick = () => copyText(text, box.querySelector('.receipt'), cp);

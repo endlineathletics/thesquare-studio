@@ -38,7 +38,7 @@
       targets.forEach((t, i) => { if (t && t.offsetTop <= y) cur = i; });
       links.forEach((a, i) => a.classList.toggle('on', i === cur));
       // 수강신청 버튼은 대관 구역이 화면 가운데에 걸쳐 있는 동안 숨김
-      const r = targets[0] && targets[0].getBoundingClientRect(), mid = window.innerHeight / 2;
+      const rent = document.getElementById('rental'), r = rent && rent.getBoundingClientRect(), mid = window.innerHeight / 2;
       if (fab && r) fab.classList.toggle('hide', r.top < mid && r.bottom > mid);
     };
     window.addEventListener('scroll', sync, { passive: true });

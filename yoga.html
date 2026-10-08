@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261008e">
+<link rel="stylesheet" href="assets/style.css?v=20261008g">
 </head>
 <body data-page="yoga">
 
@@ -20,7 +20,8 @@
     <div class="wm">THE S<span class="q">Q</span>UARE<small>STUDIO</small></div>
   </a>
   <div class="menu" id="menu">
-    <a href="index.html" data-page="badminton">배드민턴</a>
+    <a href="index.html" data-page="home">홈</a>
+    <a href="badminton.html" data-page="badminton">배드민턴</a>
     <a href="yoga.html" data-page="yoga">요가</a>
     <a href="contact.html" data-page="contact">문의</a>
     <a href="about.html" data-page="about">소개</a>
@@ -40,15 +41,97 @@
 
 <div class="sec-tabs" id="secTabs">
   <div class="wrap">
-    <a href="#rental" class="on"><small>RENTAL</small>대관</a>
-    <a href="#class"><small>LESSON</small>레슨</a>
+    <a href="#class" class="on"><small>LESSON</small>레슨</a>
+    <a href="#rental"><small>RENTAL</small>대관</a>
   </div>
 </div>
+
+<!-- 레슨 -->
+<section id="class">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">A</span>요가 · Yoga<span class="l"></span></div>
+    <div class="intro rv">
+      <h2 class="h-kr">높은 층고, 깊은 호흡.<br><span class="blue">더 넓은 공간</span>에서 만나는 요가.</h2>
+      <p class="lead">이른 아침부터 퇴근 후 저녁까지, 빈야사·하타·아쉬탕가부터 테라피·교정, 필라테스, 핫요가까지. 8명의 강사진과 함께 오늘의 컨디션에 맞는 수업을 골라보세요.</p>
+    </div>
+    <div class="stats rv">
+      <div class="stat"><b>07:30</b><span>평일 첫 수업</span></div>
+      <div class="stat"><b>21:20</b><span>마지막 수업 종료</span></div>
+      <div class="stat"><b>50<small style="font-size:22px">MIN</small></b><span>클래스 1회 수업</span></div>
+      <div class="stat"><b>8</b><span>전문 요가 강사진</span></div>
+    </div>
+    <div class="gallery2">
+      <div class="photo rv"><img src="images/yoga-class.jpg" alt="그룹 요가 클래스"></div>
+      <div class="photo rv"><img src="images/yoga-calm.jpg" alt="요가 매트와 소도구"></div>
+    </div>
+  </div>
+</section>
+
+<!-- B. 수강료 -->
+<section class="bg-soft" id="price">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">B</span>수강료 · Price<span class="l"></span></div>
+    <div class="intro rv">
+      <h2 class="h-kr">원하는 만큼,<br><span class="blue">부담 없이</span> 시작하세요.</h2>
+      <p class="lead">시간표의 다양한 수업을 수강권으로 이용할 수 있습니다. 클래스별 정원 20명으로 쾌적하게 운영합니다.</p>
+    </div>
+    <div class="price-grid two">
+      <div class="price feat rv">
+        <div class="ic"><svg viewBox="0 0 32 32"><path d="M4 9h24v4a3 3 0 0 0 0 6v4H4v-4a3 3 0 0 0 0-6z"/><path d="M12 9v14" stroke-dasharray="2 2"/></svg></div>
+        <h3>요가 월 8회</h3>
+        <div class="days">한 달 8회 수강 · 회당 30,000원</div>
+        <div class="amt"><i>월</i>240,000<small>원</small></div>
+      </div>
+      <div class="price rv">
+        <div class="ic"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><path d="M14 12l3-2v12"/></svg></div>
+        <h3>요가 1회권</h3>
+        <div class="days">원하는 수업 1회 수강</div>
+        <div class="amt">35,000<small>원</small></div>
+      </div>
+    </div>
+    <p class="note rv">* 클래스별 정원 20명 · 수업 50분 · 예약 취소는 앱에서 수업 3시간 전까지 · 등록 문의 02-6956-1861</p>
+  </div>
+</section>
+
+<section id="schedule">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">C</span>시간표 · Timetable<span class="l"></span></div>
+    <div data-timetable="yoga" class="rv">
+      <div class="tt-top">
+        <h2 class="h-display">Weekly<br>Schedule<span class="blue">.</span></h2>
+        <a href="images/yoga-timetable.png" download="THE_SQUARE_요가시간표.png" class="btn dark">시간표 이미지 저장 <span class="arr">↓</span></a>
+      </div>
+      <div class="chips" style="margin-bottom:18px"></div>
+      <div class="tt-wrap desk"><table class="tt"></table></div>
+      <div class="daytabs"></div>
+      <div class="daylist"></div>
+      <div class="tt-note">
+        <span>수업 <b>50분</b> · 평일 운영</span>
+        <span>예약 취소는 앱에서 <b>수업 3시간 전</b>까지 가능</span>
+        <span>13:30 – 17:20 · 금요일 저녁은 대관 운영</span>
+      </div>
+    </div>
+
+    <div class="rv" style="margin-top:56px">
+      <div class="shead" style="margin-bottom:0"><span class="c">D</span>강사진 · Instructors<span class="l"></span></div>
+      <div class="instructors">
+        <span>이진선<small>THERAPY · ASHTANGA</small></span>
+        <span>안유림<small>VINYASA · HATHA</small></span>
+        <span>서수옥<small>PROPS · VINYASA</small></span>
+        <span>이은빈<small>HATHA · HOT YOGA</small></span>
+        <span>김도휘<small>PILATES · VINYASA</small></span>
+        <span>오지운<small>THERAPY · HATHA</small></span>
+        <span>이지영<small>CORRECTIVE · ASHTANGA</small></span>
+        <span>이꽃미<small>HEALING · YIN-YANG</small></span>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- 대관 -->
 <section class="bg-soft" id="rental">
   <div class="wrap">
-    <div class="shead rv"><span class="c">A</span>대관 · Rental<span class="l"></span></div>
+    <div class="shead rv"><span class="c">E</span>대관 · Rental<span class="l"></span></div>
     <div class="tt-top rv">
       <h2 class="h-display">Book the<br>studio<span class="blue">.</span></h2>
       <p class="lead">요가 스튜디오 전체를 평일 13:30–17:20, 금요일 17:30–21:20에 대관할 수 있어요(주말 제외).<br>날짜와 시간을 선택해 예약을 신청하시면 확인 후 연락드립니다. 대관 문의 <a href="tel:010-7576-1861"><b>010-7576-1861</b></a><br>기업 · 비영리단체 대관은 별도 문의 부탁드립니다.</p>
@@ -102,88 +185,6 @@
   </div>
 </section>
 
-<!-- 레슨 -->
-<section id="class">
-  <div class="wrap">
-    <div class="shead rv"><span class="c">B</span>요가 · Yoga<span class="l"></span></div>
-    <div class="intro rv">
-      <h2 class="h-kr">높은 층고, 깊은 호흡.<br><span class="blue">더 넓은 공간</span>에서 만나는 요가.</h2>
-      <p class="lead">이른 아침부터 퇴근 후 저녁까지, 빈야사·하타·아쉬탕가부터 테라피·교정, 필라테스, 핫요가까지. 8명의 강사진과 함께 오늘의 컨디션에 맞는 수업을 골라보세요.</p>
-    </div>
-    <div class="stats rv">
-      <div class="stat"><b>07:30</b><span>평일 첫 수업</span></div>
-      <div class="stat"><b>21:20</b><span>마지막 수업 종료</span></div>
-      <div class="stat"><b>50<small style="font-size:22px">MIN</small></b><span>클래스 1회 수업</span></div>
-      <div class="stat"><b>8</b><span>전문 요가 강사진</span></div>
-    </div>
-    <div class="gallery2">
-      <div class="photo rv"><img src="images/yoga-class.jpg" alt="그룹 요가 클래스"></div>
-      <div class="photo rv"><img src="images/yoga-calm.jpg" alt="요가 매트와 소도구"></div>
-    </div>
-  </div>
-</section>
-
-<!-- B. 수강료 -->
-<section class="bg-soft" id="price">
-  <div class="wrap">
-    <div class="shead rv"><span class="c">C</span>수강료 · Price<span class="l"></span></div>
-    <div class="intro rv">
-      <h2 class="h-kr">원하는 만큼,<br><span class="blue">부담 없이</span> 시작하세요.</h2>
-      <p class="lead">시간표의 다양한 수업을 수강권으로 이용할 수 있습니다. 클래스별 정원 20명으로 쾌적하게 운영합니다.</p>
-    </div>
-    <div class="price-grid two">
-      <div class="price feat rv">
-        <div class="ic"><svg viewBox="0 0 32 32"><path d="M4 9h24v4a3 3 0 0 0 0 6v4H4v-4a3 3 0 0 0 0-6z"/><path d="M12 9v14" stroke-dasharray="2 2"/></svg></div>
-        <h3>요가 월 8회</h3>
-        <div class="days">한 달 8회 수강 · 회당 30,000원</div>
-        <div class="amt"><i>월</i>240,000<small>원</small></div>
-      </div>
-      <div class="price rv">
-        <div class="ic"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><path d="M14 12l3-2v12"/></svg></div>
-        <h3>요가 1회권</h3>
-        <div class="days">원하는 수업 1회 수강</div>
-        <div class="amt">35,000<small>원</small></div>
-      </div>
-    </div>
-    <p class="note rv">* 클래스별 정원 20명 · 수업 50분 · 예약 취소는 앱에서 수업 3시간 전까지 · 등록 문의 02-6956-1861</p>
-  </div>
-</section>
-
-<section id="schedule">
-  <div class="wrap">
-    <div class="shead rv"><span class="c">D</span>시간표 · Timetable<span class="l"></span></div>
-    <div data-timetable="yoga" class="rv">
-      <div class="tt-top">
-        <h2 class="h-display">Weekly<br>Schedule<span class="blue">.</span></h2>
-        <a href="images/yoga-timetable.png" download="THE_SQUARE_요가시간표.png" class="btn dark">시간표 이미지 저장 <span class="arr">↓</span></a>
-      </div>
-      <div class="chips" style="margin-bottom:18px"></div>
-      <div class="tt-wrap desk"><table class="tt"></table></div>
-      <div class="daytabs"></div>
-      <div class="daylist"></div>
-      <div class="tt-note">
-        <span>수업 <b>50분</b> · 평일 운영</span>
-        <span>예약 취소는 앱에서 <b>수업 3시간 전</b>까지 가능</span>
-        <span>13:30 – 17:20 · 금요일 저녁은 대관 운영</span>
-      </div>
-    </div>
-
-    <div class="rv" style="margin-top:56px">
-      <div class="shead" style="margin-bottom:0"><span class="c">E</span>강사진 · Instructors<span class="l"></span></div>
-      <div class="instructors">
-        <span>이진선<small>THERAPY · ASHTANGA</small></span>
-        <span>안유림<small>VINYASA · HATHA</small></span>
-        <span>서수옥<small>PROPS · VINYASA</small></span>
-        <span>이은빈<small>HATHA · HOT YOGA</small></span>
-        <span>김도휘<small>PILATES · VINYASA</small></span>
-        <span>오지운<small>THERAPY · HATHA</small></span>
-        <span>이지영<small>CORRECTIVE · ASHTANGA</small></span>
-        <span>이꽃미<small>HEALING · YIN-YANG</small></span>
-      </div>
-    </div>
-  </div>
-</section>
-
 <div class="cta-band">
   <div class="wrap">
     <h2 class="h-display">Breathe with us<span class="blue">.</span></h2>
@@ -200,7 +201,7 @@
   <div class="wrap">
     <div class="foot-brand"><svg class="logo big" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg><div><div class="wordmark">THE S<span class="q">Q</span>UARE</div><div class="sub"><i></i>PREMIUM INDOOR SPORTS STUDIO<i></i></div></div></div>
     <div class="foot-links">
-      <a href="index.html">배드민턴</a><a href="yoga.html">요가</a><a href="contact.html">문의</a><a href="about.html">소개</a>
+      <a href="index.html">홈</a><a href="badminton.html">배드민턴</a><a href="yoga.html">요가</a><a href="contact.html">문의</a><a href="about.html">소개</a>
       <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
     </div>
     <div class="foot-biz">
@@ -215,9 +216,9 @@
   </div>
 </footer>
 
-<script src="assets/schedule.js?v=20261008e"></script>
-<script src="assets/booking-config.js?v=20261008e"></script>
-<script src="assets/main.js?v=20261008e"></script>
-<script src="assets/booking.js?v=20261008e"></script>
+<script src="assets/schedule.js?v=20261008g"></script>
+<script src="assets/booking-config.js?v=20261008g"></script>
+<script src="assets/main.js?v=20261008g"></script>
+<script src="assets/booking.js?v=20261008g"></script>
 </body>
 </html>
