@@ -15,22 +15,33 @@
     if (a.dataset.page === page) a.classList.add('on');
   });
 
-  /* 대관 / 레슨 탭: 누르면 그 구역으로 스크롤, 스크롤하면 지금 구역 탭이 켜짐 */
+  /* 대관 / 레슨 탭: 고른 쪽 구역만 보여줌 (주소 #rental 등으로 들어오면 그 구역이 있는 탭을 염) */
   const tabs = document.getElementById('secTabs');
   if (tabs) {
-    const links = [...tabs.querySelectorAll('a')];
-    const targets = links.map(a => document.querySelector(a.getAttribute('href')));
-    const sync = () => {
-      const y = window.scrollY + tabs.getBoundingClientRect().bottom + 80;
-      let cur = 0;
-      targets.forEach((t, i) => { if (t && t.offsetTop <= y) cur = i; });
-      links.forEach((a, i) => a.classList.toggle('on', i === cur));
-      // 수강신청 버튼은 대관 구역이 화면 가운데에 걸쳐 있는 동안 숨김
-      const rent = document.getElementById('rental'), r = rent && rent.getBoundingClientRect(), mid = window.innerHeight / 2;
-      if (fab && r) fab.classList.toggle('hide', r.top < mid && r.bottom > mid);
+    const links = [...tabs.querySelectorAll('a[data-tab]')];
+    const panes = [...document.querySelectorAll('.tab-pane')];
+    const show = (name, scroll) => {
+      panes.forEach(p => { p.hidden = p.dataset.pane !== name; });
+      links.forEach(a => a.classList.toggle('on', a.dataset.tab === name));
+      if (fab) fab.classList.toggle('hide', name === 'rental');   // 대관 화면에서는 수강신청 버튼 숨김
+      if (scroll) {   // 탭이 화면 위에 붙어 있을 때만 구역 처음으로 올림
+        const y = (top ? top.offsetTop + top.offsetHeight : 0) - (parseFloat(getComputedStyle(tabs).top) || 0);   // 탭이 원래 있던 자리
+        if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'instant' });
+      }
     };
-    window.addEventListener('scroll', sync, { passive: true });
-    sync();
+    links.forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      show(a.dataset.tab, true);
+      history.replaceState(null, '', a.getAttribute('href'));
+    }));
+    const fromHash = () => {
+      const t = location.hash && document.querySelector(location.hash);
+      const p = t && t.closest('.tab-pane');
+      show(p ? p.dataset.pane : tabs.dataset.default, false);
+      if (p && t) requestAnimationFrame(() => t.scrollIntoView());
+    };
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
   }
 
   /* reveal */
