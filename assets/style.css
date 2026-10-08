@@ -316,10 +316,10 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .sec-tabs a small{font:700 12px 'Montserrat';letter-spacing:.16em}
 .sec-tabs a.on{color:var(--ink);border-bottom-color:var(--blue)}
 .sec-tabs a.on small{color:var(--blue)}
-#rental,#coaches,#class,#academy{scroll-margin-top:60px}
+#rental,#coaches,#class,#academy,#schedule{scroll-margin-top:60px}
 .bk-tabs .bk-tab:only-child{cursor:default}
 .tab-pane[hidden]{display:none}
-@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy{scroll-margin-top:50px}}
+@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy,#schedule{scroll-margin-top:50px}}
 
 /* ---------- 강사진 (포스터형 3열, 사진 5:7) ---------- */
 .ct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:56px 24px;align-items:start}

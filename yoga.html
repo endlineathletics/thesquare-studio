@@ -40,16 +40,52 @@
 
 <div class="sec-tabs" id="secTabs" data-default="lesson">
   <div class="wrap">
-    <a href="#class" data-tab="lesson" class="on"><small>LESSON</small>레슨</a>
+    <a href="#schedule" data-tab="lesson" class="on"><small>LESSON</small>레슨</a>
     <a href="#rental" data-tab="rental"><small>RENTAL</small>대관</a>
   </div>
 </div>
 
 <div class="tab-pane" id="pane-lesson" data-pane="lesson">
-<!-- 레슨 -->
-<section id="class">
+<!-- 레슨: 시간표 -->
+<section id="schedule">
   <div class="wrap">
-    <div class="shead rv"><span class="c">A</span>요가 · Yoga<span class="l"></span></div>
+    <div class="shead rv"><span class="c">A</span>시간표 · Timetable<span class="l"></span></div>
+    <div data-timetable="yoga" class="rv">
+      <div class="tt-top">
+        <h2 class="h-display">Weekly<br>Schedule<span class="blue">.</span></h2>
+        <a href="images/yoga-timetable.png" download="THE_SQUARE_요가시간표.png" class="btn dark">시간표 이미지 저장 <span class="arr">↓</span></a>
+      </div>
+      <div class="chips" style="margin-bottom:18px"></div>
+      <div class="tt-wrap desk"><table class="tt"></table></div>
+      <div class="daytabs"></div>
+      <div class="daylist"></div>
+      <div class="tt-note">
+        <span>수업 <b>50분</b> · 평일 운영</span>
+        <span>예약 취소는 앱에서 <b>수업 3시간 전</b>까지 가능</span>
+        <span>13:30 – 17:20 · 금요일 저녁은 대관 운영</span>
+      </div>
+    </div>
+
+    <div class="rv" style="margin-top:56px">
+      <div class="shead" style="margin-bottom:0"><span class="c">B</span>강사진 · Instructors<span class="l"></span></div>
+      <div class="instructors">
+        <span>이진선<small>THERAPY · ASHTANGA</small></span>
+        <span>안유림<small>VINYASA · HATHA</small></span>
+        <span>서수옥<small>PROPS · VINYASA</small></span>
+        <span>이은빈<small>HATHA · HOT YOGA</small></span>
+        <span>김도휘<small>PILATES · VINYASA</small></span>
+        <span>오지운<small>THERAPY · HATHA</small></span>
+        <span>이지영<small>CORRECTIVE · ASHTANGA</small></span>
+        <span>이꽃미<small>HEALING · YIN-YANG</small></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 요가 소개 -->
+<section class="bg-soft" id="class">
+  <div class="wrap">
+    <div class="shead rv"><span class="c">C</span>요가 · Yoga<span class="l"></span></div>
     <div class="intro rv">
       <h2 class="h-kr">높은 층고, 깊은 호흡.<br><span class="blue">더 넓은 공간</span>에서 만나는 요가.</h2>
       <p class="lead">이른 아침부터 퇴근 후 저녁까지, 빈야사·하타·아쉬탕가부터 테라피·교정, 필라테스, 핫요가까지. 8명의 강사진과 함께 오늘의 컨디션에 맞는 수업을 골라보세요.</p>
@@ -60,17 +96,13 @@
       <div class="stat"><b>50<small style="font-size:22px">MIN</small></b><span>클래스 1회 수업</span></div>
       <div class="stat"><b>8</b><span>전문 요가 강사진</span></div>
     </div>
-    <div class="gallery2">
-      <div class="photo rv"><img src="images/yoga-class.jpg" alt="그룹 요가 클래스"></div>
-      <div class="photo rv"><img src="images/yoga-calm.jpg" alt="요가 매트와 소도구"></div>
-    </div>
   </div>
 </section>
 
 <!-- B. 수강료 -->
-<section class="bg-soft" id="price">
+<section id="price">
   <div class="wrap">
-    <div class="shead rv"><span class="c">B</span>수강료 · Price<span class="l"></span></div>
+    <div class="shead rv"><span class="c">D</span>수강료 · Price<span class="l"></span></div>
     <div class="intro rv">
       <h2 class="h-kr">원하는 만큼,<br><span class="blue">부담 없이</span> 시작하세요.</h2>
       <p class="lead">시간표의 다양한 수업을 수강권으로 이용할 수 있습니다. 클래스별 정원 20명으로 쾌적하게 운영합니다.</p>
@@ -93,40 +125,6 @@
   </div>
 </section>
 
-<section id="schedule">
-  <div class="wrap">
-    <div class="shead rv"><span class="c">C</span>시간표 · Timetable<span class="l"></span></div>
-    <div data-timetable="yoga" class="rv">
-      <div class="tt-top">
-        <h2 class="h-display">Weekly<br>Schedule<span class="blue">.</span></h2>
-        <a href="images/yoga-timetable.png" download="THE_SQUARE_요가시간표.png" class="btn dark">시간표 이미지 저장 <span class="arr">↓</span></a>
-      </div>
-      <div class="chips" style="margin-bottom:18px"></div>
-      <div class="tt-wrap desk"><table class="tt"></table></div>
-      <div class="daytabs"></div>
-      <div class="daylist"></div>
-      <div class="tt-note">
-        <span>수업 <b>50분</b> · 평일 운영</span>
-        <span>예약 취소는 앱에서 <b>수업 3시간 전</b>까지 가능</span>
-        <span>13:30 – 17:20 · 금요일 저녁은 대관 운영</span>
-      </div>
-    </div>
-
-    <div class="rv" style="margin-top:56px">
-      <div class="shead" style="margin-bottom:0"><span class="c">D</span>강사진 · Instructors<span class="l"></span></div>
-      <div class="instructors">
-        <span>이진선<small>THERAPY · ASHTANGA</small></span>
-        <span>안유림<small>VINYASA · HATHA</small></span>
-        <span>서수옥<small>PROPS · VINYASA</small></span>
-        <span>이은빈<small>HATHA · HOT YOGA</small></span>
-        <span>김도휘<small>PILATES · VINYASA</small></span>
-        <span>오지운<small>THERAPY · HATHA</small></span>
-        <span>이지영<small>CORRECTIVE · ASHTANGA</small></span>
-        <span>이꽃미<small>HEALING · YIN-YANG</small></span>
-      </div>
-    </div>
-  </div>
-</section>
 </div>
 
 <div class="tab-pane" id="pane-rental" data-pane="rental">
