@@ -20,7 +20,7 @@ const SPACES = {
   yoga:      { name: '요가센터', price: 100000, courts: ['공간 전체'],
                slots: [[], YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_.concat(YOGA_FRI_EVE_), []] },
 };
-const BOOKING_DAYS = 30;   // 오늘부터 며칠 뒤까지 예약 가능 (booking-config.js days 와 동일)
+const BOOKING_DAYS = 62;   // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (booking-config.js days 와 동일)
 const MAX_ITEMS = 72;      // 한 번에 신청할 수 있는 최대 시간 수 (booking-config.js maxItems 와 동일)
 const own_ = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 

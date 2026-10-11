@@ -2,6 +2,7 @@
    대관 예약 설정
    - api: 대관 신청을 받는 주소. 지금은 THE SQUARE 관리프로그램(thesquare-admin)의 /api/site
           (관리자 > 대관 화면으로 바로 들어감). 비워두면 "문자로 예약 신청" 방식으로 동작합니다.
+   - phone: 공간별 대관 문의 번호(문자 접수 · 오류 안내에 사용).
    - slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸. "시작-종료" 형식.
             booking/Code.gs 의 SPACES 와 똑같이 맞춰야 합니다.
    ============================================================ */
@@ -14,17 +15,16 @@
 
   window.BOOKING = {
     api: 'https://thesquare-admin-production.up.railway.app/api/site',
-    phone: '010-7576-1861',
-    days: 30,                 // 오늘부터 며칠 뒤까지 예약 가능 (Code.gs BOOKING_DAYS 와 동일)
+    days: 62,                 // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (Code.gs BOOKING_DAYS · 관리프로그램 RENTAL_DAYS 와 동일)
     maxItems: 72,             // 한 번에 신청할 수 있는 최대 시간 수 (Code.gs MAX_ITEMS 와 동일)
     spaces: {
       badminton: {
-        name: '배드민턴센터', unit: '1코트 1시간', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
+        name: '배드민턴센터', phone: '010-7576-1861', unit: '1코트 1시간', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
         note: '여러 시간 선택 가능 · 24시간 운영',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
       yoga: {
-        name: '요가센터', unit: '공간 전체 1시간', price: 100000, courts: ['공간 전체'],
+        name: '요가센터', phone: '010-7569-1861', unit: '공간 전체 1시간', price: 100000, courts: ['공간 전체'],
         note: '평일 13:30–17:20 · 금요일 17:30–21:20 (요가 수업 시간 제외)',
         slots: [[], YOGA_DAY, YOGA_DAY, YOGA_DAY, YOGA_DAY, YOGA_DAY.concat(YOGA_FRI_EVE), []],
       },

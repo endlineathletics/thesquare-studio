@@ -5,7 +5,9 @@
   if (!form) return;
   const TYPE = document.body.dataset.apply;
   const TYPE_NAME = TYPE === 'badminton' ? '배드민턴' : '요가';
-  const CFG = window.APPLY || {};
+  const CFG = Object.assign({}, window.APPLY);
+  // phone 은 종목별 { badminton, yoga } 또는 문자열 하나 — 이 페이지 종목의 번호로 정리
+  CFG.phone = (CFG.phone && typeof CFG.phone === 'object') ? (CFG.phone[TYPE] || CFG.phone.badminton || '') : (CFG.phone || '');
   const DAYS = ['월', '화', '수', '목', '금'];
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

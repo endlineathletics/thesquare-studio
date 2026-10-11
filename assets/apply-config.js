@@ -12,6 +12,6 @@ window.APPLY = {
   api: 'https://thesquare-admin-production.up.railway.app/api/site',
   payUrl: '',
   alimtalk: false,
-  phone: '02-6956-1861',
+  phone: { badminton: '010-7576-1861', yoga: '010-7569-1861' },   // 종목별 문의 번호 (body[data-apply] 로 선택)
   instagram: 'https://www.instagram.com/the__square_studio/',
 };

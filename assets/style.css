@@ -150,6 +150,14 @@ section.tight{padding:90px 0}
 .price.feat .days,.price.feat .amt i{color:rgba(255,255,255,.8)}
 .price.feat .amt{border-color:rgba(255,255,255,.25)}
 .price.feat .ic svg{stroke:#fff}
+/* 수강료 카드 분류 라벨 · 한정가 뱃지 (yoga.html) */
+.price .cat{font:600 11px 'Inter';letter-spacing:.18em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+.price.feat .cat{color:rgba(255,255,255,.8)}
+.price h3 small{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink-2);margin-left:4px;letter-spacing:0}
+.price.feat h3 small{color:rgba(255,255,255,.8)}
+.price .sale{align-self:flex-start;margin:12px 0 18px;background:var(--blue);color:#fff;font:700 12px var(--sans);letter-spacing:-.01em;padding:6px 10px}
+.price.feat .sale{background:#fff;color:var(--blue)}
+.price .amt s{font-size:20px;font-weight:600;color:var(--ink-3);margin-right:8px;text-decoration-thickness:1.5px}   /* 한정가 옆 정가 취소선 */
 .note{margin-top:14px;font-size:13px;color:var(--ink-2)}
 
 .fitems{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--ink);margin-top:72px}
@@ -316,10 +324,10 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .sec-tabs a small{font:700 12px 'Montserrat';letter-spacing:.16em}
 .sec-tabs a.on{color:var(--ink);border-bottom-color:var(--blue)}
 .sec-tabs a.on small{color:var(--blue)}
-#rental,#coaches,#class,#academy,#schedule{scroll-margin-top:60px}
+#rental,#coaches,#class,#academy,#schedule,#instructors,#price{scroll-margin-top:60px}
 .bk-tabs .bk-tab:only-child{cursor:default}
 .tab-pane[hidden]{display:none}
-@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy,#schedule{scroll-margin-top:50px}}
+@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy,#schedule,#instructors,#price{scroll-margin-top:50px}}
 
 /* ---------- 강사진 (포스터형 3열, 사진 5:7) ---------- */
 .ct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:56px 24px;align-items:start}
@@ -334,6 +342,10 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ct-grid .coach .cv{margin-top:14px;padding-left:12px;border-left:1.5px solid var(--ink);gap:4px;font-size:13px;color:var(--ink)}
 .ct-grid .coach .cv li::before{display:none}
 .ct-grid .coach details .cv{border-left-color:var(--line);color:var(--ink-2)}
+/* 사진 준비 전 플레이스홀더 — 중앙 실루엣 (yoga.html #instructors) · 사진이 들어오면 .empty 를 빼고 <img> 를 넣습니다 */
+.ct-grid .coach .photo.empty{display:flex;align-items:center;justify-content:center;position:relative}
+.ct-grid .coach .photo.empty svg{width:36%;height:auto;fill:none;stroke:rgba(255,255,255,.3);stroke-width:1.4;stroke-linecap:round}
+.ct-grid .coach .photo.empty::after{content:"사진 준비 중";position:absolute;left:0;right:0;bottom:16px;text-align:center;font:600 11px var(--sans);letter-spacing:.04em;color:rgba(255,255,255,.35)}
 @media (max-width:1020px){.ct-grid{grid-template-columns:1fr 1fr;gap:44px 18px}.ct-title{grid-column:1 / -1}}
 @media (max-width:640px){.ct-grid{gap:34px 12px}.ct-grid .coach .photo{aspect-ratio:5/7}.ct-grid .coach .kr{font-size:15px}.ct-grid .coach .cv,.ct-grid .coach details{font-size:12px}.ct-grid .coach .sns{flex-direction:column;gap:6px;font-size:11.5px}}
 
@@ -380,7 +392,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .nav.open .menu a::after{display:none}
   .intro,.home-intro,.split,.contact-grid,.youth,.coach-head,.head-coach{grid-template-columns:1fr}
   .intro,.home-intro,.coach-head{gap:22px}
-  .price-grid,.uses{grid-template-columns:1fr}
+  .price-grid{grid-template-columns:1fr 1fr}
+  .uses{grid-template-columns:1fr}
   .tiles{grid-template-columns:1fr 1fr}
   .fitems{grid-template-columns:1fr 1fr}
   .fitem{padding-bottom:18px}
@@ -402,6 +415,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 }
 @media (max-width:640px){
   .wrap{padding:0 16px}
+  .price-grid{grid-template-columns:1fr}
   .nav{width:calc(100% - 24px);top:12px}
   section{padding:84px 0}
   section.tight{padding:64px 0}
@@ -503,14 +517,32 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-step:first-child{margin-top:0}
 .bk-step b{font:700 12px 'Inter';color:var(--blue)}
 .bk-step small{font-size:12.5px;font-weight:500;color:var(--ink-3)}
-.bk-dates{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.bk-dates button{flex:0 0 64px;border:1px solid var(--line);background:#fff;padding:9px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--sans);color:var(--ink)}
-.bk-dates button b{font:700 20px 'Inter'}
-.bk-dates button small{font-size:11px;color:var(--ink-3)}
-.bk-dates button.sun small:first-child{color:#e0445a}
-.bk-dates button.sat small:first-child{color:var(--blue)}
-.bk-dates button.on{background:var(--navy);border-color:var(--navy);color:#fff}
-.bk-dates button.on small{color:rgba(255,255,255,.7)!important}
+/* 날짜 선택 — 월 달력 (.bk-cal · booking.js renderCal). 예전 가로 스크롤 날짜 띠(.bk-dates)는 더 이상 쓰지 않아 제거함 */
+.bk-cal{max-width:480px}
+.bk-cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bk-cal-h b{font:700 18px 'Inter';letter-spacing:-.02em}
+.bk-cal-h button{border:1px solid var(--line);background:#fff;width:34px;height:34px;cursor:pointer;font:700 18px 'Inter';line-height:1;color:var(--ink);display:grid;place-items:center;padding:0 0 2px}
+.bk-cal-h button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.bk-cal-h button:disabled{opacity:.3;cursor:not-allowed}
+.bk-cal-wd,.bk-cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.bk-cal-wd span{text-align:center;font-size:11.5px;font-weight:600;color:var(--ink-3);padding:6px 0}
+.bk-cal-wd .sun{color:#e0445a}
+.bk-cal-wd .sat{color:var(--blue)}
+.bk-cal-g button{position:relative;aspect-ratio:1;border:1px solid var(--line);background:#fff;padding:0;cursor:pointer;display:grid;place-items:center;font-family:var(--sans);color:var(--ink);transition:border-color .15s,background .15s}
+.bk-cal-g button b{font:700 15px 'Inter';letter-spacing:-.02em}
+.bk-cal-g button small{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:10px;font-weight:700;line-height:1;color:var(--blue)}
+.bk-cal-g button.sun b{color:#e0445a}
+.bk-cal-g button.sat b{color:var(--blue)}
+.bk-cal-g button.out{opacity:.4}
+.bk-cal-g button:hover:not(:disabled){border-color:var(--blue)}
+.bk-cal-g button:disabled{cursor:not-allowed;background:var(--paper-2);border-color:transparent}
+.bk-cal-g button:disabled b{color:var(--ink-3)}
+.bk-cal-g button:disabled.out{opacity:.25}
+.bk-cal-g button.on{background:var(--blue);border-color:var(--blue)}
+.bk-cal-g button.on b,.bk-cal-g button.on small{color:#fff}
+.bk-cal-sel{margin-top:12px;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.bk-cal-sel span{font-size:12.5px;font-weight:500;color:var(--ink-3);margin-right:8px}
+.bk-cal + .bk-court .bk-step:first-child{margin-top:26px}   /* 달력 바로 다음 단계(코트 선택)는 first-child 라도 위 여백 유지 */
 .bk-courts{display:flex;gap:8px;flex-wrap:wrap}
 .bk-courts button{border:1px solid var(--line);background:#fff;padding:11px 22px;font:700 15px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
 .bk-courts button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -519,7 +551,9 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-legend i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;border:1px solid var(--line)}
 .bk-legend .l-on{background:var(--blue);border-color:var(--blue)}
 .bk-legend .l-off{background:repeating-linear-gradient(135deg,#f4f6f9 0 3px,#e3e6ec 3px 6px)}
-.bk-slots{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.bk-slots{display:grid;gap:18px}   /* 오전/오후 묶음(.bk-sg) 세로 나열 */
+.bk-sg-h{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.06em;margin-bottom:8px}
+.bk-sg-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .bk-slots button{border:1px solid var(--line);background:#fff;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--sans);color:var(--ink);transition:border-color .15s,background .15s}
 .bk-slots button b{font:700 16px 'Inter';letter-spacing:-.02em}
 .bk-slots button small{font-size:11px;color:var(--ink-3)}
@@ -563,7 +597,14 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .bk-tab b{font-size:18px}
   .bk-tab em{grid-column:1;grid-row:auto;justify-self:start;margin-top:8px;font-size:12.5px;padding:6px 9px}
   .bk-main,.bk-side{padding:18px 16px}
-  .bk-slots{grid-template-columns:repeat(4,1fr);gap:6px}
+  .bk-slots{gap:14px}
+  .bk-sg-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+  .bk-cal{max-width:none}
+  .bk-cal-h b{font-size:16px}
+  .bk-cal-wd,.bk-cal-g{gap:3px}
+  .bk-cal-wd span{font-size:11px}
+  .bk-cal-g button b{font-size:13px}
+  .bk-cal-g button small{font-size:9px;bottom:3px}
   .bk-slots button b{font-size:14px}
   .bk-courts button{padding:10px 16px;font-size:14px}
 }
@@ -696,6 +737,5 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-days button i[hidden]{display:none}
 
 .price-grid.two{grid-template-columns:repeat(2,1fr)}
-@media (max-width:1020px){.price-grid.two{grid-template-columns:1fr}}
-.bk-dates button:disabled{cursor:not-allowed;opacity:.35;background:repeating-linear-gradient(135deg,#f7f8fa 0 6px,#eef0f4 6px 12px)}
+@media (max-width:640px){.price-grid.two{grid-template-columns:1fr}}
 .bk-none{grid-column:1 / -1;padding:22px 0;color:var(--ink-3);font-size:14px}
