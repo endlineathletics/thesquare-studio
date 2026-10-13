@@ -1,3 +1,9 @@
+/* ============================================================
+   대관 예약 (배드민턴·요가 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
+   01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
+   한 신청 = 날짜 하나 + 이어진 시간 범위 하나 + 코트 1~3개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
+   신청은 1코트 1시간 칸(items = 선택 코트 × 범위 칸, court 는 0부터) 단위로 관리프로그램 /api/site 에 보냄 — api 가 비면 문자 접수.
+   ============================================================ */
 (function () {
   const root = document.getElementById('bk');
   if (!root) return;
@@ -8,54 +14,131 @@
   const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const won = n => n.toLocaleString('ko-KR') + '원';
   const toDate = s => new Date(s + 'T12:00:00');
-  const dLabel = s => { const d = toDate(s); return `${d.getMonth() + 1}/${d.getDate()}(${WD[d.getDay()]})`; };
   const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const dayLabel = s => { const d = toDate(s); return `${d.getMonth() + 1}월 ${d.getDate()}일(${WD[d.getDay()]})`; };
 
-  const MAX = CFG.maxItems || 72;   // 한 번에 신청할 수 있는 최대 시간 수 (Code.gs MAX_ITEMS 와 동일)
-  const MAX_COURTS = CFG.maxCourts || 3;   // 한 번에 같이 고를 수 있는 코트 수 (공간 코트 수보다 많으면 그 수까지)
-  // month: 달력에서 보고 있는 달 ("YYYY-MM") — ensureDate() 가 선택 날짜에 맞춰 둠
-  // courts: 지금 고른 코트 index 들(오름차순, 최소 1개) — 시간 버튼은 이 코트들 기준으로 표시·선택
-  // sel: "날짜|코트|시작" -> 칸 (1코트 1시간 = 1칸, 신청·금액 단위)
-  // 시작점·범위는 따로 저장하지 않고 sel 에서 그때그때 셈 (picks) — 날짜를 오가거나 코트를 바꿔도 화면에 보이는 담긴 칸 그대로가 기준
-  const state = { space: root.querySelector('.bk-tab.on').dataset.space, date: ymd(new Date()), month: '', courts: [0], sel: new Map() };
-  const booked = {};   // "space|date" -> Set("court|start")
+  const space = root.querySelector('[data-space]').dataset.space;
+  const SP = CFG.spaces[space];
+  const NC = SP.courts.length;
+  const ALL = SP.courts.map((_, i) => i);
+  const MAX = CFG.maxItems || 72;                                         // 한 번에 신청할 수 있는 최대 칸 (코트 × 시간)
+  const COURT_MAX = Math.max(1, Math.min(CFG.maxCourts || NC, NC));      // 같이 고를 수 있는 코트 수
+  const CAN_WHOLE = NC > 1 && COURT_MAX >= NC;                            // '3면 동시 가능' 보기 · 전체대관을 쓸 수 있는지
+  const WHOLE = CFG.wholeLabel || '전체대관';
 
-  /** 그 날짜에 예약 가능한 시간 칸 [{start, end}] */
-  function slotsFor(space, date) {
-    return (CFG.spaces[space].slots[toDate(date).getDay()] || []).map(s => { const [start, end] = s.split('-'); return { start, end }; });
+  /** 코트 이름 묶음 — [0, 2] → "COURT 1·3" (이름이 "앞부분 + 숫자" 꼴이 아니면 쉼표로 나열) */
+  function courtLabel(cs) {
+    const m = cs.map(c => /^(.*?)\s*(\d+)$/.exec(SP.courts[c]));
+    return m.every(x => x && x[1] === m[0][1]) ? `${m[0][1]} ${m.map(x => x[2]).join('·')}`.trim() : cs.map(c => SP.courts[c]).join(', ');
   }
-  const tLabel = x => `${x.start}~${x.end}`;
-  /** 코트 이름 묶음 — ['코트 1','코트 3'] → "코트 1·3" (이름이 "앞부분 + 숫자" 꼴이 아니면 쉼표로 나열) */
-  function courtLabel(sp, cs) {
-    const m = cs.map(c => /^(.*?)\s*(\d+)$/.exec(sp.courts[c]));
-    return m.every(x => x && x[1] === m[0][1]) ? `${m[0][1]} ${m.map(x => x[2]).join('·')}`.trim() : cs.map(c => sp.courts[c]).join(', ');
+  /** 신청의 코트 표시 — 코트를 모두 고르면 '전체대관' */
+  const courtText = cs => (NC > 1 && cs.length === NC ? WHOLE : courtLabel(cs));
+  /** 끝 글자 받침 번호 — 0 없음 · 8 ㄹ · 그 밖 (숫자는 읽는 소리: 영·일·삼·육·칠·팔, 영문 등은 없음으로) */
+  function jong(w) {
+    const ch = String(w).trim().slice(-1);
+    if (/\d/.test(ch)) return { 0: 21, 1: 8, 3: 16, 6: 1, 7: 8, 8: 8 }[ch] || 0;
+    const k = ch.charCodeAt(0) - 0xac00;
+    return k >= 0 && k <= 11171 ? k % 28 : 0;
   }
-  const courtMax = sp => Math.min(MAX_COURTS, sp.courts.length);
-  /** 한 번에 신청 가능한 최대 칸 안내 — 코트가 여럿이면 코트별 시간을 다 더한 수 */
-  const maxText = (max, sp) => `한 번에 최대 ${max}시간${sp.courts.length > 1 ? '(코트별 시간 합계)' : ''}까지 신청할 수 있습니다. 나눠서 신청해주세요.`;
+  /** 은/는 — 'COURT 2는' · 'COURT 1은' · '전체대관은' */
+  const eun = w => (jong(w) ? '은' : '는');
+  /** 으로/로 — ㄹ 받침은 '로' — '전체대관으로' · 'COURT 1로' */
+  const ro = w => (jong(w) && jong(w) !== 8 ? '으로' : '로');
 
-  /* ---------- calendar (월 달력 날짜 선택) ----------
+  /* ---------- 시간 칸 · 예약 현황 ---------- */
+  /** 그 날짜에 예약 가능한 시간 칸 [{start, end}] — '이어진' 은 이 목록의 인접 순서(index) 기준 (요가 10분 쉬는 시간도 이어진 칸) */
+  const slotsFor = date => (SP.slots[toDate(date).getDay()] || []).map(s => { const [start, end] = s.split('-'); return { start, end }; });
+  const todayStr = () => ymd(new Date());
+  const isPast = (date, start) => {
+    const now = new Date(), t = ymd(now);
+    return date < t || (date === t && mins(start) <= now.getHours() * 60 + now.getMinutes());
+  };
+  const booked = {};    // 날짜 -> Set("코트|시작") — 관리프로그램이 알려준 막힌 칸(예약 · 레슨 시간). 없으면 아직 안 불러옴
+  const loading = {};   // 날짜 -> 진행 중인 조회
+  const ready = date => !CFG.api || !!booked[date];
+  /** 그 칸을 그 코트로 신청할 수 있는지 — 지난 시간 · 예약된 칸 · 레슨 시간이면 false */
+  function free(date, i, c, list = slotsFor(date)) {
+    const x = list[i];
+    return !!x && !isPast(date, x.start) && !(booked[date] && booked[date].has(`${c}|${x.start}`));
+  }
+  /** lo~hi 칸이 코트 cs 모두에 비어 있는지 */
+  function freeRange(date, lo, hi, cs) {
+    const list = slotsFor(date);
+    for (let i = lo; i <= hi; i++) if (!cs.every(c => free(date, i, c, list))) return false;
+    return true;
+  }
+
+  /* ---------- 상태 ----------
+     date: 보고 있는 날짜, month: 달력에서 보고 있는 달("YYYY-MM"), view: 'all' 코트별 | 'whole' 모든 코트가 빈 시간만(전체대관)
+     sel: 담은 신청 { date, courts: [코트 index 오름차순], s, e } — s~e 는 그 날 시간 칸 index (양 끝 포함), 없으면 null
+          날짜를 바꿔 보기만 해서는 지우지 않음 (다른 날 칸을 누르면 새로 잡힘)
+     focus: 키보드로 움직이는 칸 { c: 열, i: 줄 } (표 안에서 Tab 이 머무는 칸 하나 — 화살표로 이동)
+     scroll: 다음에 표를 그릴 때 상자 안 스크롤을 처음 위치(오늘 지금 시각 · 첫 빈 칸 · 담은 시간)로 맞출지
+     lost: 그 사이 막혀서 지운 신청 { date, courts, s } — '시간 다시 고르기' 때 그 줄로 표를 보여줌 (새로 담으면 지움)
+     sending: 예약 신청을 보내는 중 — 그동안 표 · 선택 해제는 바꾸지 않고 신청 버튼도 다시 켜지지 않음 */
+  const state = { date: todayStr(), month: '', view: 'all', sel: null, focus: null, scroll: true, lost: null, sending: false };
+  const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (요가 50분 칸도 1시간 단위)
+  const cellsOf = sel => sel.courts.length * hoursOf(sel);
+  const priceOf = sel => cellsOf(sel) * SP.price;
+  function timeText(sel) {
+    const l = slotsFor(sel.date);
+    return `${l[sel.s].start}~${l[sel.e].end} (${hoursOf(sel)}시간)`;
+  }
+  const rangeOnly = sel => { const l = slotsFor(sel.date); return `${l[sel.s].start}~${l[sel.e].end}`; };
+  /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (요가는 코트 없이) */
+  const selText = sel => `${NC > 1 ? courtText(sel.courts) + ' ' : ''}${timeText(sel)}`;
+  /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (요가는 코트 없이) */
+  const head = sel => [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : '', timeText(sel)].filter(Boolean).join(' · ');
+  /** 요약 한 줄 "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간) · 844,800원" */
+  const summary = sel => `${head(sel)} · ${won(priceOf(sel))}`;
+  /** 담은 신청이 아직 그대로 신청 가능한지 (그 사이 지난 시간 · 새로 들어온 예약) */
+  const selOk = sel => !ready(sel.date) || freeRange(sel.date, sel.s, sel.e, sel.courts);
+
+  /* ---------- 안내 ----------
+     화면낭독기 안내는 #bkLive(role=status) 한 곳 — 칸마다 aria-pressed 가 바뀌어도 범위 전체는 읽히지 않으므로 결과를 한 줄로.
+     눈에 보이는 경고는 아래 고정 바 위에 잠깐 띄움(#bkWarn) — 표를 누르는 동안 바는 늘 화면 아래에 있음 */
+  const live = $('bkLive');
+  const say = t => { if (t) live.textContent = live.textContent === t ? t + ' ' : t; };   // 같은 문구가 이어져도 다시 읽히게
+  let warnTimer = 0;
+  function flashWarn(text) {
+    const w = $('bkWarn');
+    w.textContent = text; w.classList.add('show');
+    clearTimeout(warnTimer); warnTimer = setTimeout(() => w.classList.remove('show'), 3200);
+  }
+  /** 다음 동작이 잘 되면 남아 있던 경고는 바로 내림 (지금 상태와 안 맞는 경고가 3초 남지 않게) */
+  function hideWarn() { clearTimeout(warnTimer); $('bkWarn').classList.remove('show'); }
+  const DATE_WARN = '날짜를 바꾸면 담은 시간이 새로 잡혀요';
+  const GAP_WARN = '중간에 예약된 시간이 있어 이어서 선택할 수 없어요 · 누른 칸부터 새로 선택했어요';
+  const LOST_WARN = '그 사이 예약된 시간이 있어요. 다시 골라주세요';
+  const PAST_WARN = '선택한 시간이 지났어요. 다시 골라주세요';
+  const MAX_WARN = `한 번에 최대 ${MAX}칸(코트 × 시간)까지 신청할 수 있어요. 나눠서 신청해주세요`;
+  const ANCHOR_TIP = '끝 시간을 누르면 이어서 선택돼요';
+  const COURT_MAX_WARN = `코트는 최대 ${COURT_MAX}면까지 함께 신청할 수 있어요`;
+  const SENDING_WARN = '예약 신청을 보내는 중이에요. 잠시만 기다려주세요';
+  const busyWarn = (c, sel) => `${SP.courts[c]}${eun(SP.courts[c])} ${rangeOnly(sel)} 중 예약된 시간이 있어요`;
+
+  /* ---------- 날짜 (월 달력) ----------
      예약 가능 범위: 오늘 ~ 오늘 + CFG.days - 1 (약 2달). 범위가 걸친 달 사이만 ‹ › 로 이동.
-     지난 날 · 범위 밖 · 그 공간에 대관 칸이 없는 요일(요가센터 주말)은 disabled. */
+     지난 날 · 범위 밖 · 그 공간에 대관 칸이 없는 요일(요가센터 주말)은 disabled. 담은 시간이 있는 날엔 작은 점 */
   const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
   const lastDay = () => { const d = today0(); d.setDate(d.getDate() + CFG.days - 1); return d; };
-  const ym = d => ymd(d).slice(0, 7);                                        // "YYYY-MM"
-  const inRange = v => v >= ymd(today0()) && v <= ymd(lastDay());            // "YYYY-MM-DD" 문자열 비교
+  const ym = d => ymd(d).slice(0, 7);
+  const inRange = v => v >= ymd(today0()) && v <= ymd(lastDay());
   const selLabel = s => { const d = toDate(s); return `${d.getMonth() + 1}. ${d.getDate()}. (${WD[d.getDay()]})`; };
 
   function renderCal() {
     const [y, m] = state.month.split('-').map(Number);
     const first = new Date(y, m - 1, 1);
     const start = new Date(first); start.setDate(1 - first.getDay());        // 그 주 일요일부터 6주
-    const tv = ymd(today0()), minM = ym(today0()), maxM = ym(lastDay());
+    const tv = ymd(today0()), minM = ym(today0()), maxM = ym(lastDay()), has = state.sel && state.sel.date;
     let cells = '';
     for (let i = 0; i < 42; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
       const v = ymd(d), wd = d.getDay();
-      const off = !inRange(v) || !slotsFor(state.space, v).length;
-      const cls = [d.getMonth() !== m - 1 ? 'out' : '', wd === 0 ? 'sun' : wd === 6 ? 'sat' : '', v === state.date ? 'on' : ''].filter(Boolean).join(' ');
-      cells += `<button type="button" data-date="${v}" class="${cls}"${off ? ' disabled' : ''} aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일${off ? ' (예약 불가)' : ''}" aria-pressed="${v === state.date}">
+      const off = !inRange(v) || !slotsFor(v).length;
+      const cls = [d.getMonth() !== m - 1 ? 'out' : '', wd === 0 ? 'sun' : wd === 6 ? 'sat' : '', v === state.date ? 'on' : '', v === has ? 'bk2-has' : ''].filter(Boolean).join(' ');
+      cells += `<button type="button" data-date="${v}" class="${cls}"${off ? ' disabled' : ''} aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일${off ? ' (예약 불가)' : ''}${v === has ? ' (담은 시간 있음)' : ''}" aria-pressed="${v === state.date}">
         <b>${d.getDate()}</b>${v === tv ? '<small>오늘</small>' : ''}</button>`;
     }
     $('bkCal').innerHTML = `
@@ -68,17 +151,25 @@
       <div class="bk-cal-g">${cells}</div>
       <div class="bk-cal-sel"><span>선택한 날짜</span>${selLabel(state.date)}</div>`;
   }
-  /** 선택된 날짜가 이 공간에서 예약 불가(칸 없음 · 범위 밖)면 가장 가까운 가능한 날짜로 이동하고, 달력 월을 선택 날짜에 맞춤 */
+  /** 선택된 날짜가 예약 불가(칸 없음 · 범위 밖)면 가장 가까운 가능한 날짜로 옮기고, 달력 월을 선택 날짜에 맞춤 */
   function ensureDate() {
-    if (!inRange(state.date) || !slotsFor(state.space, state.date).length) {
+    if (!inRange(state.date) || !slotsFor(state.date).length) {
       for (let i = 0; i < CFG.days; i++) {
         const d = today0(); d.setDate(d.getDate() + i);
-        if (slotsFor(state.space, ymd(d)).length) { state.date = ymd(d); break; }
+        if (slotsFor(ymd(d)).length) { state.date = ymd(d); break; }
       }
     }
     state.month = state.date.slice(0, 7);
   }
+  /** 날짜 바꿔 보기 — 담은 시간은 그대로 둠 (그 날 칸을 누를 때 새로 잡음) */
+  function goDate(v) {
+    if (v !== state.date) { state.date = v; state.focus = null; state.scroll = true; }
+    state.month = v.slice(0, 7);
+    renderCal(); renderGrid();
+    load(v);
+  }
   $('bkCal').addEventListener('click', e => {
+    const cal = $('bkCal');
     const nav = e.target.closest('button[data-nav]');
     if (nav) {
       if (nav.disabled) return;
@@ -87,359 +178,345 @@
       if (next < ym(today0()) || next > ym(lastDay())) return;   // 오늘이 속한 달 ~ 범위 마지막 달 사이만
       state.month = next;
       renderCal();
+      const again = cal.querySelector(`[data-nav="${nav.dataset.nav}"]`);
+      (again && !again.disabled ? again : cal.querySelector('[data-nav]:not(:disabled)') || cal).focus();   // 다시 그린 버튼으로 키보드 포커스 유지
       return;
     }
     const b = e.target.closest('button[data-date]'); if (!b || b.disabled) return;
-    state.date = b.dataset.date;   // 다른 날짜에 담아 둔 시간은 그대로 (시작점·범위는 날짜마다 따로 — picks)
-    state.month = state.date.slice(0, 7);   // 전월/익월 날짜를 고르면 그 달로 이동
-    renderCal(); renderSlots();
-    loadBooked().then(renderSlots);
+    goDate(b.dataset.date);
+    const again = cal.querySelector(`[data-date="${b.dataset.date}"]`);
+    if (again) again.focus();
   });
 
-  /* ---------- courts (여러 코트 같이 선택 — 최소 1개, 최대 courtMax) ---------- */
-  /** 화면낭독기 안내 — 화면에 안 보이는 role=status 한 칸에 방금 일어난 일을 한 줄로 (담김 · 빠짐 · 경고).
-      제목 옆 안내 칸(#bkCourtNote · #bkTimeNote)은 aria-live 가 아님 — 시작점 안내로 바뀌거나 기본 문구로 되돌아갈 때마다 다시 읽히지 않게 */
-  const sr = document.createElement('p');
-  sr.className = 'bk-sr'; sr.setAttribute('role', 'status');
-  root.appendChild(sr);
-  const say = t => { sr.textContent = sr.textContent === t ? t + '\u00a0' : t; };   // 같은 문구가 이어져도 다시 읽히게 끝 공백을 붙였다 뗐다 함
-  /** 단계 제목 옆 작은 안내(<small>)를 잠깐 경고 문구로 바꿨다가 되돌림 — 휴대폰에선 아래 bkMsg 가 화면 밖이라 버튼 가까이에 띄움 */
-  let noteTimer = 0;
-  function flashNote(el, text) {
-    if (!el) return;   // 예전 HTML(캐시)에 안내 칸이 없으면 생략
-    clearTimeout(noteTimer);
-    root.querySelectorAll('.bk-step small.warn').forEach(x => { x.textContent = x.dataset.def || ''; x.classList.remove('warn'); });
-    el.textContent = text; el.classList.add('warn');
-    noteTimer = setTimeout(() => { el.textContent = el.dataset.def || ''; el.classList.remove('warn'); }, 3000);
-    say(text);
+  /* ---------- 표 (세로 = 시간 칸, 가로 = 코트) ---------- */
+  /** 지금 보기의 열 — 코트별 보기는 코트마다 한 열, '3면 동시 가능' 보기는 모든 코트를 묶은 '전체대관' 한 열 */
+  const cols = () => (state.view === 'whole'
+    ? [{ courts: ALL, name: WHOLE, sub: courtLabel(ALL) }]
+    : ALL.map(c => ({ courts: [c], name: SP.courts[c] })));
+  /** 그 날 sel (보고 있는 날짜에 담은 게 없으면 null) */
+  const selHere = () => (state.sel && state.sel.date === state.date ? state.sel : null);
+  /** 선택 안 된 코트 c 를 지금 범위에 더할 수 있는지 (코트별 보기의 '+ 추가' 표시) */
+  function canAdd(sel, c) {
+    return sel.courts.length < COURT_MAX && (sel.courts.length + 1) * hoursOf(sel) <= MAX && freeRange(sel.date, sel.s, sel.e, [c]);
   }
-  /** 안내 칸의 기본 문구를 바꿈 (flashNote 가 끝나면 이 문구로 돌아감). 같은 문구면 다시 쓰지 않음 */
-  function setNote(el, text) {
-    if (!el) return;
-    el.dataset.def = text;
-    if (!el.classList.contains('warn') && el.textContent !== text) el.textContent = text;
+  /** 칸 모양 — cls: '' 빈 칸('선택') · off('—': 지난 시간 · 예약됨 · 레슨) · on(담김, s 시작 · e 끝) · add(선택 안 된 코트의 범위 줄 — 누르면 같은 시간으로 추가)
+      · part(전체대관 보기에서 일부 코트만 담긴 범위 — 누르면 나머지 코트도 담음) · wait(예약 현황 불러오는 중) */
+  function cellView(col, i, list) {
+    const D = state.date, x = list[i], t = `${x.start}~${x.end}`, sel = selHere();
+    if (!ready(D)) return { cls: 'wait', text: '', off: true, label: `${col.name} ${t} 불러오는 중` };
+    const inR = sel && i >= sel.s && i <= sel.e;
+    if (inR && col.courts.every(c => sel.courts.includes(c))) {
+      const mark = i === sel.s ? '시작' : i === sel.e ? '끝' : '';
+      // j: 시작 바로 다음 칸이 끝(2칸 범위) — 블루 두 칸 사이 이음 띠도 블루로
+      return { cls: 'on' + (i === sel.s ? ' s' : '') + (i === sel.e ? ' e' : '') + (i === sel.e && i === sel.s + 1 ? ' j' : ''), text: mark, pressed: 'true',
+        label: `${col.name} ${t} 선택됨${mark ? ` (${mark})` : ''}` };
+    }
+    if (inR && state.view === 'whole') {
+      return { cls: 'part', text: `${courtLabel(sel.courts)}만`, pressed: 'mixed', label: `${col.name} ${t} ${courtLabel(sel.courts)}만 선택됨, 누르면 ${WHOLE}${ro(WHOLE)}` };
+    }
+    if (!col.courts.every(c => free(D, i, c, list))) {
+      return { cls: 'off', text: '—', off: true, label: `${col.name} ${t} ${isPast(D, x.start) ? '지난 시간' : '예약 마감'}` };
+    }
+    if (inR && state.view === 'all' && canAdd(sel, col.courts[0])) {
+      return { cls: 'add', text: '+ 추가', label: `${col.name} ${t} 선택 가능, 누르면 같은 시간으로 추가` };
+    }
+    return { cls: '', text: '선택', label: `${col.name} ${t} 선택 가능` };
   }
-
-  function renderCourts() {
-    const sp = CFG.spaces[state.space];
-    const multi = sp.courts.length > 1;
-    $('bkCourtWrap').style.display = multi ? '' : 'none';
-    $('bkTimeNo').textContent = multi ? '03' : '02';
-    timeNote(); fitNote();
-    setNote($('bkCourtNote'), `여러 코트 선택 가능 (최대 ${courtMax(sp)}면)`);
-    if ($('bkLegendPart')) $('bkLegendPart').hidden = !multi;   // '일부 코트만' 표시는 코트가 여럿일 때만 생김
-    $('bkCourts').innerHTML = sp.courts.map((c, i) => {
-      const n = [...state.sel.values()].filter(x => x.court === i).length;   // 이 코트에 담긴 시간 수 (모든 날짜)
-      const on = state.courts.includes(i);
-      return `<button type="button" data-court="${i}" class="${on ? 'on' : ''}" aria-pressed="${on}">${c}${n ? `<i>${n}</i>` : ''}</button>`;
+  /** 그 사이 막혀서 지운 신청이 이 날 것이면 그것 (표를 그 줄로 보여주려고) */
+  const lostHere = () => (!selHere() && state.lost && state.lost.date === state.date ? state.lost : null);
+  /** 키보드 포커스 기본 칸 — 담은 범위 시작 · 막혀서 지운 범위 시작 · 처음 보여줄 줄의 첫 빈 칸 · 맨 위 */
+  function defaultFocus(list, cs) {
+    const sel = selHere() || lostHere();
+    if (sel && sel.s < list.length) {
+      const c = cs.findIndex(col => col.courts.every(k => sel.courts.includes(k)));
+      return { c: c >= 0 ? c : Math.max(0, cs.findIndex(col => col.courts.includes(sel.courts[0]))), i: sel.s };
+    }
+    for (let i = startRow(list); i < list.length; i++) {
+      const c = cs.findIndex(col => col.courts.every(k => free(state.date, i, k, list)));
+      if (c >= 0) return { c, i };
+    }
+    return { c: 0, i: 0 };
+  }
+  /** 처음 보여줄 줄 — 담은(또는 막혀서 지운) 시간이 이 날이면 그 시작 바로 위, 오늘이면 지금 시각 줄, 아니면 첫 빈 칸 줄 */
+  function startRow(list) {
+    const D = state.date, sel = selHere() || lostHere();
+    if (sel && sel.s < list.length) return Math.max(0, sel.s - 1);
+    if (D === todayStr()) {
+      const i = list.findIndex(x => !isPast(D, x.start));
+      return i < 0 ? Math.max(0, list.length - 1) : Math.max(0, i - 1);
+    }
+    const i = list.findIndex((x, k) => cols().some(col => col.courts.every(c => free(D, k, c, list))));
+    return i < 0 ? 0 : i;
+  }
+  /** 표 상자 안에서만 스크롤 (페이지 스크롤은 그대로). 표가 숨은 탭에 있으면(높이 0) 보일 때 ResizeObserver 가 다시 부름 */
+  function scrollStart() {
+    const box = $('bkScroll'), grid = $('bkGrid'), list = slotsFor(state.date);
+    if (!state.scroll || !ready(state.date) || !list.length || !box.clientHeight || !grid.tBodies[0]) return;
+    state.scroll = false;
+    const row = grid.tBodies[0].rows[startRow(list)];
+    if (row) box.scrollTop += row.getBoundingClientRect().top - box.getBoundingClientRect().top - grid.tHead.offsetHeight;
+  }
+  function renderGrid() {
+    const D = state.date, list = slotsFor(D), grid = $('bkGrid'), cs = cols(), sel = selHere();
+    $('bkDay').textContent = dayLabel(D);
+    root.querySelectorAll('#bkView [data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+    $('bkClear').hidden = !state.sel;
+    // 다른 날에 담아 둔 시간 — 이 날 칸을 누르면 새로 잡힌다는 것도 미리 알려 둠
+    const other = state.sel && !sel;
+    $('bkElse').hidden = !other;
+    if (other) {
+      $('bkElse').innerHTML = `<span>담아 둔 시간 <b>${esc(head(state.sel))}</b> · 이 날 칸을 누르면 새로 잡혀요</span><button type="button" data-go>그 날 보기</button>`;
+    }
+    $('bkEmpty').hidden = list.length > 0;
+    if (!list.length) { grid.innerHTML = ''; return; }
+    const had = grid.contains(document.activeElement);
+    let f = state.focus;
+    if (!f || f.c >= cs.length || f.i >= list.length) f = state.focus = defaultFocus(list, cs);
+    const ths = cs.map(col => {
+      const on = sel && col.courts.every(c => sel.courts.includes(c));
+      return `<th scope="col"${on ? ' class="on"' : ''}>${esc(col.name)}${col.sub ? `<small>${esc(col.sub)}</small>` : ''}</th>`;
     }).join('');
+    const rows = list.map((x, i) => `<tr><th scope="row" class="bk2-t"><b>${x.start}</b><small>~${x.end}</small></th>${cs.map((col, c) => {
+      const v = cellView(col, i, list);
+      return `<td><button type="button" class="bk2-c ${v.cls}" data-c="${c}" data-i="${i}" tabindex="${f.c === c && f.i === i ? 0 : -1}"`
+        + `${v.off ? ' aria-disabled="true"' : ` aria-pressed="${v.pressed || 'false'}"`} aria-label="${esc(v.label)}">${v.text}</button></td>`;
+    }).join('')}</tr>`).join('');
+    grid.innerHTML = `<caption class="bk-sr">${esc(dayLabel(D))} ${esc(SP.name)} 대관 시간표 — 칸을 눌러 선택</caption>`
+      + `<thead><tr><th scope="col" class="bk2-t"><span class="bk-sr">시간</span></th>${ths}</tr></thead><tbody>${rows}</tbody>`;
+    grid.setAttribute('aria-busy', String(!ready(D)));
+    if (had) focusCell(f.c, f.i, true);   // 다시 그려도 키보드 포커스 유지
+    scrollStart();
   }
-  $('bkCourts').addEventListener('click', e => {
-    const b = e.target.closest('button[data-court]'); if (!b) return;
-    const i = +b.dataset.court, max = courtMax(CFG.spaces[state.space]);
-    if (state.courts.includes(i)) {
-      if (state.courts.length === 1) { flashNote($('bkCourtNote'), '코트는 최소 1면 선택해야 합니다'); return; }
-      state.courts = state.courts.filter(c => c !== i);
-    } else {
-      if (state.courts.length >= max) { flashNote($('bkCourtNote'), `코트는 최대 ${max}면까지 선택 가능`); return; }
-      state.courts = state.courts.concat(i).sort((a, b) => a - b);
+  /** 화면에서 가리는 곳 — 위: 떠 있는 메뉴(nav) · 대관/레슨 탭의 아래 끝, 아래: 고정 요약 바의 위 끝 */
+  function cover() {
+    const top = Math.max(0, ...['nav', 'secTabs'].map($).filter(Boolean).map(e => e.getBoundingClientRect().bottom));
+    const bar = $('bkBar').getBoundingClientRect();
+    return { top, bottom: Math.min(innerHeight, bar.height ? bar.top : innerHeight) };
+  }
+  /** 키보드로 옮긴 칸이 가려지지 않게 — 브라우저 기본 focus 스크롤은 위 탭 · 아래 고정 바에 가린 칸을 그냥 둠.
+      1) 표 상자 안에서 머리줄(코트) 아래로 2) 페이지에서 탭 아래 ~ 바 위로 (상자가 통째로 들어가면 상자째 — 머리줄도 보이게) */
+  function reveal(b) {
+    const box = $('bkScroll'), hh = $('bkGrid').tHead ? $('bkGrid').tHead.offsetHeight : 0;
+    let br = box.getBoundingClientRect(), r = b.getBoundingClientRect();
+    if (r.top < br.top + hh) box.scrollTop -= br.top + hh - r.top + 4;
+    else if (r.bottom > br.bottom) box.scrollTop += r.bottom - br.bottom + 4;
+    const { top, bottom } = cover();
+    br = box.getBoundingClientRect(); r = b.getBoundingClientRect();
+    const fits = br.height <= bottom - top, lo = fits ? br.top : r.top - 4, hi = fits ? br.bottom : r.bottom + 4;
+    const d = lo < top ? lo - top : hi > bottom ? hi - bottom : 0;
+    if (d) window.scrollBy({ top: d, behavior: 'instant' });
+  }
+  function focusCell(c, i, keep) {
+    const grid = $('bkGrid'), b = grid.querySelector(`button[data-c="${c}"][data-i="${i}"]`);
+    if (!b) return;
+    grid.querySelectorAll('button[tabindex="0"]').forEach(x => { if (x !== b) x.tabIndex = -1; });
+    b.tabIndex = 0; state.focus = { c, i };
+    b.focus({ preventScroll: true });
+    if (!keep) reveal(b);
+  }
+  // 화살표 · Home/End · PageUp/PageDown 으로 칸 이동 (Enter · Space 는 버튼 그대로 누름)
+  $('bkGrid').addEventListener('keydown', e => {
+    const b = e.target.closest('button.bk2-c'); if (!b) return;
+    const nc = cols().length, nr = slotsFor(state.date).length;
+    let c = +b.dataset.c, i = +b.dataset.i;
+    switch (e.key) {
+      case 'ArrowUp': i--; break;
+      case 'ArrowDown': i++; break;
+      case 'ArrowLeft': c--; break;
+      case 'ArrowRight': c++; break;
+      case 'Home': if (e.ctrlKey) i = 0; else c = 0; break;
+      case 'End': if (e.ctrlKey) i = nr - 1; else c = nc - 1; break;
+      case 'PageUp': i -= 6; break;
+      case 'PageDown': i += 6; break;
+      default: return;
     }
-    // 시작점·범위는 바뀐 코트 묶음 기준으로 다시 셈 (picks) — 고르지 않게 된 코트에 담긴 시간은 그대로 둠
-    const focused = document.activeElement === b;
-    renderCourts(); renderSlots();
-    if (focused) $('bkCourts').querySelector(`[data-court="${i}"]`).focus();   // 다시 그린 버튼으로 키보드 포커스 유지
+    e.preventDefault();
+    focusCell(Math.max(0, Math.min(nc - 1, c)), Math.max(0, Math.min(nr - 1, i)));
+  });
+  $('bkGrid').addEventListener('click', e => {
+    const b = e.target.closest('button.bk2-c'); if (!b) return;
+    const c = +b.dataset.c, i = +b.dataset.i;
+    state.focus = { c, i };
+    pick(cols()[c], i);
+    // 키보드(Enter · Space)로 눌렀으면 바뀐 요약 바(줄 수가 늘 수 있음)에 칸이 가리지 않게
+    const a = document.activeElement;
+    if (!e.detail && a && a.closest('#bkGrid')) reveal(a);
   });
 
-  /* ---------- slots ---------- */
-  function isPast(date, start) {
-    const now = new Date();
-    return date === ymd(now) && mins(start) <= now.getHours() * 60 + now.getMinutes();
-  }
-  /** 고른 코트들 기준 그 칸이 막힌 이유 — 지난 시간이면 "~ 끝", 고른 코트 중 예약된 게 있으면 "예약됨"/"코트 2 예약됨", 아니면 '' */
-  function blockWhy(x) {
-    const taken = booked[state.space + '|' + state.date] || new Set();
-    const busy = state.courts.filter(c => taken.has(`${c}|${x.start}`));
-    if (isPast(state.date, x.start)) return '~ ' + x.end;
-    return busy.length ? (busy.length === state.courts.length ? '예약됨' : courtLabel(CFG.spaces[state.space], busy) + ' 예약됨') : '';
-  }
-  /** 고른 코트 중 그 칸에 담긴 코트 */
-  const hasCourts = x => state.courts.filter(c => state.sel.has(`${state.date}|${c}|${x.start}`));
-  /** 고른 코트 중 그 칸을 아직 신청할 수 있는 코트 — 코트별로 따짐 (지난 시간이면 없음, 예약된 코트만 뺌) */
-  function freeCourts(x) {
-    if (isPast(state.date, x.start)) return [];
-    const taken = booked[state.space + '|' + state.date] || new Set();
-    return state.courts.filter(c => !taken.has(`${c}|${x.start}`));
-  }
-  /** 죽은 칸: 고른 코트 중 담긴 게 있지만 그 코트가 모두 막힘(시간이 지남 · 예약됨) — 신청해도 거절되는 칸.
-      범위(묶음)에 넣지 않고(묶음을 끊음) 누르면 그 칸에 담긴 코트만 빠짐 — 지난 칸 때문에 아직 쓸 수 있는 뒤쪽 시간이 지워지지 않게 */
-  function isDead(x) {
-    const has = hasCourts(x), free = freeCourts(x);
-    return has.length > 0 && !has.some(c => free.includes(c));
-  }
-  /** 고른 코트들 기준 그 시간 칸의 모양 (sub 는 <small> 안 HTML — 코트 이름·시간은 설정값이라 그대로 씀)
-      off: 지난 시간이거나 고른 코트 중 하나라도 이미 예약됨 (어느 코트가 막혔는지 작은 회색 글씨로) — 버튼 disabled
-      on: 고른 코트 모두에 담김 / part: 일부 코트에만 담김 (시간을 담은 뒤 코트 선택을 바꾼 경우) — 누르면 그 범위의 빠진 코트를 채움
-      lock: 막혔는데 고른 코트 중 담아 둔 것이 있음 (담은 뒤 코트를 추가했거나 조회 결과가 늦게 옴 · 오늘 시간이 지남)
-            — 막힌 이유 + 담긴 코트를 같이 보여줌. 담긴 코트 중 아직 쓸 수 있는 게 있으면 범위(묶음)에 들어가고(범위 규칙대로),
-              담긴 코트가 모두 막혔으면(isDead) 묶음 밖 — 누르면 그 칸만 빠짐 */
-  function slotView(x) {
-    const sp = CFG.spaces[state.space];
-    const has = hasCourts(x);
-    const on = has.length === state.courts.length, part = !on && has.length > 0;
-    const why = blockWhy(x);
-    if (why && has.length) {
-      return { off: false, cls: 'lock', pressed: on ? 'true' : 'mixed', sub: `${why}<em>${on ? '' : courtLabel(sp, has) + ' '}담김</em>` };
-    }
-    return { off: !!why, cls: on ? 'on' : part ? 'part' : '', pressed: on ? 'true' : part ? 'mixed' : 'false',
-      sub: why || (part ? courtLabel(sp, has) + '만' : '~ ' + x.end) };
-  }
-
-  /* 시작·끝 선택 — 같은 날짜·고른 코트 기준. '이어진' 은 그 날 시간 칸 목록의 인접 순서(index) 기준 — 요가의 10분 쉬는 시간이 있어도 이어진 칸
-     범위(묶음): 고른 코트에 담긴 칸 중 아직 쓸 수 있는 칸(on · part · 일부 코트만 막힌 lock)이 이어진 덩어리. 첫 칸이 고정된 시작, 마지막 칸이 끝
-       (담긴 코트가 모두 막힌 칸(isDead — 오늘 지난 시간 등)은 묶음을 끊음 → 고정된 시작은 아직 쓸 수 있는 첫 칸)
-     시작점: 그 날 묶음이 막히지 않은 1칸뿐일 때 그 칸 — 끝 시간을 누르면 그 사이를 한 번에 담음 */
-  const ANCHOR_NOTE = '끝 시간을 누르면 이어서 선택돼요';
-  const RANGE_NOTE = '가운데를 누르면 거기까지로 줄어요 · 첫 칸을 누르면 지워져요';
-  const PART_NOTE = '일부 코트만 담긴 칸을 누르면 나머지 코트에도 담겨요';
-  const GAP_WARN = '중간에 예약된 시간이 있어 이어서 선택할 수 없어요';
-  const MAX_WARN = `최대 ${MAX}시간까지 신청 가능`;
-  /** 지금 날짜·고른 코트 기준 담긴 칸 묶음 — list: 그 날 시간 칸, runs: [{s, e}] (list index, 양 끝 포함, 시간 순),
-      anchor: 묶음이 하나뿐이고 1칸이며 막히지 않은(on · part) 칸이면 그 index, 아니면 -1,
-      part: 묶음 안에 일부 코트만 담긴 칸(part)이 있는지 */
-  function picks() {
-    const list = slotsFor(state.space, state.date), runs = [];
-    list.forEach((x, i) => {
-      if (!hasCourts(x).length || isDead(x)) return;
-      const r = runs[runs.length - 1];
-      if (r && r.e === i - 1) r.e = i; else runs.push({ s: i, e: i });
-    });
-    const one = runs.length === 1 && runs[0].s === runs[0].e ? runs[0].s : -1;
-    const part = runs.some(r => list.slice(r.s, r.e + 1).some(x => slotView(x).cls === 'part'));
-    return { list, runs, part, anchor: one >= 0 && !blockWhy(list[one]) ? one : -1 };
-  }
-  /** 담긴 칸 상태에 맞는 안내 — 시작점만 있으면 이어서 선택, 일부 코트만 담긴 칸이 있으면 채우기, 2칸 이상 범위가 있으면 줄이기·지우기, 아니면 '' */
-  const pickNote = pk => pk.anchor >= 0 ? ANCHOR_NOTE : pk.part ? PART_NOTE : pk.runs.some(r => r.e > r.s) ? RANGE_NOTE : '';
-  /** 시간 제목 옆 안내 — pickNote, 없으면 공간 기본 안내 */
-  function timeNote(pk = picks()) {
-    setNote($('bkTimeNote'), pickNote(pk) || CFG.spaces[state.space].note || '');
-  }
-  /** 시간 안내 칸 높이 고정 — 이 공간에서 나올 수 있는 문구(기본 안내 · 시작점 안내 · 범위 안내 · 코트 채우기 안내 · 경고)를 #bkTimeFit 에 투명하게 겹쳐 두어
-      늘 가장 긴 문구 높이만큼 자리를 잡음 (style.css .bk-note) → 안내 줄 수가 바뀌어도 아래 시간 격자가 위아래로 밀리지 않음 */
-  function fitNote() {
-    const fit = $('bkTimeFit');
-    if (!fit || fit.dataset.space === state.space) return;   // 공간이 바뀔 때만 다시 채움
-    fit.dataset.space = state.space;
-    const multi = CFG.spaces[state.space].courts.length > 1;   // 코트 채우기 안내는 코트가 여럿일 때만 나옴
-    fit.innerHTML = [CFG.spaces[state.space].note || '', ANCHOR_NOTE, RANGE_NOTE].concat(multi ? [PART_NOTE] : []).map(t => `<small>${esc(t)}</small>`).join('')
-      + [GAP_WARN, MAX_WARN].map(t => `<small class="w">${esc(t)}</small>`).join('');   // 경고는 굵은 글씨(.warn)라 폭이 더 넓음
-  }
-  /** 시간 격자 경고 — 제목 옆 안내에 잠깐 띄우고, 그 안내가 화면 밖이거나 위쪽 고정 메뉴·탭에 가려 있으면 화면 아래에도 잠깐 띄움
-      (휴대폰에서 저녁 시간을 누르면 '시간 선택' 제목은 한참 위라 왜 안 담겼는지 안 보임) */
-  let toastEl = null, toastTimer = 0;
-  function warnTime(text) {
-    const el = $('bkTimeNote');
-    flashNote(el, text);
-    const r = el && el.getBoundingClientRect();
-    const hit = r && document.elementFromPoint(r.left + 2, r.top + r.height / 2);
-    if (hit && el.contains(hit)) return;   // 안내가 보이면 그걸로 충분
-    if (!toastEl) {
-      toastEl = document.createElement('div');
-      toastEl.className = 'bk-toast'; toastEl.setAttribute('aria-hidden', 'true');   // 읽기는 say() 가 함
-      document.body.appendChild(toastEl);
-    }
-    toastEl.textContent = text; toastEl.classList.add('show');
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3000);
-  }
-  /** 시간 버튼 표시 — 시작점 칸은 'anchor'(남색 안쪽 테두리 + '시작'), 2칸 이상 범위의 첫·끝 칸은 '시작'·'끝' 작은 표시.
-      안내 문구도 같이 갱신. 반환: Map(시작 시간 → 'anchor' | 'start' | 'end') */
-  function marks() {
-    const pk = picks(), m = new Map();
-    timeNote(pk);
-    if (pk.anchor >= 0) m.set(pk.list[pk.anchor].start, 'anchor');
-    pk.runs.filter(r => r.e > r.s).forEach(r => { m.set(pk.list[r.s].start, 'start'); m.set(pk.list[r.e].start, 'end'); });
-    return m;
-  }
-  const BADGE = { anchor: '시작', start: '시작', end: '끝' };
-  /** 시간 버튼 안쪽 — 시작점·범위 첫 칸엔 위쪽 가운데 작은 '시작', 범위 끝 칸엔 '끝' */
-  function slotInner(x, v, mk) {
-    const t = mk.get(x.start);
-    return `<b>${x.start}</b><small>${v.sub}</small>${t ? `<i class="bk-anc">${BADGE[t]}</i>` : ''}`;
-  }
-  const slotCls = (x, v, mk) => v.cls + (mk.get(x.start) === 'anchor' ? ' anchor' : '');
-  function renderSlots() {
-    const mk = marks();
-    const list = slotsFor(state.space, state.date);
-    if (!list.length) { $('bkSlots').innerHTML = '<p class="bk-none">이 날은 대관 가능한 시간이 없습니다.</p>'; return; }
-    const btn = x => {
-      const v = slotView(x);
-      return `<button type="button" data-s="${x.start}" data-e="${x.end}" class="${slotCls(x, v, mk)}" aria-pressed="${v.pressed}"${v.off ? ' disabled' : ''}>${slotInner(x, v, mk)}</button>`;
-    };
-    // 오전(시작 12:00 전) / 오후 소제목으로 묶어서 표시 — 비어 있는 묶음은 생략
-    const groups = [['오전', list.filter(x => mins(x.start) < 720)], ['오후', list.filter(x => mins(x.start) >= 720)]];
-    $('bkSlots').innerHTML = groups.filter(g => g[1].length)
-      .map(([h, xs]) => `<div class="bk-sg"><div class="bk-sg-h">${h}</div><div class="bk-sg-grid">${xs.map(btn).join('')}</div></div>`).join('');
-  }
-  /** 이미 그려진 시간 버튼들을 그 자리에서 고침 — 범위로 여러 칸이 바뀌어도 누른 버튼의 키보드 포커스가 남게 (다시 그리면 사라짐) */
-  function paintSlots() {
-    const mk = marks();
-    $('bkSlots').querySelectorAll('button[data-s]').forEach(b => {
-      const x = { start: b.dataset.s, end: b.dataset.e }, v = slotView(x);
-      b.className = slotCls(x, v, mk); b.setAttribute('aria-pressed', v.pressed); b.innerHTML = slotInner(x, v, mk);
-      b.disabled = v.off;      // lock 칸에서 담긴 코트가 빠지면 그냥 막힌 칸이 됨
-    });
-  }
-  // 시간 칸 누름 (담기·빼기는 고른 코트에만, 1코트 1시간씩 — 다른 날짜 · 고르지 않은 코트에 담긴 시간은 건드리지 않음)
-  //  - 담긴 코트가 모두 막힌 칸(isDead — 오늘 지난 시간 · 늦게 온 조회로 예약됨) → 그 칸에 담긴 코트만 뺌 (범위는 그대로)
-  //  - 일부 코트만 담긴 칸(part — 시간을 담은 뒤 코트를 추가함) → 그 범위 전체의 빠진 코트를 채움 (막힌 코트는 코트별로 건너뜀)
-  //      1칸뿐인 시작점이 part 여도 지우지 않고 채움 — 지우기·줄이기는 채운 다음 누름부터
-  //  - 범위(묶음) 첫 칸(고정된 시작 · 1칸뿐인 시작점 포함) → 그 범위 통째로 지움
-  //  - 범위 안 다른 칸(끝 칸 포함) → 시작~누른 칸으로 줄임 (누른 칸 뒤만 빠짐 — 가운데를 눌러도 구멍이 안 생김, 끝 칸이면 그대로). 빼기만 하고 채우지 않음
-  //  - 범위 밖 빈 칸
-  //      시작점(막히지 않은 1칸)만 있으면 → 시작점~누른 칸(양 끝 포함, 앞뒤 방향 모두)을 한 번에 담음
-  //        사이에 지난·예약된 칸이 있으면 → 안내 후 기존 시작점은 빼고 누른 칸만 담아 새 시작점으로
-  //      그 밖(담긴 게 없음 · 2칸 이상 범위 · 묶음 여럿) → 그 날 고른 코트에 담긴 시간을 모두(죽은 칸 포함) 빼고 누른 칸만 담아 새 시작점으로
-  //  - 바뀐 뒤 담긴 칸이 최대(MAX)를 넘으면 아무것도 안 바꿈 (더 가까운 끝을 다시 고를 수 있게) — 빼기만 하는 지우기·줄이기는 늘 됨
-  //  - 결과는 화면낭독기용 한 줄(say)로도 알림 — 범위로 바뀐 다른 버튼들의 aria-pressed 는 읽히지 않으므로. 문구는 바뀐 뒤 실제로 담긴 칸으로 만듦
-  $('bkSlots').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b || b.disabled) return;
-    const x = { start: b.dataset.s, end: b.dataset.e };
-    const now = slotView(x); if (now.off) { renderSlots(); return; }   // 그린 뒤 시간이 지났으면 막힌 칸으로 다시 그림
-    const { list, runs, anchor } = picks(), i = list.findIndex(s => s.start === x.start);
-    if (i < 0) { renderSlots(); return; }
-    const sp = CFG.spaces[state.space], who = cs => sp.courts.length > 1 ? courtLabel(sp, cs) + ' ' : '';   // 안내 앞머리 "코트 1·2 " (요가는 없음)
-    const del = new Set(), add = [];   // 뺄 키 · 새로 담을 [키, 칸] (서로 겹치지 않음)
-    const drop = s => hasCourts(s).forEach(c => del.add(`${state.date}|${c}|${s.start}`));
-    const take = s => freeCourts(s).forEach(c => {
-      const k = `${state.date}|${c}|${s.start}`;
-      if (!state.sel.has(k)) add.push([k, { date: state.date, court: c, start: s.start, end: s.end }]);
-    });
-    /** 안내용 — 칸들을 예약 내역처럼 묶은 문구 "코트 1·2 13:00~15:00 (2시간)" (코트 묶음이 다르면 쉼표로 이어 씀) */
-    const text = xs => rows(xs).map(r => `${who(r.courts)}${tLabel(r)} ${hours(r)}`).join(', ');
-    /** 바뀐 뒤 그 날·고른 코트에 담긴 칸 중 index lo~hi */
-    const held = (lo, hi) => items().filter(v => v.date === state.date && state.courts.includes(v.court)
-      && (j => j >= lo && j <= hi)(list.findIndex(s => s.start === v.start)));
-    const run = runs.find(r => r.s <= i && i <= r.e);
-    let warn = '', kind, lo = i, hi = i;   // kind: 결과 안내 종류, lo~hi: 안내할 칸 범위(index)
-    if (isDead(list[i])) {
-      drop(list[i]); kind = 'off';
-    } else if (run && now.cls === 'part') {
-      list.slice(run.s, run.e + 1).forEach(take); kind = 'fill'; lo = run.s; hi = run.e;
-    } else if (run && i === run.s) {
-      list.slice(run.s, run.e + 1).forEach(drop); kind = 'off';
-    } else if (run) {
-      list.slice(i + 1, run.e + 1).forEach(drop); kind = del.size ? 'shrink' : 'same'; lo = run.s; hi = del.size ? i : run.e;
-    } else if (anchor >= 0) {
-      lo = Math.min(anchor, i); hi = Math.max(anchor, i);
-      if (list.slice(lo, hi + 1).some(s => blockWhy(s))) {
-        warn = GAP_WARN; lo = hi = i; kind = 'new';
-        drop(list[anchor]); take(list[i]);
-      } else {
-        list.slice(lo, hi + 1).forEach(take); kind = 'range';
+  /* 칸 누름 — 결과는 sel 하나만 바꿈 (한 신청 = 날짜 하나 · 이어진 범위 하나 · 같은 시간의 코트 1~3개)
+     - '—' 칸은 아무 일 없음 (단, 코트별 보기에서 선택 안 된 코트의 범위 줄 '—' 칸 → 그 코트를 더할 수 없는 까닭을 안내)
+     - 신청을 보내는 중이면 바꾸지 않음. 다른 날짜에 담아 둔 게 있으면 지우고 이 날짜에서 새로 시작
+     - 담은 게 없음 → 그 열(코트 · 전체대관)의 그 칸 1칸 = 시작점
+     - 선택된 열:
+         첫 칸(1칸뿐인 시작점 포함) → 그 열의 코트를 뺌 (마지막 코트면 전부 해제)
+         시작점(1칸)만 있을 때 다른 칸 → 시작~그 칸 (앞뒤 방향, 모든 선택 코트에 같이). 사이에 막힌 칸이 있으면 안내 후 누른 칸에서 새로 시작
+         범위 안 다른 칸 → 시작~그 칸으로 줄임 (모든 선택 코트 같이) / 끝 칸 → 그대로 / 범위 밖 → 전부 지우고 그 칸에서 새로 시작
+     - 코트별 보기에서 선택 안 된 코트 열의 아무 칸 → 그 코트를 '같은 시간 범위'로 추가 (범위 중 막힌 칸이 있으면 안내만).
+       범위 밖 줄을 눌렀으면 표를 범위로 올려 보여주고 포커스도 그 코트의 시작 칸으로
+     - 전체대관 보기에서 일부 코트만 담긴 범위 줄 → 나머지 코트도 담아 전체대관 (막혔으면 안내만), 범위 밖 → 전체대관으로 새로 시작
+     - 바뀐 뒤 칸 수(코트 × 시간)가 MAX 를 넘으면 안내 후 바꾸지 않음 */
+  function pick(col, i) {
+    const D = state.date, list = slotsFor(D);
+    if (!list[i]) return;
+    if (state.sending) { flashWarn(SENDING_WARN); say(SENDING_WARN); return; }
+    const v = cellView(col, i, list), here = selHere();
+    if (v.off) {
+      if (v.cls === 'off' && here && state.view === 'all' && i >= here.s && i <= here.e && !isPast(D, list[i].start)
+        && !col.courts.every(c => here.courts.includes(c))) {
+        const w = here.courts.length >= COURT_MAX ? COURT_MAX_WARN : busyWarn(col.courts[0], here);
+        flashWarn(w); say(w);
       }
-    } else {
-      list.forEach(drop);   // 그 날 고른 코트에 담긴 시간 모두 (묶음 밖 죽은 칸 포함)
-      take(list[i]); kind = 'new';
-    }
-    if (add.length > del.size && state.sel.size - del.size + add.length > MAX) {   // 넘으면 하나도 안 바꿈 (자세한 안내는 아래 bkMsg)
-      showMsg(maxText(MAX, sp), 'err');
-      warnTime(MAX_WARN);
       return;
     }
-    const gone = items().filter(v => del.has(`${v.date}|${v.court}|${v.start}`));   // 빠지는 칸 (안내용 — 지우기 전에 모아 둠)
-    if (del.size || add.length) clearDraft();   // 끝 칸을 다시 누른 것처럼 바뀐 게 없으면 문자 신청 초안은 그대로
-    del.forEach(k => state.sel.delete(k));
-    add.forEach(([k, v]) => state.sel.set(k, v));
-    const tail = (t => t ? '. ' + t : '')(pickNote(picks()));   // 바뀐 뒤 상태의 안내 (시작점 · 채우기 · 범위)
-    const said = {
-      off: () => `${text(gone)} 선택 해제`,
-      fill: () => `빠진 코트도 담았어요. ${text(held(lo, hi))}${tail}`,
-      shrink: () => `${text(held(lo, hi))}으로 줄었어요${tail}`,
-      same: () => `끝 칸이라 그대로예요. ${text(held(lo, hi))}${tail}`,
-      range: () => `${text(held(lo, hi))} 선택됨${tail}`,
-      new: () => `${warn ? warn + '. ' : del.size ? '이전 선택 해제. ' : ''}${text(held(lo, hi))} ${warn ? '새로 ' : ''}선택됨${tail}`,
-    }[kind]();
-    paintSlots();
-    if (warn) warnTime(warn);   // 시작점 안내(timeNote)를 잠깐 덮었다가 3초 뒤 되돌아감 (+ 안 보이면 화면 아래)
-    say(said);                  // warnTime 이 읽힐 문구를 경고만으로 바꿔 두므로 그 뒤에 결과까지 한 줄로
-    renderSummary(); renderCourts();
+    let sel = state.sel, warn = '', said = '', next, jump = false;
+    if (sel && sel.date !== D) { sel = null; warn = DATE_WARN; }
+    const lone = () => ({ date: D, courts: col.courts.slice(), s: i, e: i });
+    if (!sel) {
+      next = lone(); said = `${selText(next)} 선택됨. ${ANCHOR_TIP}`;
+    } else {
+      const mine = col.courts.every(c => sel.courts.includes(c)), inR = i >= sel.s && i <= sel.e;
+      if (mine && i === sel.s) {
+        const left = sel.courts.filter(c => !col.courts.includes(c));
+        next = left.length ? { ...sel, courts: left } : null;
+        said = next ? `${courtLabel(col.courts)} 선택 해제. ${selText(next)} 남음` : `${selText(sel)} 선택 해제`;
+      } else if (mine && sel.s === sel.e) {
+        const lo = Math.min(sel.s, i), hi = Math.max(sel.s, i);
+        if (freeRange(D, lo, hi, sel.courts)) { next = { ...sel, s: lo, e: hi }; said = `${selText(next)} 선택됨`; }
+        else { warn = GAP_WARN; next = lone(); said = `${selText(next)} 새로 선택됨. ${ANCHOR_TIP}`; }
+      } else if (mine && inR) {
+        if (i === sel.e) { next = sel; said = `끝 칸이라 그대로예요. ${selText(sel)}`; }
+        else { next = { ...sel, e: i }; said = `${selText(next)}으로 줄었어요`; }
+      } else if (mine) {
+        next = lone(); said = `이전 선택 해제. ${selText(next)} 선택됨. ${ANCHOR_TIP}`;
+      } else if (state.view === 'whole') {
+        if (inR) {
+          const miss = ALL.filter(c => !sel.courts.includes(c));
+          const busy = miss.filter(c => !freeRange(D, sel.s, sel.e, [c]));
+          if (busy.length) { warn = `${courtLabel(busy)}${eun(courtLabel(busy))} ${rangeOnly(sel)} 중 예약된 시간이 있어요`; next = sel; }
+          else { next = { ...sel, courts: ALL.slice() }; said = `${WHOLE} 선택됨. ${selText(next)}`; }
+        } else {
+          next = lone(); said = `이전 선택 해제. ${selText(next)} 선택됨. ${ANCHOR_TIP}`;
+        }
+      } else {
+        const c = col.courts[0];
+        if (sel.courts.length >= COURT_MAX) { warn = COURT_MAX_WARN; next = sel; }
+        else if (!freeRange(D, sel.s, sel.e, [c])) { warn = busyWarn(c, sel); next = sel; }
+        else {
+          next = { ...sel, courts: sel.courts.concat(c).sort((a, b) => a - b) }; said = `${SP.courts[c]} 추가. ${selText(next)}`;
+          jump = !inR;
+        }
+      }
+    }
+    if (next && next !== sel && cellsOf(next) > MAX) {   // 넘으면 하나도 안 바꿈
+      flashWarn(MAX_WARN); say(MAX_WARN);
+      return;
+    }
+    if (next !== state.sel) clearDraft();   // 끝 칸을 다시 누른 것처럼 그대로면 문자 신청 초안도 그대로
+    state.sel = next; state.lost = null;
+    // 범위 밖 줄을 눌러 코트를 더했으면 바뀐 범위가 화면 밖 — 표 상자를 범위 시작으로 옮기고 포커스도 그 코트의 시작 칸으로
+    if (jump && state.focus) { state.focus = { c: state.focus.c, i: next.s }; state.scroll = true; }
+    update();
+    if (warn) flashWarn(warn); else hideWarn();
+    say([warn, said].filter(Boolean).join('. '));
+  }
+
+  /** 담은 신청이 그 사이 막혔으면(지난 시간 · 새 예약) 지우고 안내. 그대로면 true */
+  function keepSel() {
+    const sel = state.sel;
+    if (!sel || selOk(sel)) return true;
+    const past = slotsFor(sel.date).slice(sel.s, sel.e + 1).some(x => isPast(sel.date, x.start));
+    lose(past ? PAST_WARN : LOST_WARN);
+    return false;
+  }
+  /** 담은 신청을 지우고 안내. 지운 범위는 state.lost 로 기억('시간 다시 고르기' 때 그 줄로).
+      sent: 보냈다가 막힌 신청 — 그 신청의 날짜 예약 현황을 다시 불러오고, 화면낭독기 안내는 신청 결과(#bkMsg) 쪽 한 번만 */
+  function lose(text, sent) {
+    const sel = sent || state.sel;
+    if (!sel) return;
+    state.lost = { date: sel.date, courts: sel.courts.slice(), s: sel.s };
+    if (state.sel === sel) state.sel = null;
+    if (sent) delete booked[sel.date];
+    update();
+    flashWarn(text);
+    if (sent) load(sel.date); else say(text);
+  }
+
+  /* ---------- 아래 고정 요약 바 · 신청 요약 ---------- */
+  function renderBar() {
+    const sel = state.sel;
+    $('bkBar').classList.toggle('has', !!sel);
+    $('bkBarMain').textContent = sel ? [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : ''].filter(Boolean).join(' · ') : '예약 시간을 선택하세요';
+    $('bkBarSub').textContent = sel ? `${timeText(sel)} · ${won(priceOf(sel))}` : `원하는 ${NC > 1 ? '코트를' : '시간을'} 누르면 선택됩니다`;
+    $('bkGo').disabled = !sel;
+  }
+  function renderSel() {
+    const sel = state.sel;
+    $('bkSel').innerHTML = sel
+      ? `<div class="bk2-sel-h">선택한 예약</div>
+        <dl>
+          <div><dt>날짜</dt><dd>${esc(dayLabel(sel.date))}</dd></div>
+          ${NC > 1 ? `<div><dt>코트</dt><dd>${esc(courtText(sel.courts))}${sel.courts.length === NC ? ` <small>(${esc(courtLabel(ALL))})</small>` : ''}</dd></div>` : ''}
+          <div><dt>시간</dt><dd>${esc(timeText(sel))}</dd></div>
+          <div><dt>금액</dt><dd><b class="bk2-won">${won(priceOf(sel))}</b><small>${esc(SP.unit)} ${won(SP.price)} × ${cellsOf(sel)}</small></dd></div>
+        </dl>
+        <button type="button" class="bk2-edit" data-edit>시간 바꾸기 ↑</button>`
+      : `<p class="bk2-sel-empty">아직 고른 시간이 없어요. 위 표에서 ${NC > 1 ? '코트와 ' : ''}시간을 골라주세요.</p>
+        <button type="button" class="bk2-edit" data-edit>시간 고르기 ↑</button>`;
+  }
+  function update() { renderCal(); renderGrid(); renderBar(); renderSel(); validate(); }
+
+  /** 표로 돌아가기 — 담은(또는 막혀서 지운) 날짜로 바꿔 보여주고 그 시작 칸에 포커스 */
+  function backToGrid() {
+    const d = state.sel ? state.sel.date : state.lost && state.lost.date;
+    if (d && d !== state.date) goDate(d);
+    else { state.focus = null; state.scroll = true; renderGrid(); }
+    $('bkCard').scrollIntoView({ block: 'start' });
+    const f = state.focus;
+    if (f) focusCell(f.c, f.i, true);
+  }
+  $('bkGo').addEventListener('click', () => {
+    if (!state.sel || !keepSel()) return;
+    $('bkApply').scrollIntoView({ block: 'start' });
+    const f = form.name.value.trim() ? (form.phone.value.trim() ? form.name : form.phone) : form.name;
+    f.focus({ preventScroll: true });
+    say(`${summary(state.sel)}. 이름과 연락처를 입력해 예약을 신청해주세요`);
+  });
+  $('bkSel').addEventListener('click', e => { if (e.target.closest('[data-edit]')) backToGrid(); });
+  $('bkElse').addEventListener('click', e => { if (e.target.closest('[data-go]')) backToGrid(); });
+  $('bkClear').addEventListener('click', () => {
+    if (!state.sel) return;
+    if (state.sending) { flashWarn(SENDING_WARN); say(SENDING_WARN); return; }
+    const t = `${selText(state.sel)} 선택 해제`;
+    state.sel = null; clearDraft(); update(); hideWarn();
+    const f = state.focus; if (f) focusCell(f.c, f.i, true);   // 버튼이 사라지므로 표로 포커스
+    say(t);
+  });
+  $('bkView').hidden = !CAN_WHOLE;
+  const wholeBtn = root.querySelector('#bkView [data-view="whole"]');
+  if (wholeBtn) wholeBtn.textContent = `${NC}면 동시 가능`;
+  $('bkView').addEventListener('click', e => {
+    const b = e.target.closest('button[data-view]'); if (!b || b.dataset.view === state.view) return;
+    state.view = b.dataset.view; state.focus = null;
+    renderGrid(); hideWarn();
+    say(state.view === 'whole' ? `${NC}면 동시 가능 보기 — 모든 코트가 빈 시간만 고를 수 있어요 (${WHOLE})` : '전체 보기 — 코트별 시간');
   });
 
-  /* ---------- summary ---------- */
-  function items() {
-    return [...state.sel.values()].sort((a, b) => (a.date + pad(a.court) + a.start).localeCompare(b.date + pad(b.court) + b.start));
-  }
-  /** 보여주기용 줄: 같은 날짜에서 코트 묶음이 같고 이어진 칸(그 날 시간 칸 목록의 인접 순서 — 요가 10분 쉬는 시간도 이어진 것으로)을
-      한 줄로 묶음 ("10/15(목) 코트 1·2 · 13:00~15:00 (2시간)", 요가는 코트 없이 "10/16(금) 13:30~15:20 (2시간)"). 끝은 마지막 칸의 end, starts 는 그 줄의 칸 시작 시간들.
-      신청·금액은 그대로 1코트 1시간 칸(items) 단위 — 칸이 빠지면(× · 신청 충돌) 다시 계산돼 저절로 쪼개짐 */
-  function rows(list) {
-    const m = new Map();   // 1) 같은 날짜·시간의 코트를 모음
-    list.forEach(x => {
-      const k = x.date + '|' + x.start;
-      if (!m.has(k)) m.set(k, { date: x.date, start: x.start, end: x.end, courts: [] });
-      m.get(k).courts.push(x.court);   // items() 가 코트 순으로 정렬돼 있어 courts 도 오름차순
-    });
-    const out = [];        // 2) 시간 순으로 놓고, 바로 앞 줄과 날짜·코트 묶음이 같고 칸이 이어지면 합침
-    [...m.values()].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)).forEach(c => {
-      const i = slotsFor(state.space, c.date).findIndex(s => s.start === c.start), p = out[out.length - 1];
-      if (p && p.date === c.date && i >= 0 && p.last === i - 1 && p.courts.join() === c.courts.join()) {
-        p.end = c.end; p.last = i; p.starts.push(c.start);
-      } else out.push({ date: c.date, courts: c.courts, start: c.start, end: c.end, last: i, starts: [c.start] });
-    });
-    return out;
-  }
-  const hours = r => `(${r.starts.length}시간)`;   // 그 줄의 칸 수 = 시간 수 (요가 50분 칸도 1시간 단위)
-  function renderSummary() {
-    const sp = CFG.spaces[state.space], list = items(), multi = sp.courts.length > 1;
-    // × 는 그 줄(이어진 시간 × 코트들)을 한 번에 뺌
-    $('bkList').innerHTML = list.length
-      ? rows(list).map(r => {
-        const head = `${dLabel(r.date)} ${multi ? courtLabel(sp, r.courts) + ' · ' : ''}${tLabel(r)}`, n = hours(r);
-        const keys = r.starts.flatMap(t => r.courts.map(c => `${r.date}|${c}|${t}`));
-        return `<li><span>${head} <small>${n}</small></span>
-          <button type="button" data-k="${keys.join(',')}" aria-label="${head} ${n} 삭제">×</button></li>`;
-      }).join('')
-      : '<li class="empty">선택한 시간이 없습니다.</li>';
-    $('bkTotal').textContent = won(list.length * sp.price);
-    if ($('bkCount')) $('bkCount').textContent = list.length ? `${sp.unit} × ${list.length}` : '';
-    validate();
-  }
-  $('bkList').addEventListener('click', e => {
-    const b = e.target.closest('button[data-k]'); if (!b) return;
-    b.dataset.k.split(',').forEach(k => state.sel.delete(k)); clearDraft();
-    say(b.getAttribute('aria-label').replace(/ 삭제$/, ' 삭제됨'));
-    renderSummary(); renderCourts(); renderSlots();
-  });
-
-  /* ---------- tabs ---------- */
-  root.querySelector('.bk-tabs').addEventListener('click', e => {
-    const b = e.target.closest('.bk-tab'); if (!b || b.dataset.space === state.space) return;
-    root.querySelectorAll('.bk-tab').forEach(x => {
-      x.classList.toggle('on', x === b);
-      x.setAttribute('aria-selected', String(x === b));
-    });
-    state.space = b.dataset.space; state.courts = [0]; state.sel.clear(); showMsg('', '');
-    ensureDate();
-    renderCal(); renderCourts(); renderSummary(); renderSlots();
-    loadBooked().then(renderSlots);
-  });
-
-  /* ---------- form ---------- */
+  /* ---------- 신청 폼 ---------- */
   const form = $('bkForm');
   function validate() {
-    const ok = state.sel.size > 0 && state.sel.size <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked;
-    $('bkSubmit').disabled = !ok;
-    return ok;
+    const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked;
+    $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
+    return ok && !state.sending;
   }
   form.addEventListener('input', validate);
   form.addEventListener('change', validate);
 
-  function message(list) {
-    const sp = CFG.spaces[state.space];
+  function message(sel) {
     return [
       '[THE SQUARE 대관 예약 신청]',
-      `공간: ${sp.name}`,
-      ...rows(list).map(r => `- ${dLabel(r.date)} ${sp.courts.length > 1 ? courtLabel(sp, r.courts) + ' ' : ''}${tLabel(r)} ${hours(r)}`),
-      `합계: ${won(list.length * sp.price)} (${sp.unit} × ${list.length})`,
+      `공간: ${SP.name}`,
+      `예약: ${head(sel)}`,
+      `합계: ${won(priceOf(sel))} (${SP.unit} × ${cellsOf(sel)})`,
       `이름: ${form.name.value.trim()}`,
       `연락처: ${form.phone.value.trim()}`,
       form.people.value ? `인원: ${form.people.value}명` : '',
@@ -447,8 +524,17 @@
     ].filter(Boolean).join('\n');
   }
 
-  function showMsg(html, cls) { const m = $('bkMsg'); m.className = 'bk-msg ' + (cls || ''); m.innerHTML = html; }
-  /** 선택이 바뀌면 이전 문자 신청 초안은 지움 (내용이 달라지므로) */
+  /** 신청 결과 안내 — 폼 아래(#bkMsg)에 보이고, 화면낭독기는 #bkLive 한 곳에서 읽음 (quiet: 안내 문단에 포커스를 줄 때 — 두 번 읽히지 않게) */
+  function showMsg(html, cls, quiet) {
+    const m = $('bkMsg');
+    m.className = 'bk-msg ' + (cls || ''); m.innerHTML = html;
+    if (!html || quiet) return;
+    const t = m.cloneNode(true);   // 읽을 문구만 — 버튼 · 문자 초안(pre) 은 빼고
+    t.querySelectorAll('button, pre, .bk-actions').forEach(x => x.remove());
+    t.querySelectorAll('br').forEach(x => x.replaceWith(' '));
+    say(t.textContent.replace(/\s+/g, ' ').trim());
+  }
+  /** 선택이 바뀌면 이전 문자 신청 초안 · 오류 안내는 지움 (내용이 달라지므로) */
   function clearDraft() { const m = $('bkMsg'); if (m.classList.contains('info') || m.classList.contains('err')) showMsg('', ''); }
 
   function copyText(text, btn, sel) {
@@ -470,69 +556,112 @@
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    if (!validate()) return;
-    const list = items();
-    const sp = CFG.spaces[state.space];
-    // 시작점은 따로 두지 않으므로(picks) 신청 뒤에도 화면에 남은 담긴 칸이 그대로 기준 — 충돌로 빠진 칸은 예약 조회로 막힌 칸이 되어 범위가 끊김
+    if (!validate() || !keepSel()) return;
+    const sel = state.sel, list = slotsFor(sel.date);
+    const items = sel.courts.flatMap(c => list.slice(sel.s, sel.e + 1).map(x => ({ date: sel.date, court: c, start: x.start })));
 
     if (!CFG.api) {
-      const text = message(list);
-      const sms = `sms:${sp.phone.replace(/-/g, '')}?&body=${encodeURIComponent(text)}`;
-      showMsg(`<b>예약 내용을 문자로 보내주세요.</b><br>아래 버튼을 누르면 예약 내용이 문자로 작성됩니다. 전송해주시면 확인 후 연락드립니다.
+      const text = message(sel);
+      const sms = `sms:${SP.phone.replace(/-/g, '')}?&body=${encodeURIComponent(text)}`;
+      showMsg(`<b>예약 내용을 문자로 보내주세요.</b><br>${esc(summary(sel))}<br>아래 버튼을 누르면 예약 내용이 문자로 작성됩니다. 전송해주시면 확인 후 연락드립니다.
         <pre>${esc(text)}</pre>
         <div class="bk-actions"><a class="bk-submit" href="${sms}">문자로 예약 신청</a>
         <button type="button" class="bk-copy">내용 복사</button></div>
-        <small>PC에서는 내용을 복사해 ${sp.phone}로 문자 보내주세요.</small>`, 'info');
+        <small>PC에서는 내용을 복사해 ${SP.phone}로 문자 보내주세요.</small>`, 'info');
       const m = $('bkMsg');
       m.querySelector('.bk-copy').onclick = ev => copyText(text, ev.currentTarget, m.querySelector('pre'));
       return;
     }
 
-    $('bkSubmit').disabled = true; $('bkSubmit').textContent = '신청 중…';
+    const btn = $('bkSubmit');
+    state.sending = true;
+    btn.disabled = true; btn.textContent = '신청 중…';
+    let after = null;   // 끝난 뒤 할 일 (선택 지우기 등) — 버튼 문구를 되돌린 다음에. 결과는 보낸 신청(sel) 기준
     try {
       const res = await fetch(CFG.api, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          action: 'book', space: state.space,
-          items: list.map(({ date, court, start }) => ({ date, court, start })),
+          action: 'book', space, items,
           name: form.name.value.trim(), phone: form.phone.value.trim(),
           people: form.people.value, memo: form.memo.value.trim(),
         }),
       });
       const r = await res.json();
       if (r.ok) {
-        showMsg(`<b>예약 신청이 접수되었습니다.</b><br>신청번호 ${esc(r.id)} · 확인 후 ${esc(form.phone.value.trim())}로 연락드립니다.`, 'ok');
-        state.sel.clear(); form.reset();
+        const done = summary(sel);
+        if (state.sel === sel) state.sel = null;
+        state.lost = null; form.reset();
         Object.keys(booked).forEach(k => delete booked[k]);
+        after = quiet => {
+          update(); load(state.date);
+          showMsg(`<b>예약 신청이 접수되었습니다.</b><br>${esc(done)}<br>신청번호 ${esc(r.id)} · 확인 후 연락드립니다.`, 'ok', quiet);
+        };
+      } else if (r.error === 'conflict' || r.error === 'invalid_item') {
+        const t = r.error === 'conflict' ? LOST_WARN : '선택한 날짜가 예약 범위를 벗어났어요. 날짜를 다시 선택해주세요';
+        after = () => {
+          lose(t, sel);   // 보낸 신청을 지우고 그 날 예약 현황을 다시 불러옴 (낭독은 아래 결과 안내 한 번)
+          showMsg(`${esc(t)} <button type="button" class="bk2-edit" data-edit>시간 다시 고르기 ↑</button>`, 'err');
+        };
       } else if (r.error === 'too_many') {
-        showMsg(maxText(r.max || MAX, sp), 'err');
-      } else if (r.error === 'invalid_item') {
-        showMsg('선택한 날짜 중 예약 범위를 벗어난 날이 있습니다. 날짜를 다시 선택해주세요.', 'err');
-      } else if (r.error === 'conflict') {
-        showMsg('선택하신 시간 중 방금 다른 예약이 들어온 시간이 있습니다. 시간을 다시 확인해주세요.', 'err');
-        (r.conflicts || []).forEach(c => state.sel.delete(`${c.date}|${c.court}|${c.start}`));
-        Object.keys(booked).forEach(k => delete booked[k]);
+        showMsg(`한 번에 최대 ${esc(r.max || MAX)}칸(코트 × 시간)까지 신청할 수 있습니다. 나눠서 신청해주세요.`, 'err');
+      } else if (r.error === 'pending_limit') {
+        showMsg(`확인 전인 예약 신청이 많아 더 신청할 수 없습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
       } else throw new Error(r.error || 'fail');
     } catch (err) {
-      showMsg(`예약 신청 중 오류가 발생했습니다. 전화(${CFG.spaces[state.space].phone})로 문의해주세요.`, 'err');
+      showMsg(`예약 신청 중 오류가 발생했습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
     }
-    $('bkSubmit').textContent = '예약 신청';
-    renderSummary(); renderCourts(); renderSlots();
-    loadBooked().then(renderSlots);
+    state.sending = false;
+    btn.textContent = '예약 신청';
+    // 신청 중 버튼이 꺼지며 키보드 포커스가 빠졌으면(body) 되살림 — '시간 다시 고르기' · 다시 켜진 신청 버튼 · 결과 안내 문단
+    const a = document.activeElement, dropped = !a || a === document.body || a === btn;
+    validate();
+    const m = $('bkMsg');
+    if (after) after(dropped);
+    if (dropped) {
+      const edit = m.querySelector('[data-edit]');
+      if (edit) edit.focus({ preventScroll: true });
+      else if (!btn.disabled) btn.focus({ preventScroll: true });
+      else if (m.textContent.trim()) { m.tabIndex = -1; m.focus({ preventScroll: true }); }
+    }
   });
+  $('bkMsg').addEventListener('click', e => { if (e.target.closest('[data-edit]')) backToGrid(); });
 
-  /* ---------- availability ---------- */
-  async function loadBooked() {
-    const k = state.space + '|' + state.date;
-    if (!CFG.api || booked[k]) return;
-    try {
-      const r = await (await fetch(`${CFG.api}?action=slots&space=${state.space}&date=${state.date}`)).json();
-      booked[k] = new Set((r.slots || []).map(x => `${x.court}|${x.start}`));
-    } catch (e) { /* 조회 실패 시 전체 가능으로 표시 */ }
+  /* ---------- 예약 현황 (관리프로그램 조회) ---------- */
+  function load(date) {
+    if (!CFG.api || booked[date] || loading[date]) return loading[date];
+    loading[date] = (async () => {
+      try {
+        const r = await (await fetch(`${CFG.api}?action=slots&space=${encodeURIComponent(space)}&date=${date}`)).json();
+        booked[date] = new Set((r.slots || []).map(x => `${x.court}|${x.start}`));
+      } catch (e) {
+        booked[date] = new Set();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
+      }
+      delete loading[date];
+      if (state.sel && state.sel.date === date && !keepSel()) return;   // 담은 시간이 그 사이 막혔으면 지우고 다시 그림
+      if (date === state.date) renderGrid();
+    })();
+    return loading[date];
   }
 
+  /* 아래 요약 바가 화면 아래에 붙지 않고 제자리(신청 폼 바로 위)에 있는데 그 자리가 위 메뉴 · 탭 밑이면 숨김
+     — [예약 확인] 뒤 폼으로 내려왔을 때 반투명 메뉴 둘레 · 탭 아래로 네이비 띠가 비치지 않게 */
+  let barRaf = 0;
+  function tuckBar() {
+    barRaf = 0;
+    const bar = $('bkBar'), r = bar.getBoundingClientRect();
+    bar.classList.toggle('tuck', r.height > 0 && r.bottom < innerHeight - 1 && r.top < cover().top + 1);
+  }
+  const onScroll = () => { if (!barRaf) barRaf = requestAnimationFrame(tuckBar); };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+
+  // 대관 탭이 처음엔 숨어 있으면(요가 페이지) 표 높이가 0 — 보이게 될 때 상자 안 스크롤을 처음 위치로
+  if (window.ResizeObserver) new ResizeObserver(() => { scrollStart(); onScroll(); }).observe($('bkScroll'));
+
   ensureDate();
-  renderCal(); renderCourts(); renderSummary(); renderSlots();
-  loadBooked().then(renderSlots);
+  $('bkGuide').textContent = SP.note || '';
+  if (SP.title) $('bkTitle').textContent = SP.title;
+  update();
+  load(state.date);
 })();

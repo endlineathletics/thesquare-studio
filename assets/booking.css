@@ -1,0 +1,154 @@
+/* ============================================================
+   대관 예약 화면 (assets/booking.js · 배드민턴/요가 페이지 #rental)
+   - style.css 의 .bk(카드 테두리) · .bk-tabs(공간 머리) · .bk-step(단계 제목) · .bk-cal(월 달력) · .bk-form · .bk-submit · .bk-msg · .bk-sr 는 그대로 쓰고,
+     새 화면(시간 × 코트 표 · 아래 고정 요약 바 · 신청 요약)은 .bk2-* 로 따로 둠 — 옛 .bk-slots/.bk-courts/.bk-sum 규칙과 섞이지 않게
+   ============================================================ */
+
+/* 01 날짜(왼쪽) | 02 코트·시간 표(오른쪽) — 1020px 이하에선 위아래로 */
+.bk2-body{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr)}
+.bk2-date{padding:28px;border-right:1px solid var(--line);min-width:0}
+.bk2-pick{padding:28px;min-width:0}
+.bk2-guide{margin:-2px 0 14px;font-size:13px;line-height:1.6;color:var(--ink-2)}
+.bk2-guide:empty{display:none}
+
+/* 달력: 담은 시간이 있는 날 — 오른쪽 위 작은 점 */
+.bk-cal-g button.bk2-has::after{content:'';position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.bk-cal-g button.bk2-has.on::after{background:#fff}
+
+/* 시간표 카드 (COURT RESERVATION) */
+.bk2-card{border:1px solid var(--line);background:#fff;scroll-margin-top:150px}
+.bk2-card-h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 16px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.bk2-day span{display:block;font:700 11px 'Montserrat',sans-serif;letter-spacing:.18em;color:var(--blue)}
+.bk2-day b{display:block;margin-top:4px;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.bk2-view{display:inline-flex;border:1px solid var(--navy)}
+.bk2-view[hidden]{display:none}
+.bk2-view button{border:0;background:#fff;color:var(--ink);font:700 13px var(--sans);padding:0 14px;min-height:36px;cursor:pointer;white-space:nowrap}
+.bk2-view button + button{border-left:1px solid var(--navy)}
+.bk2-view button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.bk2-view button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bk2-else{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:10px 16px;background:#f3f7ff;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.55;color:var(--ink-2)}
+.bk2-else[hidden]{display:none}
+.bk2-else b{color:var(--ink);font-weight:700}
+.bk2-else button{flex:none;border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 12px var(--sans);padding:6px 10px;cursor:pointer}
+
+/* 표 상자 — 정해진 높이 안에서만 세로 스크롤, 머리줄(코트)과 왼쪽 시간 열은 붙어 있음.
+   높이는 화면 높이에도 맞춤 — 위 메뉴·탭(약 145px)과 아래 요약 바(약 76px) 사이에 상자가 다 들어가게 (세로가 짧은 노트북 · 가로로 든 휴대폰) */
+.bk2-scroll{position:relative;max-height:520px;max-height:clamp(150px,calc(100vh - 236px),520px);max-height:clamp(150px,calc(100svh - 236px),520px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.bk2-grid{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+.bk2-grid thead th{position:sticky;top:0;z-index:2;background:#fff;padding:12px 3px 10px;border-bottom:1px solid var(--line);text-align:center;font:700 12.5px 'Montserrat',sans-serif;letter-spacing:.08em;color:var(--ink);white-space:nowrap}
+.bk2-grid thead th small{display:block;margin-top:3px;font:500 11px var(--sans);letter-spacing:0;color:var(--ink-3)}
+.bk2-grid thead th.on{color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
+.bk2-grid .bk2-t{position:sticky;left:0;z-index:1;width:78px;background:#fff;text-align:left;padding:0 6px 0 16px}
+.bk2-grid thead .bk2-t{z-index:3}
+.bk2-grid tbody th{font-weight:400;white-space:nowrap}
+.bk2-grid tbody th b{display:block;font:700 14px 'Inter',sans-serif;letter-spacing:-.02em;color:var(--ink)}
+.bk2-grid tbody th small{display:block;font:500 11px 'Inter',sans-serif;color:var(--ink-3)}
+.bk2-grid td{padding:3px}
+.bk2-grid tbody tr:first-child > *{padding-top:8px}
+.bk2-grid tbody tr:last-child > *{padding-bottom:8px}
+
+/* 칸: '선택'(빈) · '—'(예약 마감 · 지난 시간 · 레슨) · 선택됨(네이비, 시작·끝은 블루) */
+.bk2-c{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 2px;border:1px solid var(--line);background:#fff;color:var(--ink);font:700 13px var(--sans);letter-spacing:-.01em;cursor:pointer;scroll-margin:58px 0 8px;transition:background .15s,border-color .15s,color .15s}
+@media (hover:hover){.bk2-c:not(.off):not(.wait):not(.on):hover{border-color:var(--blue);color:var(--blue)}}
+.bk2-c:focus-visible{outline:3px solid var(--blue-2);outline-offset:1px;z-index:1}
+.bk2-c.off{background:var(--paper-2);border-color:var(--paper-2);color:var(--ink-3);font-weight:500;cursor:not-allowed}
+.bk2-c.wait{background:var(--paper-2);border-color:var(--paper-2);cursor:progress}
+.bk2-c.add{border:1px dashed var(--blue);color:var(--blue)}
+.bk2-c.part{background:#e6efff;border-color:var(--blue);color:var(--blue);font-size:12px}
+.bk2-c.on{background:var(--navy);border-color:var(--navy);color:#fff;font-size:12px;letter-spacing:.02em}
+.bk2-c.on.s,.bk2-c.on.e{background:var(--blue);border-color:var(--blue)}
+.bk2-c.on:not(.s)::before{content:'';position:absolute;left:-1px;right:-1px;bottom:100%;height:8px;background:var(--navy)}   /* 위 칸과 이어 붙여 범위가 한 덩어리로 보이게 */
+.bk2-c.on.j::before{background:var(--blue)}   /* 2칸 범위 — 블루 시작 · 끝 사이도 블루 */
+
+.bk2-empty{padding:28px 16px;color:var(--ink-3);font-size:14px}
+.bk2-empty[hidden]{display:none}
+.bk2-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;padding:12px 16px;border-top:1px solid var(--line)}
+.bk2-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2)}
+.bk2-legend span{display:inline-flex;align-items:center;gap:6px}
+.bk2-legend i{width:14px;height:14px;border:1px solid var(--line);background:#fff}
+.bk2-legend i.l-off{background:var(--paper-2);border-color:#d5d9e1}
+.bk2-legend i.l-on{background:var(--navy);border-color:var(--navy)}
+.bk2-clear{border:0;background:none;padding:6px 0;font:700 12.5px var(--sans);color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.bk2-clear[hidden]{display:none}
+.bk2-clear:hover{color:var(--ink)}
+
+/* 아래 고정 요약 바 — 대관 화면(달력 + 표)이 보이는 동안 화면 아래에 붙음 (sticky: 이 묶음을 지나면 신청 폼 바로 위에 멈춤) */
+.bk2-bar{position:sticky;bottom:0;z-index:30;display:flex;align-items:center;gap:12px 18px;padding:14px 16px 14px 24px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;transition:opacity .2s,visibility .2s}
+.bk2-bar.tuck{opacity:0;visibility:hidden}   /* 제자리(폼 바로 위)가 위 메뉴·탭 밑일 때 — booking.js tuckBar */
+.bk2-bar-txt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;line-height:1.45}
+.bk2-bar-txt b{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.bk2-bar-txt span{font-size:13.5px;color:rgba(255,255,255,.7)}
+.bk2-bar.has .bk2-bar-txt span{font-size:15px;font-weight:700;color:#fff}
+.bk2-go{flex:none;display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;border:0;background:var(--blue);color:#fff;font:800 15px var(--sans);letter-spacing:-.01em;cursor:pointer;white-space:nowrap}
+.bk2-go:hover:not(:disabled){background:#1a6bff}
+.bk2-go:disabled{background:rgba(255,255,255,.12);color:rgba(255,255,255,.45);cursor:not-allowed}
+.bk2-go:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.bk2-warn{position:absolute;left:0;right:0;bottom:calc(100% + 10px);margin:0 auto;width:fit-content;max-width:calc(100% - 24px);padding:10px 14px;background:#c0392b;color:#fff;font-size:13.5px;font-weight:700;line-height:1.45;text-align:center;box-shadow:0 8px 24px rgba(6,16,31,.22);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .2s,transform .2s,visibility .2s;pointer-events:none}
+.bk2-warn.show{opacity:1;visibility:visible;transform:none}
+
+/* 03 신청 — 선택 요약(왼쪽) | 폼(오른쪽) */
+.bk2-apply{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);align-items:start;gap:0 40px;padding:28px;border-top:1px solid var(--line);background:#fbfcfd;scroll-margin-top:150px}
+.bk2-apply > .bk-step{grid-column:1 / -1}
+.bk2-sel{border:1px solid var(--line);background:#fff;padding:20px 22px;margin-bottom:20px}
+.bk2-sel-h{font-size:15px;font-weight:800;margin-bottom:12px}
+.bk2-sel dl{display:grid;gap:10px;border-top:1px solid var(--ink);padding-top:14px}
+.bk2-sel dl div{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:baseline;font-size:14.5px}
+.bk2-sel dt{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.bk2-sel dd{font-weight:700;overflow-wrap:anywhere}
+.bk2-sel dd small{font-size:12px;font-weight:500;color:var(--ink-3)}
+.bk2-won{font:700 24px 'Inter',sans-serif;letter-spacing:-.03em;color:var(--blue);margin-right:8px}
+.bk2-sel-empty{font-size:14px;line-height:1.6;color:var(--ink-3)}
+.bk2-edit{margin-top:16px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:700 13px var(--sans);padding:10px 14px;cursor:pointer}
+.bk-msg .bk2-edit{display:inline-block;margin:8px 0 0}
+.bk-msg[tabindex="-1"]:focus{outline:none}   /* 신청 뒤 포커스만 옮겨 받는 안내 문단 */
+
+@media (max-width:1020px){
+  .bk2-body{grid-template-columns:minmax(0,1fr)}
+  .bk2-date{border-right:0;border-bottom:1px solid var(--line)}
+  .bk2-apply{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .bk2-date{padding:18px 16px}
+  .bk2-pick{padding:18px 12px}
+  .bk2-pick > .bk-step,.bk2-guide{margin-left:4px;margin-right:4px}
+  .bk2-guide{font-size:12.5px}
+  .bk2-card,.bk2-apply{scroll-margin-top:130px}
+  .bk2-card-h{padding:12px}
+  .bk2-day b{font-size:16px}
+  .bk2-view{display:flex;width:100%}
+  .bk2-view button{flex:1;padding:0 8px}
+  .bk2-else{padding:10px 12px}
+  .bk2-scroll{max-height:55vh;max-height:clamp(150px,min(55svh,calc(100svh - 200px)),55svh)}
+  .bk2-grid .bk2-t{width:62px;padding:0 4px 0 10px}
+  .bk2-grid thead th{padding:10px 2px 8px;font-size:11.5px;letter-spacing:.04em}
+  .bk2-grid thead th small{font-size:10px}
+  .bk2-grid tbody th b{font-size:13px}
+  .bk2-grid tbody th small{font-size:10px}
+  .bk2-grid td{padding:3px 2px}
+  .bk2-c{height:42px;font-size:12.5px}
+  .bk2-foot{padding:10px 12px}
+  .bk2-bar{gap:10px;padding:10px 10px 10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  .bk2-bar-txt{display:block}
+  .bk2-bar-txt b,.bk2-bar-txt span{display:block}
+  .bk2-bar-txt b{font-size:14px}
+  .bk2-bar-txt span{font-size:12px}
+  .bk2-bar.has .bk2-bar-txt span{font-size:13px}
+  .bk2-go{min-height:44px;padding:0 14px;gap:6px;font-size:14px}
+  .bk2-apply{padding:18px 16px}
+  .bk2-sel{padding:16px}
+}
+/* 세로가 짧은 화면(가로로 든 휴대폰 등) — 아래 요약 바를 얇게 해 표가 보일 자리를 늘림 */
+@media (max-height:540px){
+  .bk2-bar{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+  .bk2-go{min-height:40px}
+  .bk2-bar-txt b{font-size:14px}
+  .bk2-bar-txt span,.bk2-bar.has .bk2-bar-txt span{font-size:13px}
+}
+@media (max-width:360px){
+  .bk2-grid .bk2-t{width:54px;padding-left:6px}
+  .bk2-grid thead th{font-size:10.5px;letter-spacing:.02em}
+  .bk2-c{font-size:12px}
+  .bk2-c.part{font-size:11px}
+  .bk2-bar{padding-left:12px}
+  .bk2-go{padding:0 10px}
+}
