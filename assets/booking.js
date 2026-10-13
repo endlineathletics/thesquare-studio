@@ -24,7 +24,6 @@
   const ALL = SP.courts.map((_, i) => i);
   const MAX = CFG.maxItems || 72;                                         // 한 번에 신청할 수 있는 최대 칸 (코트 × 시간)
   const COURT_MAX = Math.max(1, Math.min(CFG.maxCourts || NC, NC));      // 같이 고를 수 있는 코트 수
-  const CAN_WHOLE = NC > 1 && COURT_MAX >= NC;                            // '3면 동시 가능' 보기 · 전체대관을 쓸 수 있는지
   const WHOLE = CFG.wholeLabel || '전체대관';
 
   /** 코트 이름 묶음 — [0, 2] → "COURT 1·3" (이름이 "앞부분 + 숫자" 꼴이 아니면 쉼표로 나열) */
@@ -43,8 +42,6 @@
   }
   /** 은/는 — 'COURT 2는' · 'COURT 1은' · '전체대관은' */
   const eun = w => (jong(w) ? '은' : '는');
-  /** 으로/로 — ㄹ 받침은 '로' — '전체대관으로' · 'COURT 1로' */
-  const ro = w => (jong(w) && jong(w) !== 8 ? '으로' : '로');
 
   /* ---------- 시간 칸 · 예약 현황 ---------- */
   /** 그 날짜에 예약 가능한 시간 칸 [{start, end}] — '이어진' 은 이 목록의 인접 순서(index) 기준 (요가 10분 쉬는 시간도 이어진 칸) */
@@ -70,14 +67,14 @@
   }
 
   /* ---------- 상태 ----------
-     date: 보고 있는 날짜, month: 달력에서 보고 있는 달("YYYY-MM"), view: 'all' 코트별 | 'whole' 모든 코트가 빈 시간만(전체대관)
+     date: 보고 있는 날짜, month: 달력에서 보고 있는 달("YYYY-MM")
      sel: 담은 신청 { date, courts: [코트 index 오름차순], s, e } — s~e 는 그 날 시간 칸 index (양 끝 포함), 없으면 null
           날짜를 바꿔 보기만 해서는 지우지 않음 (다른 날 칸을 누르면 새로 잡힘)
      focus: 키보드로 움직이는 칸 { c: 열, i: 줄 } (표 안에서 Tab 이 머무는 칸 하나 — 화살표로 이동)
      scroll: 다음에 표를 그릴 때 상자 안 스크롤을 처음 위치(오늘 지금 시각 · 첫 빈 칸 · 담은 시간)로 맞출지
      lost: 그 사이 막혀서 지운 신청 { date, courts, s } — '시간 다시 고르기' 때 그 줄로 표를 보여줌 (새로 담으면 지움)
      sending: 예약 신청을 보내는 중 — 그동안 표 · 선택 해제는 바꾸지 않고 신청 버튼도 다시 켜지지 않음 */
-  const state = { date: todayStr(), month: '', view: 'all', sel: null, focus: null, scroll: true, lost: null, sending: false };
+  const state = { date: todayStr(), month: '', sel: null, focus: null, scroll: true, lost: null, sending: false };
   const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (요가 50분 칸도 1시간 단위)
   const cellsOf = sel => sel.courts.length * hoursOf(sel);
   const priceOf = sel => cellsOf(sel) * SP.price;
@@ -189,10 +186,8 @@
   });
 
   /* ---------- 표 (세로 = 시간 칸, 가로 = 코트) ---------- */
-  /** 지금 보기의 열 — 코트별 보기는 코트마다 한 열, '3면 동시 가능' 보기는 모든 코트를 묶은 '전체대관' 한 열 */
-  const cols = () => (state.view === 'whole'
-    ? [{ courts: ALL, name: WHOLE, sub: courtLabel(ALL) }]
-    : ALL.map(c => ({ courts: [c], name: SP.courts[c] })));
+  /** 표의 열 — 코트마다 한 열 (코트를 모두 고르면 '전체대관') */
+  const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c] }));
   /** 그 날 sel (보고 있는 날짜에 담은 게 없으면 null) */
   const selHere = () => (state.sel && state.sel.date === state.date ? state.sel : null);
   /** 선택 안 된 코트 c 를 지금 범위에 더할 수 있는지 (코트별 보기의 '+ 추가' 표시) */
@@ -200,7 +195,7 @@
     return sel.courts.length < COURT_MAX && (sel.courts.length + 1) * hoursOf(sel) <= MAX && freeRange(sel.date, sel.s, sel.e, [c]);
   }
   /** 칸 모양 — cls: '' 빈 칸('선택') · off('—': 지난 시간 · 예약됨 · 레슨) · on(담김, s 시작 · e 끝) · add(선택 안 된 코트의 범위 줄 — 누르면 같은 시간으로 추가)
-      · part(전체대관 보기에서 일부 코트만 담긴 범위 — 누르면 나머지 코트도 담음) · wait(예약 현황 불러오는 중) */
+      · wait(예약 현황 불러오는 중) */
   function cellView(col, i, list) {
     const D = state.date, x = list[i], t = `${x.start}~${x.end}`, sel = selHere();
     if (!ready(D)) return { cls: 'wait', text: '', off: true, label: `${col.name} ${t} 불러오는 중` };
@@ -211,13 +206,10 @@
       return { cls: 'on' + (i === sel.s ? ' s' : '') + (i === sel.e ? ' e' : '') + (i === sel.e && i === sel.s + 1 ? ' j' : ''), text: mark, pressed: 'true',
         label: `${col.name} ${t} 선택됨${mark ? ` (${mark})` : ''}` };
     }
-    if (inR && state.view === 'whole') {
-      return { cls: 'part', text: `${courtLabel(sel.courts)}만`, pressed: 'mixed', label: `${col.name} ${t} ${courtLabel(sel.courts)}만 선택됨, 누르면 ${WHOLE}${ro(WHOLE)}` };
-    }
     if (!col.courts.every(c => free(D, i, c, list))) {
       return { cls: 'off', text: '—', off: true, label: `${col.name} ${t} ${isPast(D, x.start) ? '지난 시간' : '예약 마감'}` };
     }
-    if (inR && state.view === 'all' && canAdd(sel, col.courts[0])) {
+    if (inR && canAdd(sel, col.courts[0])) {
       return { cls: 'add', text: '+ 추가', label: `${col.name} ${t} 선택 가능, 누르면 같은 시간으로 추가` };
     }
     return { cls: '', text: '선택', label: `${col.name} ${t} 선택 가능` };
@@ -259,7 +251,6 @@
   function renderGrid() {
     const D = state.date, list = slotsFor(D), grid = $('bkGrid'), cs = cols(), sel = selHere();
     $('bkDay').textContent = dayLabel(D);
-    root.querySelectorAll('#bkView [data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
     $('bkClear').hidden = !state.sel;
     // 다른 날에 담아 둔 시간 — 이 날 칸을 누르면 새로 잡힌다는 것도 미리 알려 둠
     const other = state.sel && !sel;
@@ -353,7 +344,6 @@
          범위 안 다른 칸 → 시작~그 칸으로 줄임 (모든 선택 코트 같이) / 끝 칸 → 그대로 / 범위 밖 → 전부 지우고 그 칸에서 새로 시작
      - 코트별 보기에서 선택 안 된 코트 열의 아무 칸 → 그 코트를 '같은 시간 범위'로 추가 (범위 중 막힌 칸이 있으면 안내만).
        범위 밖 줄을 눌렀으면 표를 범위로 올려 보여주고 포커스도 그 코트의 시작 칸으로
-     - 전체대관 보기에서 일부 코트만 담긴 범위 줄 → 나머지 코트도 담아 전체대관 (막혔으면 안내만), 범위 밖 → 전체대관으로 새로 시작
      - 바뀐 뒤 칸 수(코트 × 시간)가 MAX 를 넘으면 안내 후 바꾸지 않음 */
   function pick(col, i) {
     const D = state.date, list = slotsFor(D);
@@ -361,7 +351,7 @@
     if (state.sending) { flashWarn(SENDING_WARN); say(SENDING_WARN); return; }
     const v = cellView(col, i, list), here = selHere();
     if (v.off) {
-      if (v.cls === 'off' && here && state.view === 'all' && i >= here.s && i <= here.e && !isPast(D, list[i].start)
+      if (v.cls === 'off' && here && i >= here.s && i <= here.e && !isPast(D, list[i].start)
         && !col.courts.every(c => here.courts.includes(c))) {
         const w = here.courts.length >= COURT_MAX ? COURT_MAX_WARN : busyWarn(col.courts[0], here);
         flashWarn(w); say(w);
@@ -388,15 +378,6 @@
         else { next = { ...sel, e: i }; said = `${selText(next)}으로 줄었어요`; }
       } else if (mine) {
         next = lone(); said = `이전 선택 해제. ${selText(next)} 선택됨. ${ANCHOR_TIP}`;
-      } else if (state.view === 'whole') {
-        if (inR) {
-          const miss = ALL.filter(c => !sel.courts.includes(c));
-          const busy = miss.filter(c => !freeRange(D, sel.s, sel.e, [c]));
-          if (busy.length) { warn = `${courtLabel(busy)}${eun(courtLabel(busy))} ${rangeOnly(sel)} 중 예약된 시간이 있어요`; next = sel; }
-          else { next = { ...sel, courts: ALL.slice() }; said = `${WHOLE} 선택됨. ${selText(next)}`; }
-        } else {
-          next = lone(); said = `이전 선택 해제. ${selText(next)} 선택됨. ${ANCHOR_TIP}`;
-        }
       } else {
         const c = col.courts[0];
         if (sel.courts.length >= COURT_MAX) { warn = COURT_MAX_WARN; next = sel; }
@@ -490,15 +471,6 @@
     state.sel = null; clearDraft(); update(); hideWarn();
     const f = state.focus; if (f) focusCell(f.c, f.i, true);   // 버튼이 사라지므로 표로 포커스
     say(t);
-  });
-  $('bkView').hidden = !CAN_WHOLE;
-  const wholeBtn = root.querySelector('#bkView [data-view="whole"]');
-  if (wholeBtn) wholeBtn.textContent = `${NC}면 동시 가능`;
-  $('bkView').addEventListener('click', e => {
-    const b = e.target.closest('button[data-view]'); if (!b || b.dataset.view === state.view) return;
-    state.view = b.dataset.view; state.focus = null;
-    renderGrid(); hideWarn();
-    say(state.view === 'whole' ? `${NC}면 동시 가능 보기 — 모든 코트가 빈 시간만 고를 수 있어요 (${WHOLE})` : '전체 보기 — 코트별 시간');
   });
 
   /* ---------- 신청 폼 ---------- */
