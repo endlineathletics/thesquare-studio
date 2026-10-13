@@ -531,8 +531,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-step b{font:700 12px 'Inter';color:var(--blue)}
 .bk-step small{font-size:12.5px;font-weight:500;color:var(--ink-3);white-space:normal}
 .bk-step small.warn{color:#c0392b;font-weight:700}   /* booking.js flashNote — 마지막 코트 끄기·최대 초과 같은 짧은 경고 (3초 뒤 원래 문구) */
-/* 시간 안내 칸 (booking.js fitNote) — 나올 수 있는 문구(기본 안내 · 시작점 안내 · 경고)를 .bk-fit 에 투명하게 겹쳐 두어 가장 긴 문구 높이만큼 늘 자리를 잡음.
-   안내가 바뀌어 줄 수가 달라져도(휴대폰 폭에서 요가 기본 안내 2~3줄 ↔ 시작점 안내 1줄, 경고 2줄) 아래 시간 격자가 위아래로 밀리지 않게 */
+/* 시간 안내 칸 (booking.js fitNote) — 나올 수 있는 문구(기본 안내 · 시작점 안내 · 범위 안내 · 코트 채우기 안내 · 경고)를 .bk-fit 에 투명하게 겹쳐 두어 가장 긴 문구 높이만큼 늘 자리를 잡음.
+   안내가 바뀌어 줄 수가 달라져도(휴대폰 폭에서 요가 기본 안내 2~3줄 ↔ 시작점 안내 1줄, 범위 안내·경고 2줄) 아래 시간 격자가 위아래로 밀리지 않게 */
 .bk-note{display:inline-grid;white-space:normal}
 .bk-note > *,.bk-fit > *{grid-area:1 / 1}
 .bk-fit{display:grid;visibility:hidden}
@@ -591,17 +591,19 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-slots button:hover:not(:disabled){border-color:var(--blue)}
 .bk-slots button.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .bk-slots button.on small{color:rgba(255,255,255,.8)}
-/* part: 고른 코트 중 일부에만 담긴 시간 (코트 선택을 바꾼 뒤) — 누르면 나머지 코트에도 담김 */
+/* part: 고른 코트 중 일부에만 담긴 시간 (코트 선택을 바꾼 뒤) — 누르면 그 범위 전체의 나머지 코트에도 담김 (booking.js — 지우기·줄이기는 채운 다음 누름부터) */
 .bk-slots button.part{background:#e6efff;border-color:var(--blue)}
 .bk-slots button.part small{color:var(--blue);font-weight:700}
 .bk-slots button:disabled,.bk-slots button.lock{color:var(--ink-3);background:repeating-linear-gradient(135deg,#f7f8fa 0 6px,#eef0f4 6px 12px)}
 .bk-slots button:disabled{cursor:not-allowed}
 /* 막힌 칸의 이유("코트 2 예약됨")는 on/part 칸이었더라도 항상 회색 보통 굵기 — 파란 굵은 글씨면 '내 예약'처럼 읽힘 */
 .bk-slots button:disabled small,.bk-slots button.lock small{color:var(--ink-3);font-weight:500}
-/* lock: 막혔는데 담아 둔 코트가 있는 칸 (booking.js slotView) — 파란 테두리 + 아래 줄 "코트 1 담김", 누르면 담긴 코트만 빠짐 */
+/* lock: 막혔는데 담아 둔 코트가 있는 칸 (booking.js slotView) — 파란 테두리 + 아래 줄 "코트 1 담김".
+   담긴 코트가 모두 막혔으면(지난 시간 등 — booking.js isDead) 범위 밖이라 누르면 그 칸만 빠지고, 담긴 코트 중 쓸 수 있는 게 있으면 범위 규칙(첫 칸이면 지우기, 아니면 거기까지로 줄이기)을 따름 */
 .bk-slots button.lock{border-color:var(--blue)}
 .bk-slots button.lock small em{display:block;font-style:normal;color:var(--blue);font-weight:700}
-/* 이어서 선택의 시작점 (booking.js state.anchor) — 남색 안쪽 테두리 + 위쪽 가운데 작은 '시작' 표시. 끝 시간을 누르면 그 사이가 한 번에 담김 */
+/* 이어서 선택의 시작점 (booking.js picks — 그 날 담긴 칸이 1칸뿐) — 남색 안쪽 테두리 + 위쪽 가운데 작은 '시작' 표시. 끝 시간을 누르면 그 사이가 한 번에 담김
+   2칸 이상 범위는 첫 칸에 '시작', 마지막 칸에 '끝' 표시만 (첫 칸을 누르면 범위가 지워지고, 가운데를 누르면 거기까지로 줄어듦) */
 .bk-slots button.anchor{box-shadow:inset 0 0 0 2px var(--navy)}
 .bk-slots .bk-anc{position:absolute;top:-7px;left:50%;transform:translateX(-50%);z-index:1;background:var(--navy);color:#fff;font:700 10px/15px var(--sans);font-style:normal;padding:0 6px;letter-spacing:.02em;white-space:nowrap;pointer-events:none}
 .bk-side{border-left:1px solid var(--line);padding:28px;background:#fbfcfd;display:flex;flex-direction:column;gap:22px}
