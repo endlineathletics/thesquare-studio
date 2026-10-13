@@ -348,6 +348,19 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ct-grid .coach .photo.empty::after{content:"사진 준비 중";position:absolute;left:0;right:0;bottom:16px;text-align:center;font:600 11px var(--sans);letter-spacing:.04em;color:rgba(255,255,255,.35)}
 @media (max-width:1020px){.ct-grid{grid-template-columns:1fr 1fr;gap:44px 18px}.ct-title{grid-column:1 / -1}}
 @media (max-width:640px){.ct-grid{gap:34px 12px}.ct-grid .coach .photo{aspect-ratio:5/7}.ct-grid .coach .kr{font-size:15px}.ct-grid .coach .cv,.ct-grid .coach details{font-size:12px}.ct-grid .coach .sns{flex-direction:column;gap:6px;font-size:11.5px}}
+/* 작은 카드 (yoga.html #instructors .ct-grid.ct-compact — 강사 8명) — 3열·5:7 은 한 명씩 너무 커서 PC 4열(8명 = 2줄) · 사진 4:5 · 글씨 약간 작게.
+   제목은 한 줄 전체로 올려 카드만 4열. ≤1020px 3열, ≤640px 2열. 배드민턴 코치 카드(#coaches)는 그대로 */
+.ct-grid.ct-compact{grid-template-columns:repeat(4,1fr);gap:44px 20px}
+.ct-compact .ct-title{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:flex-end;gap:24px 48px;flex-wrap:wrap}
+.ct-compact .ct-title .lead{margin-top:0;max-width:520px}
+.ct-grid.ct-compact .coach .photo{aspect-ratio:4/5}
+.ct-grid.ct-compact .coach .body{padding-top:16px}
+.ct-grid.ct-compact .coach h3.en{font-size:clamp(22px,2vw,28px)}
+.ct-grid.ct-compact .coach .kr{margin-top:6px;font-size:15px}
+.ct-grid.ct-compact .coach .cv{margin-top:12px;font-size:12.5px}
+.ct-grid.ct-compact .coach details{font-size:12.5px}
+@media (max-width:1020px){.ct-grid.ct-compact{grid-template-columns:repeat(3,1fr);gap:40px 16px}}
+@media (max-width:640px){.ct-grid.ct-compact{grid-template-columns:1fr 1fr;gap:30px 12px}.ct-grid.ct-compact .coach .photo{aspect-ratio:5/6}.ct-grid.ct-compact .coach h3.en{font-size:20px}.ct-grid.ct-compact .coach .kr{font-size:14px}.ct-grid.ct-compact .coach .cv,.ct-grid.ct-compact .coach details{font-size:12px}}
 
 /* ---------- 배드민턴 아카데미 시간표 (깔끔한 표) ---------- */
 .atb{border:1px solid var(--line);background:#fff}
@@ -513,10 +526,23 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-tab.on em{background:var(--blue);border-color:var(--blue);color:#fff}
 .bk-body{display:grid;grid-template-columns:1fr 340px}
 .bk-main{padding:28px;min-width:0}
-.bk-step{display:flex;align-items:baseline;gap:10px;font-size:16px;font-weight:800;margin:26px 0 12px;letter-spacing:-.02em}
+.bk-step{display:flex;align-items:baseline;gap:10px;font-size:16px;font-weight:800;margin:26px 0 12px;letter-spacing:-.02em;white-space:nowrap}   /* 제목("시간 선택")은 안 깨지고 옆 안내만 줄바꿈 — 요가 안내가 길어 휴대폰에서 "시간/선택" 으로 갈라지던 것 */
 .bk-step:first-child{margin-top:0}
 .bk-step b{font:700 12px 'Inter';color:var(--blue)}
-.bk-step small{font-size:12.5px;font-weight:500;color:var(--ink-3)}
+.bk-step small{font-size:12.5px;font-weight:500;color:var(--ink-3);white-space:normal}
+.bk-step small.warn{color:#c0392b;font-weight:700}   /* booking.js flashNote — 마지막 코트 끄기·최대 초과 같은 짧은 경고 (3초 뒤 원래 문구) */
+/* 시간 안내 칸 (booking.js fitNote) — 나올 수 있는 문구(기본 안내 · 시작점 안내 · 경고)를 .bk-fit 에 투명하게 겹쳐 두어 가장 긴 문구 높이만큼 늘 자리를 잡음.
+   안내가 바뀌어 줄 수가 달라져도(휴대폰 폭에서 요가 기본 안내 2~3줄 ↔ 시작점 안내 1줄, 경고 2줄) 아래 시간 격자가 위아래로 밀리지 않게 */
+.bk-note{display:inline-grid;white-space:normal}
+.bk-note > *,.bk-fit > *{grid-area:1 / 1}
+.bk-fit{display:grid;visibility:hidden}
+.bk-fit .w{font-weight:700}
+.bk-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}   /* booking.js say() — 화면낭독기에만 읽히는 결과 안내 (role=status) */
+/* 시간 격자 경고를 화면 아래에 잠깐 (booking.js warnTime — 제목 옆 안내가 화면 밖이거나 위쪽 고정 메뉴·탭에 가려 있을 때만) */
+.bk-toast{position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:70;margin:0 auto;width:fit-content;max-width:440px;
+  background:var(--navy);color:#fff;font:700 13.5px/1.45 var(--sans);letter-spacing:-.01em;text-align:center;padding:11px 16px;box-shadow:0 8px 24px rgba(6,16,31,.25);
+  opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s;pointer-events:none}
+.bk-toast.show{opacity:1;visibility:visible;transform:none}
 /* 날짜 선택 — 월 달력 (.bk-cal · booking.js renderCal). 예전 가로 스크롤 날짜 띠(.bk-dates)는 더 이상 쓰지 않아 제거함 */
 .bk-cal{max-width:480px}
 .bk-cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -543,33 +569,56 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-cal-sel{margin-top:12px;font-size:14px;font-weight:800;letter-spacing:-.01em}
 .bk-cal-sel span{font-size:12.5px;font-weight:500;color:var(--ink-3);margin-right:8px}
 .bk-cal + .bk-court .bk-step:first-child{margin-top:26px}   /* 달력 바로 다음 단계(코트 선택)는 first-child 라도 위 여백 유지 */
+/* 코트 — 여러 개 같이 고르는 토글(aria-pressed). 앞의 네모가 체크 상자처럼 켜져 '중복 선택'이 보이게 */
 .bk-courts{display:flex;gap:8px;flex-wrap:wrap}
-.bk-courts button{border:1px solid var(--line);background:#fff;padding:11px 22px;font:700 15px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
+.bk-courts button{border:1px solid var(--line);background:#fff;padding:11px 22px 11px 16px;font:700 15px var(--sans);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--ink);transition:border-color .15s,background .15s}
+.bk-courts button::before{content:'';flex:none;width:16px;height:16px;border:1.5px solid #c9cfdb;background:#fff center / 12px no-repeat}
+.bk-courts button:hover:not(.on){border-color:var(--blue)}
 .bk-courts button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.bk-courts button.on::before{border-color:var(--blue);background-color:var(--blue);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.4 6.3 4.9 8.7 9.6 3.6' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 .bk-courts button i{font-style:normal;background:var(--blue);color:#fff;font:700 11px 'Inter';min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
-.bk-legend{display:flex;gap:16px;margin-bottom:12px;font-size:12.5px;color:var(--ink-2)}
+.bk-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px;font-size:12.5px;color:var(--ink-2)}
 .bk-legend i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;border:1px solid var(--line)}
 .bk-legend .l-on{background:var(--blue);border-color:var(--blue)}
+.bk-legend .l-part{background:#e6efff;border-color:var(--blue)}
 .bk-legend .l-off{background:repeating-linear-gradient(135deg,#f4f6f9 0 3px,#e3e6ec 3px 6px)}
 .bk-slots{display:grid;gap:18px}   /* 오전/오후 묶음(.bk-sg) 세로 나열 */
 .bk-sg-h{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.06em;margin-bottom:8px}
 .bk-sg-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.bk-slots button{border:1px solid var(--line);background:#fff;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--sans);color:var(--ink);transition:border-color .15s,background .15s}
+.bk-slots button{position:relative;border:1px solid var(--line);background:#fff;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--sans);color:var(--ink);transition:border-color .15s,background .15s}
 .bk-slots button b{font:700 16px 'Inter';letter-spacing:-.02em}
-.bk-slots button small{font-size:11px;color:var(--ink-3)}
+.bk-slots button small{font-size:11px;line-height:1.3;text-align:center;color:var(--ink-3)}
 .bk-slots button:hover:not(:disabled){border-color:var(--blue)}
 .bk-slots button.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .bk-slots button.on small{color:rgba(255,255,255,.8)}
-.bk-slots button:disabled{cursor:not-allowed;color:var(--ink-3);background:repeating-linear-gradient(135deg,#f7f8fa 0 6px,#eef0f4 6px 12px)}
+/* part: 고른 코트 중 일부에만 담긴 시간 (코트 선택을 바꾼 뒤) — 누르면 나머지 코트에도 담김 */
+.bk-slots button.part{background:#e6efff;border-color:var(--blue)}
+.bk-slots button.part small{color:var(--blue);font-weight:700}
+.bk-slots button:disabled,.bk-slots button.lock{color:var(--ink-3);background:repeating-linear-gradient(135deg,#f7f8fa 0 6px,#eef0f4 6px 12px)}
+.bk-slots button:disabled{cursor:not-allowed}
+/* 막힌 칸의 이유("코트 2 예약됨")는 on/part 칸이었더라도 항상 회색 보통 굵기 — 파란 굵은 글씨면 '내 예약'처럼 읽힘 */
+.bk-slots button:disabled small,.bk-slots button.lock small{color:var(--ink-3);font-weight:500}
+/* lock: 막혔는데 담아 둔 코트가 있는 칸 (booking.js slotView) — 파란 테두리 + 아래 줄 "코트 1 담김", 누르면 담긴 코트만 빠짐 */
+.bk-slots button.lock{border-color:var(--blue)}
+.bk-slots button.lock small em{display:block;font-style:normal;color:var(--blue);font-weight:700}
+/* 이어서 선택의 시작점 (booking.js state.anchor) — 남색 안쪽 테두리 + 위쪽 가운데 작은 '시작' 표시. 끝 시간을 누르면 그 사이가 한 번에 담김 */
+.bk-slots button.anchor{box-shadow:inset 0 0 0 2px var(--navy)}
+.bk-slots .bk-anc{position:absolute;top:-7px;left:50%;transform:translateX(-50%);z-index:1;background:var(--navy);color:#fff;font:700 10px/15px var(--sans);font-style:normal;padding:0 6px;letter-spacing:.02em;white-space:nowrap;pointer-events:none}
 .bk-side{border-left:1px solid var(--line);padding:28px;background:#fbfcfd;display:flex;flex-direction:column;gap:22px}
 .bk-sum-h{font-size:16px;font-weight:800;margin-bottom:12px}
 .bk-sum ul{list-style:none;max-height:220px;overflow:auto;border-top:1px solid var(--ink)}
 .bk-sum li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;font-weight:600}
 .bk-sum li.empty{color:var(--ink-3);font-weight:500}
-.bk-sum li button{border:0;background:none;font-size:18px;line-height:1;cursor:pointer;color:var(--ink-3);padding:0 4px}
+.bk-sum li span small{font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap}   /* 이어진 시간을 묶은 줄의 "(2시간)" */
+/* × — 한 줄이 이어진 시간 × 코트들을 한 번에 빼므로 누르는 자리를 넓힘: 높이 38px (위아래 -10px → 예전 18px 글자 높이와 같아 줄 높이는 그대로),
+   휴대폰 폭 · 터치 화면은 폭도 44px 이상 (글자는 오른쪽 끝 그대로 — 오른쪽으로 넘치면 목록 ul(overflow:auto)에 가로 스크롤이 생겨 왼쪽으로만 넓힘).
+   PC 마우스에선 폭을 그대로 둬 340px 옆 칸의 "10/15(목) 코트 1·2·3 · 12:00~15:00 (3시간)" 이 두 줄로 깨지지 않게 */
+.bk-sum li button{flex:none;height:38px;margin:-10px 0;padding:0 4px;display:grid;place-items:center end;border:0;background:none;font-size:18px;line-height:1;cursor:pointer;color:var(--ink-3)}
+@media (max-width:640px),(pointer:coarse){.bk-sum li button{min-width:44px}}   /* 높이는 그대로 — li 위아래 여백(10px)보다 크게 빼면 ul 에 세로 스크롤이 생김 */
 .bk-sum li button:hover{color:var(--ink)}
 .bk-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .bk-total span{font-size:14px;font-weight:700}
+.bk-total span small{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:4px}   /* "1코트 1시간 × n" — 예약 내역은 코트를 묶어 보여줘서 줄 수와 칸 수가 다름 */
 .bk-total b{font:700 26px 'Inter';letter-spacing:-.03em;color:var(--blue)}
 .bk-form{display:grid;gap:12px}
 .bk-form label{display:grid;gap:6px;font-size:13px;font-weight:700}
@@ -606,7 +655,9 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .bk-cal-g button b{font-size:13px}
   .bk-cal-g button small{font-size:9px;bottom:3px}
   .bk-slots button b{font-size:14px}
-  .bk-courts button{padding:10px 16px;font-size:14px}
+  .bk-courts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}   /* 코트 3면이 한 줄에 */
+  .bk-courts button{position:relative;padding:10px 4px;font-size:14px;gap:6px;white-space:nowrap}
+  .bk-courts button i{position:absolute;top:-8px;right:-6px}   /* 담긴 시간 수는 모서리 뱃지로 — 375px 에서 "코트 3" 이 두 줄로 깨지지 않게 */
 }
 .bk-tab:only-child{cursor:default}
 

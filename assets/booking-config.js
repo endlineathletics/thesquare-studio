@@ -16,7 +16,8 @@
   window.BOOKING = {
     api: 'https://thesquare-admin-production.up.railway.app/api/site',
     days: 62,                 // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (Code.gs BOOKING_DAYS · 관리프로그램 RENTAL_DAYS 와 동일)
-    maxItems: 72,             // 한 번에 신청할 수 있는 최대 시간 수 (Code.gs MAX_ITEMS 와 동일)
+    maxItems: 72,             // 한 번에 신청할 수 있는 최대 시간 수 — 코트가 여럿이면 코트별 시간 합계 (Code.gs MAX_ITEMS 와 동일)
+    maxCourts: 3,             // 한 신청에서 같이 고를 수 있는 코트 수 (최소 1). 공간 코트 수보다 크면 그 수까지 — 홈페이지 화면 제한만, 관리프로그램은 코트 수만 검사
     spaces: {
       badminton: {
         name: '배드민턴센터', phone: '010-7576-1861', unit: '1코트 1시간', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
