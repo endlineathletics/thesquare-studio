@@ -11,6 +11,12 @@
 .bk2-guide{margin:-2px 0 14px;font-size:13px;line-height:1.6;color:var(--ink-2)}
 .bk2-guide:empty{display:none}
 
+/* 달력 칸 폭을 항상 열 폭에서 다시 계산 — 정사각형(aspect-ratio) 칸 + repeat(7,1fr) 이면 Safari 가 창을 넓힐 때
+   좁은 화면(달력이 한 줄 전체)일 때의 큰 칸 크기를 최소 폭으로 붙잡아, 달력이 오른쪽 표 밑으로 파고든다 */
+.bk2-date .bk-cal{width:100%;min-width:0}
+.bk2-date .bk-cal-wd,.bk2-date .bk-cal-g{grid-template-columns:repeat(7,minmax(0,1fr))}
+.bk2-date .bk-cal-g button{min-width:0;min-height:0}
+
 /* 달력: 담은 시간이 있는 날 — 오른쪽 위 작은 점 */
 .bk-cal-g button.bk2-has::after{content:'';position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
 .bk-cal-g button.bk2-has.on::after{background:#fff}
