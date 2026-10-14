@@ -218,15 +218,15 @@
     if (!CFG.api) { done(v, null, 'fallback'); return; }
 
     sending = true;
-    const btn = $('applySubmit'); btn.disabled = true; btn.textContent = '접수 중…';
+    const btn = $('applySubmit'); btn.disabled = true; btn.textContent = '결제 준비 중…';
     try {
       const res = await fetch(CFG.api, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
       const r = await res.json();
       if (!r.ok) throw new Error(r.error || 'fail');
       done(v, r.id, 'ok');
     } catch (err) {
-      $('applyErr').textContent = `접수 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
-      btn.disabled = false; btn.textContent = '다음';
+      $('applyErr').textContent = `결제 준비 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
+      btn.disabled = false; btn.textContent = '결제하기';
     }
     sending = false;
   });
