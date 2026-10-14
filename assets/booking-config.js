@@ -20,6 +20,8 @@
     days: 62,                 // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (Code.gs BOOKING_DAYS · 관리프로그램 RENTAL_DAYS 와 동일)
     maxItems: 72,             // 한 번에 신청할 수 있는 최대 칸 수 = 코트 수 × 시간 (Code.gs MAX_ITEMS · 관리프로그램 RENTAL_MAX_ITEMS 와 동일)
     maxCourts: 3,             // 한 신청에서 같이 고를 수 있는 코트 수 (최소 1). 공간 코트 수보다 크면 그 수까지 — 홈페이지 화면 제한만, 관리프로그램은 코트 수만 검사
+    // pay: order => { … },   // 결제 연결 지점 — 넣으면 '결제하기'로 신청이 저장된 직후 booking.js 가 부름. order = { id(신청번호 TS…), space, summary, amount(표시용), name, phone }.
+    //                         실제 결제 금액은 서버(관리 앱)가 신청번호로 다시 계산해 맞춰 봐야 하고, 시크릿 키는 여기 넣지 말 것(관리 앱 서버에만)
     wholeLabel: '전체대관',   // 코트를 모두 고른 신청의 표시 이름
     spaces: {
       badminton: {

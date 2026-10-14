@@ -112,7 +112,7 @@
   const MAX_WARN = `한 번에 최대 ${MAX}칸(코트 × 시간)까지 신청할 수 있어요. 나눠서 신청해주세요`;
   const ANCHOR_TIP = '끝 시간을 누르면 이어서 선택돼요';
   const COURT_MAX_WARN = `코트는 최대 ${COURT_MAX}면까지 함께 신청할 수 있어요`;
-  const SENDING_WARN = '예약 신청을 보내는 중이에요. 잠시만 기다려주세요';
+  const SENDING_WARN = '결제를 준비하는 중이에요. 잠시만 기다려주세요';
   const busyWarn = (c, sel) => `${SP.courts[c]}${eun(SP.courts[c])} ${rangeOnly(sel)} 중 예약된 시간이 있어요`;
 
   /* ---------- 날짜 (월 달력) ----------
@@ -547,7 +547,7 @@
 
     const btn = $('bkSubmit');
     state.sending = true;
-    btn.disabled = true; btn.textContent = '신청 중…';
+    btn.disabled = true; btn.textContent = '결제 준비 중…';
     let after = null;   // 끝난 뒤 할 일 (선택 지우기 등) — 버튼 문구를 되돌린 다음에. 결과는 보낸 신청(sel) 기준
     try {
       const res = await fetch(CFG.api, {
@@ -561,13 +561,17 @@
       });
       const r = await res.json();
       if (r.ok) {
-        const done = summary(sel);
+        // 결제 연결 지점 — booking-config.js 에 BOOKING.pay(주문) 를 넣으면(토스 결제창 등) 여기서 부른다.
+        // 서버는 신청을 받으면서 그 시간을 이미 잡아 두므로(확인 전 상태) 결제하는 동안 다른 사람이 같은 칸을 못 잡는다.
+        // '신청 접수' 안내는 띄우지 않는다 (버튼이 '결제하기' — 결제가 붙기 전까지는 신청만 저장되고 관리자가 연락)
+        // 금액은 화면 표시용 — 실제 결제 금액은 서버가 신청번호로 다시 계산해 맞춰 봐야 한다
+        const order = { id: r.id, space, summary: summary(sel), amount: priceOf(sel), name: form.name.value.trim(), phone: form.phone.value.trim() };
         if (state.sel === sel) state.sel = null;
         state.lost = null; form.reset();
         Object.keys(booked).forEach(k => delete booked[k]);
-        after = quiet => {
+        after = () => {
           update(); load(state.date);
-          showMsg(`<b>예약 신청이 접수되었습니다.</b><br>${esc(done)}<br>신청번호 ${esc(r.id)} · 확인 후 연락드립니다.`, 'ok', quiet);
+          if (typeof CFG.pay === 'function') CFG.pay(order);
         };
       } else if (r.error === 'conflict' || r.error === 'invalid_item') {
         const t = r.error === 'conflict' ? LOST_WARN : '선택한 날짜가 예약 범위를 벗어났어요. 날짜를 다시 선택해주세요';
@@ -581,10 +585,10 @@
         showMsg(`확인 전인 예약 신청이 많아 더 신청할 수 없습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
       } else throw new Error(r.error || 'fail');
     } catch (err) {
-      showMsg(`예약 신청 중 오류가 발생했습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
+      showMsg(`결제 준비 중 오류가 발생했습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
     }
     state.sending = false;
-    btn.textContent = '예약 신청';
+    btn.textContent = '결제하기';
     // 신청 중 버튼이 꺼지며 키보드 포커스가 빠졌으면(body) 되살림 — '시간 다시 고르기' · 다시 켜진 신청 버튼 · 결과 안내 문단
     const a = document.activeElement, dropped = !a || a === document.body || a === btn;
     validate();
