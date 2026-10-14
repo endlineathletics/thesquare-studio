@@ -3,6 +3,7 @@
    01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
    한 신청 = 날짜 하나 + 이어진 시간 범위 하나 + 코트 1~3개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
    신청은 1코트 1시간 칸(items = 선택 코트 × 범위 칸, court 는 0부터) 단위로 관리프로그램 /api/site 에 보냄 — api 가 비면 문자 접수.
+   [결제하기] 뒤 결제 흐름이 켜져 있으면 나이스페이 결제창 → 결과는 관리프로그램이 받아 ?pay=ok|fail 로 돌려보냄 (아래 '온라인 결제').
    ============================================================ */
 (function () {
   const root = document.getElementById('bk');
@@ -112,7 +113,7 @@
   const MAX_WARN = `한 번에 최대 ${MAX}칸(코트 × 시간)까지 신청할 수 있어요. 나눠서 신청해주세요`;
   const ANCHOR_TIP = '끝 시간을 누르면 이어서 선택돼요';
   const COURT_MAX_WARN = `코트는 최대 ${COURT_MAX}면까지 함께 신청할 수 있어요`;
-  const SENDING_WARN = '결제를 준비하는 중이에요. 잠시만 기다려주세요';
+  const SENDING_WARN = '결제를 진행하는 중이에요. 잠시만 기다려주세요';
   const busyWarn = (c, sel) => `${SP.courts[c]}${eun(SP.courts[c])} ${rangeOnly(sel)} 중 예약된 시간이 있어요`;
 
   /* ---------- 날짜 (월 달력) ----------
@@ -548,31 +549,39 @@
     const btn = $('bkSubmit');
     state.sending = true;
     btn.disabled = true; btn.textContent = '결제 준비 중…';
+    clearDraft();   // 지난 결제 실패 안내 등은 내림 (새 결과가 다시 씀)
+    const name = form.name.value.trim(), phone = form.phone.value.trim();
     let after = null;   // 끝난 뒤 할 일 (선택 지우기 등) — 버튼 문구를 되돌린 다음에. 결과는 보낸 신청(sel) 기준
     try {
-      const res = await fetch(CFG.api, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'book', space, items,
-          name: form.name.value.trim(), phone: form.phone.value.trim(),
-          people: form.people.value, memo: form.memo.value.trim(),
-        }),
-      });
-      const r = await res.json();
+      if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
+      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim() });
       if (r.ok) {
-        // 결제 연결 지점 — booking-config.js 에 BOOKING.pay(주문) 를 넣으면(토스 결제창 등) 여기서 부른다.
-        // 서버는 신청을 받으면서 그 시간을 이미 잡아 두므로(확인 전 상태) 결제하는 동안 다른 사람이 같은 칸을 못 잡는다.
-        // '신청 접수' 안내는 띄우지 않는다 (버튼이 '결제하기' — 결제가 붙기 전까지는 신청만 저장되고 관리자가 연락)
-        // 금액은 화면 표시용 — 실제 결제 금액은 서버가 신청번호로 다시 계산해 맞춰 봐야 한다
-        const order = { id: r.id, space, summary: summary(sel), amount: priceOf(sel), name: form.name.value.trim(), phone: form.phone.value.trim() };
-        if (state.sel === sel) state.sel = null;
-        state.lost = null; form.reset();
-        Object.keys(booked).forEach(k => delete booked[k]);
-        after = () => {
-          update(); load(state.date);
-          if (typeof CFG.pay === 'function') CFG.pay(order);
-        };
+        // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
+        // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
+        const p = await prepare(r.id, phone);
+        if (p && p.enabled) { openPay(p, { id: r.id, name, phone, date: sel.date }); return; }
+        const err = p && p.error;
+        let rr = '';
+        // 결제 대기 시간이 (거의) 지난 신청(같은 칸을 조금 전에 신청해 둔 것 등) — 잡아 둔 칸을 바로 풀어 다시 결제할 수 있게
+        if (err === 'expired') rr = await release({ id: r.id, phone });
+        if (rr === 'ok') {
+          // 풀었음 — 고른 시간 · 입력은 그대로 (다시 [결제하기] 하면 새 신청 · 새 결제 대기 15분)
+          await loading[sel.date]; delete booked[sel.date];
+          after = () => { load(sel.date); showMsg('결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요', 'err'); };
+        } else {
+          // 꺼져 있으면 지금처럼 신청만 저장 — '신청 접수' 안내 없이 선택 · 입력을 비우고 표를 새로 불러옴 (관리자가 확인 후 연락).
+          // 결제 준비가 안 된 이유가 있으면(이미 결제됨 · 승인 중 · 이미 처리 중 · 연결 실패) 그 상황대로 알림
+          if (state.sel === sel) state.sel = null;
+          state.lost = null; form.reset();
+          Object.keys(booked).forEach(k => delete booked[k]);
+          after = () => {
+            update(); load(state.date);
+            if (err === 'already_paid') showMsg(paidMsg(r.id, p.test), 'ok');
+            else if (err === 'in_progress') showMsg(esc(PAY_UNKNOWN), 'info');
+            else if (err) showMsg(`신청(${esc(r.id)})은 접수됐어요 — 이미 확인 중인 신청이라 결제는 확인 후 연락드릴 때 안내할게요. 문의 ${SP.phone}`, 'info');
+            else if (!p) showMsg(`결제창을 열지 못했어요. 신청(${esc(r.id)})은 접수됐으니 확인 후 연락드릴게요. 문의 ${SP.phone}`, 'err');
+          };
+        }
       } else if (r.error === 'conflict' || r.error === 'invalid_item') {
         const t = r.error === 'conflict' ? LOST_WARN : '선택한 날짜가 예약 범위를 벗어났어요. 날짜를 다시 선택해주세요';
         after = () => {
@@ -587,21 +596,245 @@
     } catch (err) {
       showMsg(`결제 준비 중 오류가 발생했습니다. 전화(${SP.phone})로 문의해주세요.`, 'err');
     }
+    endSend(after);
+  });
+  /** 보내기(신청 · 결제) 끝 — 버튼을 되돌리고 after(선택 지우기 · 안내 등)를 한 뒤,
+      버튼이 꺼지며(또는 결제창이 닫히며) 키보드 포커스가 빠졌으면(body) 되살림 — '시간 다시 고르기' · 다시 켜진 신청 버튼 · 결과 안내 문단 */
+  function endSend(after) {
+    const btn = $('bkSubmit');
     state.sending = false;
     btn.textContent = '결제하기';
-    // 신청 중 버튼이 꺼지며 키보드 포커스가 빠졌으면(body) 되살림 — '시간 다시 고르기' · 다시 켜진 신청 버튼 · 결과 안내 문단
     const a = document.activeElement, dropped = !a || a === document.body || a === btn;
     validate();
     const m = $('bkMsg');
-    if (after) after(dropped);
+    if (after) after();
     if (dropped) {
       const edit = m.querySelector('[data-edit]');
       if (edit) edit.focus({ preventScroll: true });
       else if (!btn.disabled) btn.focus({ preventScroll: true });
       else if (m.textContent.trim()) { m.tabIndex = -1; m.focus({ preventScroll: true }); }
     }
-  });
+  }
   $('bkMsg').addEventListener('click', e => { if (e.target.closest('[data-edit]')) backToGrid(); });
+
+  /* ---------- 온라인 결제 (나이스페이 결제창, 관리프로그램 docs/site-api.md 4~6절) ----------
+     [결제하기] → api 'book'(칸 잡힘 · 확인 전) → api 'pay_prepare'(결제 흐름이 켜졌는지 · 금액 · 주문번호 — 전부 서버가 정함, test = 주소에 ?paytest=1)
+     → 켜져 있으면 나이스페이 JS SDK 를 그때 불러와 AUTHNICE.requestPay → 인증 결과는 나이스페이가 관리프로그램 returnUrl 로 보내고,
+       관리프로그램이 승인한 뒤 이 화면으로 돌려보냄 — ?pay=ok|fail&no=신청번호(&msg=짧은 안내)(&paytest=1)#rental (payResult).
+     결제창 닫기 · 오류(fnError) · 결제창을 못 엶 · 결제 화면에서 뒤로 옴(같은 화면이 되살아남) · 결제 대기 시간 초과 → api 'pay_cancel' 로
+     잡아 둔 칸을 바로 풀고, 고른 시간 · 입력은 그대로 둬 다시 결제하거나 시간을 바꿀 수 있게 (payStop — 폼 아래 안내).
+     화면을 새로 연 경우(휴대폰 결제 화면에서 뒤로 와 새로 열림 · ?pay=fail 결과)는 sessionStorage 기록으로 칸을 풀고 대관 맨 위 안내 (resumePay).
+     샌드박스(테스트) 결제는 관리프로그램이 신청을 확정하지 않는다 — '테스트 결제 완료(확정 안 됨)'로 안내.
+     꺼져 있으면(키 없음 · 샌드박스인데 ?paytest=1 없음) 지금처럼 신청만 저장. 시크릿 키 · 금액 계산은 이 파일에 없음 */
+  const PAY_KEY = 'bkPay';   // sessionStorage — 결제창으로 넘어간 신청 { id, phone, orderId, space, at } (휴대폰 결제 화면에서 뒤로 와 새로 열려도 칸을 풀려고)
+  // ?msg= 는 누구나 주소에 적을 수 있어서 관리프로그램 PAY_MSG 와 같은 문구만 보여준다 (그 밖의 글은 버림)
+  const PAY_MSGS = ['결제가 취소됐거나 인증되지 않았어요.', '이미 끝났거나 취소된 결제예요.', '신청 내용이 바뀌어 결제하지 않았어요.',
+    '카드 승인이 되지 않았어요.', '결제 승인 중 연결이 끊겨 결제를 취소했어요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.'];
+  const payMsgOk = m => PAY_MSGS.includes(m) || /^결제 시간\(\d{1,3}분\)이 지났어요\.$/.test(m);
+  const PAY_UNKNOWN = '결제 결과를 확인하고 있어요. 결과는 문자로 알려드릴게요.';   // 관리프로그램 PAY_MSG.unknown — 실패가 아니라 결과 대기
+  const PAY_FAIL = '결제가 완료되지 않았어요';
+  // 샌드박스(테스트) 결제는 돈이 오가지 않아 관리프로그램이 신청을 확정하지 않는다 (확인 전 그대로 — 관리프로그램 pay_rental_paid)
+  const PAY_TEST_NOTE = '샌드박스 시험 결제예요 — 실제 결제가 아니라 예약은 확정되지 않았어요 (확인 전).';
+  const isPayTest = () => new URLSearchParams(location.search).get('paytest') === '1';
+  let pay = null;    // 결제창이 열린 신청 { id, phone, orderId, date, test, timer, closing }
+  let held = null;   // 풀지 못한(연결 실패) 결제 대기 신청 { id, phone, orderId } — 다음 [결제하기] 전에 다시 풂
+
+  /** 관리프로그램 /api/site POST → 응답 JSON (연결 실패 · JSON 아님은 throw — 오류 응답 4xx 도 JSON 이라 그대로 읽음) */
+  async function post(body) {
+    const res = await fetch(CFG.api, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    return res.json();
+  }
+  function stash(v) {
+    try { if (v) sessionStorage.setItem(PAY_KEY, JSON.stringify(v)); else sessionStorage.removeItem(PAY_KEY); } catch (e) { /* 못 써도 결제는 그대로 — 칸은 15분 뒤 서버가 풂 */ }
+  }
+  function stashed() {
+    try { const v = JSON.parse(sessionStorage.getItem(PAY_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  /** UTF-8 n바이트 안으로 자름 (나이스페이 길이 규칙이 byte — 한글 10자 = 30바이트) */
+  function cutBytes(s, n) {
+    let out = '', len = 0;
+    for (const ch of String(s)) {
+      const p = ch.codePointAt(0), b = p < 0x80 ? 1 : p < 0x800 ? 2 : p < 0x10000 ? 3 : 4;
+      if (len + b > n) break;
+      out += ch; len += b;
+    }
+    return out;
+  }
+
+  /** 결제창에 넘길 연락처 — '-' 없이 숫자만, +82 10-… · 82 10-… 은 010… (관리프로그램 site_phone 과 같게) */
+  function telDigits(t) {
+    let d = String(t).replace(/\D/g, '');
+    if (/^\s*\+82/.test(t) || (d.startsWith('82') && d.length >= 11)) d = '0' + d.slice(2).replace(/^0+/, '');
+    return d.slice(0, 20);
+  }
+  /** 결제 준비 (api pay_prepare) → 응답 { enabled, … } / 결제창을 열 수 없는 신청이면 { error, test } / 연결 실패 · 그 밖이면 null.
+      error: already_paid(이미 결제됨 — test = 테스트 결제) · in_progress(승인 중) · expired(결제 대기 시간이 지남) · not_payable(이미 처리 중인 신청).
+      결제 기능 전의 관리프로그램은 모르는 action 에 bad_request — 결제 흐름이 없는 것과 같게(지금 동작 그대로) */
+  const PREP_ERRORS = ['already_paid', 'in_progress', 'expired', 'not_payable'];
+  async function prepare(id, phone) {
+    try {
+      const p = await post({ action: 'pay_prepare', kind: 'rental', id, phone, test: isPayTest() });
+      if (p && p.ok) return p;
+      if (p && p.error === 'bad_request') return { enabled: false };
+      return p && PREP_ERRORS.includes(p.error) ? { error: p.error, test: p.test === true } : null;
+    } catch (e) { return null; }
+  }
+  /** '결제 완료' 안내 (폼 아래) — 테스트 결제(샌드박스)는 신청이 확정되지 않음 */
+  function paidMsg(id, test) {
+    return test ? `<b>테스트 결제 완료</b> — 신청번호 ${esc(id)}<br><small>${PAY_TEST_NOTE}</small>`
+      : `<b>결제 완료 · 예약 확정</b> — 신청번호 ${esc(id)}`;
+  }
+
+  let sdk = null;   // 결제창 SDK 불러오기 (Promise, 한 번만 — 실패하면 다음에 다시)
+  function loadSdk(mode) {
+    if (window.AUTHNICE) return Promise.resolve();
+    const src = (CFG.paySdk || {})[mode];
+    if (!src) return Promise.reject(new Error('no_sdk'));
+    if (!sdk) {
+      sdk = new Promise((ok, no) => {
+        const s = document.createElement('script');
+        const t = setTimeout(() => no(new Error('sdk_timeout')), 20000);
+        s.src = src; s.async = true;
+        s.onload = () => { clearTimeout(t); if (window.AUTHNICE) ok(); else no(new Error('no_authnice')); };
+        s.onerror = () => { clearTimeout(t); s.remove(); no(new Error('sdk_load')); };
+        document.head.appendChild(s);
+      }).catch(err => { sdk = null; throw err; });
+    }
+    return sdk;
+  }
+
+  /** 결제창 열기 — p: pay_prepare 응답(서버가 정한 clientId · orderId · amount · goodsName · returnUrl), o: { id(신청번호), name, phone, date } */
+  async function openPay(p, o) {
+    const test = p.mode !== 'live';
+    const cur = pay = { id: o.id, phone: o.phone, orderId: p.orderId, date: o.date, test, timer: 0, closing: false };
+    stash({ id: o.id, phone: o.phone, orderId: p.orderId, space, test, at: Date.now() });
+    const btn = $('bkSubmit');
+    btn.textContent = '결제창 여는 중…';
+    try { await loadSdk(p.mode); } catch (e) { payStop(cur, 'sdk'); return; }
+    if (pay !== cur) return;   // 그 사이 끝남 (뒤로 오기 등)
+    // 결제 대기 시간(서버 expiresAt, KST)이 지나면 서버가 칸을 푼다 — 결제창이 결과 없이 사라졌을 때 화면도 되돌리게.
+    // 기기 시계가 크게 어긋나 있으면 15분으로
+    const left = Date.parse(String(p.expiresAt) + '+09:00') - Date.now();
+    cur.timer = setTimeout(() => payStop(cur, 'timeout'), (left > 60e3 && left < 16 * 60e3 ? left : 15 * 60e3) + 30e3);
+    btn.textContent = '결제 진행 중…';
+    try {
+      window.AUTHNICE.requestPay({
+        clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount,
+        goodsName: p.goodsName, returnUrl: p.returnUrl,
+        buyerName: cutBytes(o.name, 30), buyerTel: telDigits(o.phone),
+        fnError: res => { payStop(cur, 'error', res); },
+      });
+    } catch (e) { payStop(cur, 'error'); }
+  }
+
+  /** 잡아 둔 칸 풀기 (api pay_cancel) → 'ok'(풀었음) / 'done'(풀 주문이 없음 — 이미 끝났거나 서버가 풂) / 'paid'(그 사이 결제됨) /
+      'busy'(승인 중) / 'gone'(신청을 못 찾음) / 'net'(연결 실패 · 그 밖 — held 에 남겨 다음 [결제하기] 전에 다시) */
+  async function release(o) {
+    const h = { id: o.id, phone: o.phone, orderId: o.orderId };
+    try {
+      const r = await post({ action: 'pay_cancel', kind: 'rental', ...h });
+      held = null;
+      if (r.ok) return r.released ? 'ok' : 'done';
+      if (r.error === 'already_paid') return 'paid';
+      if (r.error === 'in_progress') return 'busy';
+      if (r.error === 'not_found') return 'gone';
+    } catch (e) { /* 아래 */ }
+    held = h;
+    return 'net';
+  }
+
+  /** 결제창이 결과 없이 끝남 — 칸을 풀고 안내(폼 아래 #bkMsg). 고른 시간 · 입력은 그대로 둬 다시 결제하거나 시간을 바꿀 수 있게.
+      why: error(결제창 닫기 · 오류 fnError) / sdk(결제창을 못 엶) / timeout(결제 대기 시간 초과) / back(결제 화면에서 뒤로 옴) */
+  async function payStop(cur, why, res) {
+    if (!cur || pay !== cur || cur.closing) return;
+    cur.closing = true;
+    clearTimeout(cur.timer);
+    const r = await release(cur);
+    const freed = r === 'ok' || r === 'done';   // 풀었거나 이미 풀린 주문
+    pay = null; stash(null);
+    // 풀린 칸을 다시 불러오게 — 못 풀었으면(연결 실패) 그대로 둠: 내 신청이 잡은 칸이 '그 사이 예약됨'으로 보여 선택이 지워지지 않게
+    if (freed) { await loading[cur.date]; delete booked[cur.date]; }
+    let after;
+    if (r === 'paid' || r === 'busy') {
+      // 그 사이 결제가 끝났거나 승인 중 — 같은 시간을 다시 잡지 않게 선택 · 입력을 비움
+      state.sel = null; state.lost = null; form.reset();
+      Object.keys(booked).forEach(k => delete booked[k]);
+      after = () => {
+        update(); load(state.date);
+        showMsg(r === 'paid' ? paidMsg(cur.id, cur.test) : esc(PAY_UNKNOWN), r === 'paid' ? 'ok' : 'info');
+      };
+    } else {
+      const head = why === 'sdk' ? '결제창을 열지 못했어요. 잠시 뒤 다시 시도해주세요'
+        : why === 'timeout' ? '결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요'
+        : `${PAY_FAIL} — 다시 결제하거나 시간을 다시 골라주세요`;
+      const sub = why === 'error' && res && typeof res.msg === 'string' ? res.msg.trim().slice(0, 100) : '';   // 나이스페이 SDK 의 고객용 문구
+      after = () => {
+        if (freed) load(cur.date);
+        showMsg(`${esc(head)}${sub ? `<br><small>${esc(sub)}</small>` : ''}`, 'err');
+      };
+    }
+    endSend(after);
+  }
+  // 휴대폰 결제 화면에서 뒤로 와 이 화면이 그대로(bfcache) 되살아나면 — 결과 없이 돌아온 것
+  addEventListener('pageshow', e => { if (e.persisted && pay) payStop(pay, 'back'); });
+
+  /** 결제 결과 안내 — 대관 화면 맨 위(#bkResult). kind: ok / fail / wait(결과 확인 중), test: 테스트 결제(샌드박스 — 신청은 확정 안 됨).
+      화면 안으로 스크롤하고 포커스 */
+  function payBanner(kind, no, msg, test) {
+    const el = $('bkResult');
+    if (!el) return;
+    const num = no ? ` — 신청번호 <span class="bk2-no">${esc(no)}</span>` : '';
+    el.className = 'bk2-result ' + (kind === 'ok' ? 'ok' : kind === 'wait' ? 'info' : 'err');
+    el.innerHTML = kind === 'ok' ? (test ? `<b>테스트 결제 완료</b>${num}<small>${PAY_TEST_NOTE}</small>` : `<b>결제 완료 · 예약 확정</b>${num}`)
+      : kind === 'wait' ? `<b>결제 결과를 확인하고 있어요</b>${num}<small>결과는 문자로 알려드릴게요.</small>`
+      : `<b>${PAY_FAIL}</b> — 시간을 다시 골라주세요${msg ? `<small>${esc(msg)}</small>` : ''}`;
+    el.hidden = false;
+    el.tabIndex = -1;   // 화면낭독기는 포커스를 받은 안내를 읽음 (#bkLive 로 또 읽지 않게)
+    // 안내는 #rental 맨 위. 페이지를 다 읽은 뒤(브라우저의 # 이동 · 뒤로 가기 스크롤 복원이 끝난 뒤) 안내를 위 메뉴 · 탭 바로 아래로
+    // (scroll-margin-top — booking.css) — 다 읽기 전에 손님이 스크롤했으면 그대로
+    let moved = false;
+    const mark = () => { moved = true; };
+    addEventListener('wheel', mark, { once: true, passive: true });
+    addEventListener('touchmove', mark, { once: true, passive: true });
+    const show = () => requestAnimationFrame(() => {
+      if (!moved) el.scrollIntoView({ block: 'start', behavior: 'instant' });
+      el.focus({ preventScroll: true });
+    });
+    if (document.readyState === 'complete') show(); else addEventListener('load', show, { once: true });
+  }
+  /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=&msg=) → 안내 후 주소에서 pay · no · msg 를 뗌 (paytest · #rental 은 그대로).
+      → { kind: ok | wait | fail, no } 또는 null(결과 주소 아님). 관리프로그램은 테스트(샌드박스) 주문에만 paytest=1 을 붙여 돌려보낸다 */
+  function payResult() {
+    const q = new URLSearchParams(location.search), kind = q.get('pay');
+    if (kind !== 'ok' && kind !== 'fail') return null;
+    const no = /^TS\d{6}-\d{3,6}$/.test(q.get('no') || '') ? q.get('no') : '';
+    const msg = (q.get('msg') || '').trim();
+    ['pay', 'no', 'msg'].forEach(k => q.delete(k));
+    const qs = q.toString();
+    history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    const res = { kind: kind === 'ok' ? 'ok' : msg === PAY_UNKNOWN ? 'wait' : 'fail', no };
+    if (res.kind === 'ok') payBanner('ok', no, '', isPayTest());
+    else if (res.kind === 'wait') payBanner('wait', no);
+    else payBanner('fail', no, payMsgOk(msg) ? msg : '');
+    return res;
+  }
+  /** 결제창으로 넘어갈 때 남긴 기록(bkPay)으로 잡아 둔 칸 정리 — 결과 없이 이 화면을 새로 열었거나(휴대폰 결제 화면에서 뒤로 · 새로고침)
+      '결제가 완료되지 않았어요'(?pay=fail)로 돌아왔으면 pay_cancel 로 칸을 푼다. 관리프로그램이 주문을 닫지 않고 fail 로 보내는 경우
+      (인증 결과 서명이 맞지 않음 · 결과 요청이 너무 많음 등)에도 고른 시간이 15분 동안 '예약 마감'으로 남지 않게 —
+      서버는 결제 대기 주문만 닫으므로 이미 결제 · 승인 중이면 그대로(paid · busy). res: payResult() */
+  async function resumePay(res) {
+    const s = stashed();
+    if (!s) return;
+    stash(null);
+    if (res && res.kind !== 'fail') return;   // 결제 완료 · 결과 확인 중 — 서버가 처리
+    if (s.space !== space || typeof s.id !== 'string' || !(Date.now() - s.at < 20 * 60e3)) return;   // 다른 공간 · 오래된 기록 — 서버가 15분 뒤 풂
+    if (res && res.no && res.no !== s.id) return;   // 다른 신청의 결과
+    const r = await release(s);
+    if (r === 'paid') payBanner('ok', s.id, '', s.test === true);
+    else if (r === 'busy') payBanner('wait', s.id);
+    else if (!res) payBanner('fail', '');
+    if (r === 'ok' || r === 'done') { await loading[state.date]; delete booked[state.date]; load(state.date); }   // 풀린 칸을 다시 불러옴 (처음 조회가 끝난 뒤)
+  }
 
   /* ---------- 예약 현황 (관리프로그램 조회) ---------- */
   function load(date) {
@@ -640,4 +873,5 @@
   if (SP.title) $('bkTitle').textContent = SP.title;
   update();
   load(state.date);
+  resumePay(payResult());   // 결제를 마치고(?pay=) · 결과 없이(뒤로) 돌아온 경우
 })();

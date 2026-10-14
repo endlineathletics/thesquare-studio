@@ -7,6 +7,7 @@
    - title: 시간표 카드 머리 영문 제목. note: 표 위 짧은 안내.
    - slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸. "시작-종료" 형식.
             booking/Code.gs 의 SPACES 와 똑같이 맞춰야 합니다.
+   - paySdk · payMethod: 대관 온라인 결제(나이스페이 결제창). 결제를 켜고 끄는 건 관리프로그램 환경변수 — README '온라인 결제'.
    ============================================================ */
 (function () {
   const p = n => String(n).padStart(2, '0');
@@ -20,8 +21,14 @@
     days: 62,                 // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (Code.gs BOOKING_DAYS · 관리프로그램 RENTAL_DAYS 와 동일)
     maxItems: 72,             // 한 번에 신청할 수 있는 최대 칸 수 = 코트 수 × 시간 (Code.gs MAX_ITEMS · 관리프로그램 RENTAL_MAX_ITEMS 와 동일)
     maxCourts: 3,             // 한 신청에서 같이 고를 수 있는 코트 수 (최소 1). 공간 코트 수보다 크면 그 수까지 — 홈페이지 화면 제한만, 관리프로그램은 코트 수만 검사
-    // pay: order => { … },   // 결제 연결 지점 — 넣으면 '결제하기'로 신청이 저장된 직후 booking.js 가 부름. order = { id(신청번호 TS…), space, summary, amount(표시용), name, phone }.
-    //                         실제 결제 금액은 서버(관리 앱)가 신청번호로 다시 계산해 맞춰 봐야 하고, 시크릿 키는 여기 넣지 말 것(관리 앱 서버에만)
+    // 온라인 결제(나이스페이) — '결제하기'로 신청이 저장되면 booking.js 가 관리프로그램 api 'pay_prepare' 로 결제 흐름이 켜져 있는지 묻고,
+    // 켜져 있으면 결제창을 연다. 켜고 끄기(키 · 모드)와 금액 · 주문번호는 전부 관리프로그램(Railway 환경변수 NICEPAY_*)이 정한다 — 여기엔 키를 넣지 말 것.
+    // 샌드박스 모드에선 주소에 ?paytest=1 이 있을 때만 결제창(일반 손님은 지금처럼 신청만 저장), 운영(live) 모드에선 모두 결제창.
+    paySdk: {                 // 나이스페이 결제창 JS SDK — 결제할 때만 불러옴(모드는 pay_prepare 응답). 공식 샘플은 샌드박스 키도 pay.nicepay.co.kr 를 씀
+      sandbox: 'https://pay.nicepay.co.kr/v1/js/',   //   샌드박스 결제창이 안 뜨면 'https://sandbox-pay.nicepay.co.kr/v1/js/' 로 바꿔 시험
+      live: 'https://pay.nicepay.co.kr/v1/js/',
+    },
+    payMethod: 'card',        // 결제수단 — card(신용카드). 'cardAndEasyPay' = 카드 + 간편결제(가맹점 계약 확인 후). 가상계좌(vbank)는 관리프로그램이 받지 않음
     wholeLabel: '전체대관',   // 코트를 모두 고른 신청의 표시 이름
     spaces: {
       badminton: {

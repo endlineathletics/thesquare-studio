@@ -100,6 +100,15 @@
 .bk2-edit{margin-top:16px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:700 13px var(--sans);padding:10px 14px;cursor:pointer}
 .bk-msg .bk2-edit{display:inline-block;margin:8px 0 0}
 .bk-msg[tabindex="-1"]:focus{outline:none}   /* 신청 뒤 포커스만 옮겨 받는 안내 문단 */
+/* 결제 결과 안내 — 결제를 마치고 ?pay=ok|fail …#rental 로 돌아오면 대관 구역 맨 위(#rental 로 맞춘 화면에 바로 보이는 자리, booking.js payBanner) */
+.bk2-result{margin:0 0 36px;padding:16px 20px;scroll-margin-top:150px;border:1px solid var(--line);font-size:15px;line-height:1.6;overflow-wrap:anywhere}
+.bk2-result b{font-weight:800}
+.bk2-result .bk2-no{white-space:nowrap}
+.bk2-result small{display:block;margin-top:2px;font-size:13px;color:var(--ink-2)}
+.bk2-result.ok{background:#eaf7f0;border-color:#9fd8bb;color:#0f7a4a}
+.bk2-result.err{background:#fdf0ee;border-color:#f0b7ae;color:#c0392b}
+.bk2-result.info{background:#fff;color:var(--ink)}
+.bk2-result:focus{outline:none}
 
 @media (max-width:1020px){
   .bk2-body{grid-template-columns:minmax(0,1fr)}
@@ -107,6 +116,7 @@
   .bk2-apply{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:640px){
+  .bk2-result{margin-bottom:28px;padding:14px 16px;font-size:14.5px;scroll-margin-top:130px}
   .bk2-date{padding:18px 16px}
   .bk2-pick{padding:18px 12px}
   .bk2-pick > .bk-step,.bk2-guide{margin-left:4px;margin-right:4px}
