@@ -288,7 +288,7 @@
   const PAY_UNKNOWN = PAY_MSGS[6];   // 관리프로그램 PAY_MSG.unknown — 실패가 아니라 결과 대기 (다시 결제하게 하지 않음)
   const payMsgOk = m => PAY_MSGS.includes(m) || /^결제 시간\(\d{1,3}분\)이 지났어요\.$/.test(m);
   const PAY_ERR = {
-    full: '방금 마감됐어요. 다른 것을 골라주세요.', bad_option: '고를 수 있는 것이 바뀌었어요. 화면을 새로 고쳐주세요.',
+    full: '방금 마감됐어요. 다른 것을 골라주세요.', already_registered: '이미 그 달 그 시간에 등록돼 있어요. 앱에서 결제해 주세요.', bad_option: '고를 수 있는 것이 바뀌었어요. 화면을 새로 고쳐주세요.',
     already_paid: '이미 결제가 끝났어요.', in_progress: '결제를 확인하고 있어요. 잠시 뒤 다시 확인해주세요.',
     not_payable: '이미 등록이 끝났거나 결제할 수 없는 신청이에요.', not_found: '결제할 수 있는 시간이 지났어요. 신청은 접수됐으니 담당자가 연락드릴게요.',
   };
