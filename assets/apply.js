@@ -339,7 +339,10 @@
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
     let r = null;
     try { r = await post({ action: 'pay_options', kind: 'apply', id: o.id, phone: o.phone, test: o.test }); } catch (e) { /* 아래 */ }
-    const say = t => { box.innerHTML = `<p class="ap-pay-msg">${t}</p>`; };
+    const say = t => {                          // 결제가 없으면 위 '아래에서 결제하면 바로 등록돼요' 줄도 접수 안내로 바꾼다
+      box.innerHTML = `<p class="ap-pay-msg">${t}</p>`;
+      if ($('doneMsg')) $('doneMsg').textContent = `신청이 접수됐어요${o.id ? ` (신청번호 ${o.id})` : ''}.`;
+    };
     if (!r || r.error === 'bad_request') {      // 연결 실패 · 결제 기능 전의 관리프로그램
       return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     }
