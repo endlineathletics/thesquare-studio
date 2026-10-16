@@ -218,15 +218,15 @@
     if (!CFG.api) { done(v, null, 'fallback'); return; }
 
     sending = true;
-    const btn = $('applySubmit'); btn.disabled = true; btn.textContent = '결제 준비 중…';
+    const btn = $('applySubmit'); btn.disabled = true; btn.textContent = '신청하는 중…';
     try {
       const res = await fetch(CFG.api, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
       const r = await res.json();
       if (!r.ok) throw new Error(r.error || 'fail');
       done(v, r.id, 'ok');
     } catch (err) {
-      $('applyErr').textContent = `결제 준비 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
-      btn.disabled = false; btn.textContent = '결제하기';
+      $('applyErr').textContent = `신청 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
+      btn.disabled = false; btn.textContent = '신청하고 결제하기';
     }
     sending = false;
   });
@@ -254,25 +254,182 @@
     const text = receipt(v, id);
     const box = $('applyDone');
     const msg = mode === 'ok'
-      ? `신청 내용을 확인하시고 아래 <b>결제하기</b>를 눌러 결제를 진행해주세요.<br>` +
-        (CFG.alimtalk ? `입력하신 번호(${esc(v.phone)})로 접수 완료 알림톡이 발송됩니다.` : `확인 후 담당자가 ${esc(v.phone)}로 연락드리겠습니다.`)
+      ? `신청이 접수됐어요${id ? ` (신청번호 ${esc(id)})` : ''}. 아래에서 결제하면 바로 등록돼요.`
       : `아래 신청 내용을 복사해 인스타그램 DM으로 보내주시거나<br>${esc(CFG.phone)}로 전화 주시면 바로 접수해드립니다.`;
     box.innerHTML = `<div class="ok">${mode === 'ok' ? '✓' : '!'}</div>
       <h2>${mode === 'ok' ? '신청 내용 확인' : '신청 내용을 보내주세요'}</h2>
-      <p>${msg}</p>
+      <p id="doneMsg">${msg}</p>
       <div class="receipt">${esc(text)}</div>
+      ${mode === 'ok' ? '<div class="ap-pay" id="payBox"></div>' : ''}
       <div class="acts">
-        ${mode === 'ok' ? `<a class="pri" id="payBtn" href="${esc(CFG.payUrl || '#')}"${CFG.payUrl ? ' target="_blank" rel="noopener"' : ''}>결제하기</a>` : `<button type="button" class="pri" id="copyReceipt">내용 복사</button>
+        ${mode === 'ok' ? '' : `<button type="button" class="pri" id="copyReceipt">내용 복사</button>
         <a href="${esc(CFG.instagram)}" target="_blank" rel="noopener">인스타그램 DM</a>
         <a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>`}
         <a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>
       </div>`;
     const cp = $('copyReceipt');
     if (cp) cp.onclick = () => copyText(text, box.querySelector('.receipt'), cp);
-    const pay = $('payBtn');      // 결제 시스템 주소(CFG.payUrl)가 없으면 안내만
-    if (pay && !CFG.payUrl) pay.onclick = ev => { ev.preventDefault(); alert(`온라인 결제는 준비 중이에요.\n결제 문의: ${CFG.phone}`); };
     $('applyWrap').hidden = true;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (mode === 'ok' && id) payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest() });
   }
+
+  /* ---------- 온라인 결제 (2026-10 — 관리프로그램 api 'pay_options' → 'pay_prepare' → 나이스페이 결제창) ----------
+     신청서 저장(apply) 뒤 확인 화면에서, 고를 것(배드민턴: 시작 달·시간 / 요가: 수강권)과 금액을 서버에서 받아 보여 주고 [결제하기].
+     결제가 끝나면 나이스페이가 관리프로그램으로 보내고, 관리프로그램이 이 화면(?pay=ok|fail&no=신청번호)으로 돌려보낸다 → payResult.
+     결제가 꺼져 있으면(관리자 설정·키 — 응답 enabled:false) 옛 동작 '확인 후 담당자가 연락'. 금액·주문번호는 서버가 정하고 여기선 보여 주기만.
+     ?paytest=1 = 시험 주소(관리자가 '수강 온라인 결제'를 켜기 전 시험 — 운영이면 진짜 결제·진짜 등록이라 시험 뒤 환불) */
+  const PAY_KEY = 'apPay';   // sessionStorage — 결제창으로 넘어간 신청 { id, phone, name, test, orderId } (돌아와서 다시 결제·결과 확인)
+  // ?msg= 는 누구나 주소에 적을 수 있어서 관리프로그램 PAY_MSG 와 같은 문구만 보여준다 (그 밖의 글은 버림)
+  const PAY_MSGS = ['결제가 완료되지 않았어요.', '결제가 취소됐거나 인증되지 않았어요.', '이미 끝났거나 취소된 결제예요.',
+    '신청 내용이 바뀌어 결제하지 않았어요.', '카드 승인이 되지 않았어요.', '결제 승인 중 연결이 끊겨 결제를 취소했어요.',
+    '결제 결과를 확인하고 있어요. 결과는 문자로 알려드릴게요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.'];
+  const PAY_UNKNOWN = PAY_MSGS[6];   // 관리프로그램 PAY_MSG.unknown — 실패가 아니라 결과 대기 (다시 결제하게 하지 않음)
+  const payMsgOk = m => PAY_MSGS.includes(m) || /^결제 시간\(\d{1,3}분\)이 지났어요\.$/.test(m);
+  const PAY_ERR = {
+    full: '방금 마감됐어요. 다른 것을 골라주세요.', bad_option: '고를 수 있는 것이 바뀌었어요. 화면을 새로 고쳐주세요.',
+    already_paid: '이미 결제가 끝났어요.', in_progress: '결제를 확인하고 있어요. 잠시 뒤 다시 확인해주세요.',
+    not_payable: '이미 등록이 끝났거나 결제할 수 없는 신청이에요.', not_found: '결제할 수 있는 시간이 지났어요. 신청은 접수됐으니 담당자가 연락드릴게요.',
+  };
+  const isPayTest = () => new URLSearchParams(location.search).get('paytest') === '1';
+  const won = n => Number(n).toLocaleString('ko-KR') + '원';
+  let sdk = null;
+
+  /** 관리프로그램 /api/site POST → 응답 JSON (오류 응답 4xx 도 JSON 이라 그대로 읽음, 연결 실패는 throw) */
+  async function post(body) {
+    const res = await fetch(CFG.api, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    return res.json();
+  }
+  function stash(v) {
+    try { if (v) sessionStorage.setItem(PAY_KEY, JSON.stringify(v)); else sessionStorage.removeItem(PAY_KEY); } catch (e) { /* 못 써도 결제는 그대로 */ }
+  }
+  function stashed() {
+    try { const v = JSON.parse(sessionStorage.getItem(PAY_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  /** UTF-8 n바이트 안으로 자름 (나이스페이 길이 규칙이 byte) */
+  function cutBytes(s, n) {
+    let out = '', len = 0;
+    for (const ch of String(s || '')) {
+      const p = ch.codePointAt(0), b = p < 0x80 ? 1 : p < 0x800 ? 2 : p < 0x10000 ? 3 : 4;
+      if (len + b > n) break;
+      out += ch; len += b;
+    }
+    return out;
+  }
+  function loadSdk() {
+    if (window.AUTHNICE) return Promise.resolve();
+    if (!CFG.paySdk) return Promise.reject(new Error('no_sdk'));
+    if (!sdk) {
+      sdk = new Promise((ok, no) => {
+        const s = document.createElement('script');
+        const t = setTimeout(() => no(new Error('sdk_timeout')), 20000);
+        s.src = CFG.paySdk; s.async = true;
+        s.onload = () => { clearTimeout(t); if (window.AUTHNICE) ok(); else no(new Error('no_authnice')); };
+        s.onerror = () => { clearTimeout(t); s.remove(); no(new Error('sdk_load')); };
+        document.head.appendChild(s);
+      }).catch(err => { sdk = null; throw err; });
+    }
+    return sdk;
+  }
+
+  /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test } */
+  async function payBox(box, o) {
+    if (!box) return;
+    box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
+    let r = null;
+    try { r = await post({ action: 'pay_options', kind: 'apply', id: o.id, phone: o.phone, test: o.test }); } catch (e) { /* 아래 */ }
+    const say = t => { box.innerHTML = `<p class="ap-pay-msg">${t}</p>`; };
+    if (!r || r.error === 'bad_request') {      // 연결 실패 · 결제 기능 전의 관리프로그램
+      return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
+    }
+    if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
+    if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : (PAY_ERR[r.error] || '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
+    if (!r.options.length) return say(esc(r.note || '확인 후 담당자가 연락드릴게요.'));
+    const first = r.options.find(x => !x.disabled);
+    const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
+    box.innerHTML = `<h3>${TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
+      <div class="ap-opts" role="radiogroup">${r.options.map(x => `
+        <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
+          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}<small>${esc(x.sub)}</small></span>
+          <span class="p">${won(x.amount)}</span></label>`).join('')}</div>
+      ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
+      ${first ? `<button type="button" class="ap-paybtn" id="payGo">${won(first.amount)} 결제하기</button>` : '<p class="ap-pay-msg">지금은 모두 마감이에요. 담당자가 연락드릴게요.</p>'}
+      <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
+      ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
+        : (o.test ? '<p class="ap-pay-note">시험 주소예요 — 실제로 결제되고 등록돼요.</p>' : '')}`;
+    const go = box.querySelector('#payGo');
+    if (!go) return;
+    box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
+      const x = r.options.find(y => y.key === i.value);
+      if (x && !go.disabled) go.textContent = `${won(x.amount)} 결제하기`;
+    }));
+    go.onclick = () => startPay(box, o, go);
+  }
+
+  async function startPay(box, o, go) {
+    const sel = box.querySelector('input[name=payopt]:checked');
+    const msg = box.querySelector('#payMsg');
+    if (!sel || go.disabled) return;
+    const label = go.textContent;
+    const fail = t => { go.disabled = false; go.textContent = label; msg.textContent = t; };
+    go.disabled = true; go.textContent = '결제창을 여는 중…'; msg.textContent = '';
+    let p;
+    try { p = await post({ action: 'pay_prepare', kind: 'apply', id: o.id, phone: o.phone, test: o.test, option: sel.value }); }
+    catch (e) { return fail('인터넷 연결을 확인하고 다시 눌러주세요.'); }
+    if (!p.ok) return fail(PAY_ERR[p.error] || '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.');
+    if (!p.enabled) return fail('지금은 온라인 결제를 받지 않아요. 담당자가 연락드릴게요.');
+    try { await loadSdk(); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
+    stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now() });
+    window.AUTHNICE.requestPay({
+      clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
+      returnUrl: p.returnUrl, buyerName: cutBytes(o.name, 30), buyerTel: String(o.phone || '').replace(/\D/g, ''),
+      fnError: res => {
+        post({ action: 'pay_cancel', kind: 'apply', id: o.id, phone: o.phone, orderId: p.orderId }).catch(() => {});
+        const why = res && (res.errorMsg || res.msg);
+        fail(`결제가 완료되지 않았어요${why ? ` (${why})` : ''}. 다시 눌러 결제할 수 있어요.`);
+      },
+    });
+    setTimeout(() => { if (go.disabled) { go.disabled = false; go.textContent = label; } }, 8000);   // PC: 결제창(레이어)을 그냥 닫았을 때 다시 누를 수 있게
+  }
+
+  /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=신청번호&msg=) → 결과 화면 + 주소에서 pay·no·msg 를 뗌 (paytest 는 그대로) */
+  function payResult() {
+    const q = new URLSearchParams(location.search);
+    const st = q.get('pay');
+    if (st !== 'ok' && st !== 'fail') return;
+    const no = /^AP\d{6}-\d{3,6}$/.test(q.get('no') || '') ? q.get('no') : '';
+    const m = q.get('msg') || '';
+    ['pay', 'no', 'msg'].forEach(k => q.delete(k));
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    const s = stashed();
+    const mine = s && no && s.id === no ? s : null;
+    const box = $('applyDone');
+    $('applyWrap').hidden = true;
+    box.hidden = false;
+    const back = `<a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>`;
+    if (st === 'ok') {
+      stash(null);
+      box.innerHTML = `<div class="ok">✓</div><h2>결제가 완료됐어요</h2>
+        <p id="doneMsg">${no ? `신청번호 ${esc(no)} · ` : ''}등록이 끝났어요. 입력하신 번호로 결제 확인과 앱 로그인 안내를 보내드려요.</p>
+        <div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+      if (mine) {                               // 샌드박스 시험 결제면 등록되지 않는다 — 서버에 물어 안내를 바꿈
+        post({ action: 'pay_options', kind: 'apply', id: mine.id, phone: mine.phone, test: mine.test }).then(r => {
+          if (r && r.error === 'already_paid' && r.test) $('doneMsg').textContent = '테스트 결제가 끝났어요 — 샌드박스라 실제 결제·등록은 되지 않았어요.';
+        }).catch(() => {});
+      }
+      return;
+    }
+    const why = payMsgOk(m) ? m : '결제가 완료되지 않았어요.';
+    const unknown = m === PAY_UNKNOWN;
+    box.innerHTML = `<div class="ok">!</div><h2>${unknown ? '결제 결과를 확인하고 있어요' : '결제가 완료되지 않았어요'}</h2>
+      <p>${esc(why)}${unknown ? '' : ' 신청은 접수돼 있어요.'}</p>
+      ${mine && !unknown ? '<div class="ap-pay" id="payBox"></div>' : ''}
+      <div class="acts"><a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>${back}</div>`;
+    if (mine && !unknown) {                     // 남은 결제 대기 주문을 닫고(이미 닫혔으면 할 일 없음) 다시 고르게
+      post({ action: 'pay_cancel', kind: 'apply', id: mine.id, phone: mine.phone, orderId: mine.orderId }).catch(() => {})
+        .finally(() => payBox($('payBox'), mine));
+    }
+  }
+  payResult();
 })();
