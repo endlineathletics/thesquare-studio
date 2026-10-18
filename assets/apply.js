@@ -44,22 +44,62 @@
     const list = Object.values(groups);
     list.forEach(g => { g.days.sort(); g.dayLabel = g.days.map(i => DAYS[i]).join('·'); });
 
-    $('prefGroups').innerHTML = list.map(g => {
-      const cat = window.BD_CATS[g.key];
-      const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
-      return `<label style="--c:${cat.c};--bg:${cat.bg}"><input type="radio" name="cls" value="${g.key}">
-        <span class="grp-card"><b>${esc(g.cls)}</b><span class="d">${g.dayLabel}</span>
-        <span class="t">${first} – ${last} · ${g.times.length}타임</span>
-        <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
-    }).join('');
+    // 타임별 마감 (2026-10-19 사용자 "꽉 찬 반도 마감이라고 안 떠" · "있는 사람이랑 급수가 안 맞으면 마감") — 관리프로그램
+    // GET api?action=bd_slots&grade= 가 정원·'붙은 두 급수까지'·입문 3명 조·타임별 받을 급수로 달마다 들어갈 수 있는지 준다.
+    // avail[반 key][시작 HH:MM] = [{ym, ok}] (이번 달 남은 수업 → 다음 달 순). 못 받으면 {} — 마감 표시 없이 예전처럼(결제 화면이 다시 막음)
+    let avail = {}, loadNo = 0;
+    const slotState = (k, t) => {               // '' 모름 · 'ok' · 'later:11'(그 달부터) · 'full'
+      const ms = (avail[k] || {})[t.split('~')[0]];
+      if (!ms || !ms.length) return '';
+      if (ms[0].ok) return 'ok';
+      const m = ms.find(x => x.ok);
+      return m ? 'later:' + Number(m.ym.slice(5)) : 'full';
+    };
+    const classFull = g => g.times.every(t => slotState(g.key, t) === 'full');
 
-    const chip = (name, v) => `<label><input type="radio" name="${name}" value="${esc(v)}"${v === '상관없음' ? ' checked' : ''}><span>${esc(v)}</span></label>`;
-    form.addEventListener('change', e => {
-      if (e.target.name !== 'cls') return;
-      const g = groups[e.target.value];
-      $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => chip('time', v)).join('');
-      $('prefCoach').innerHTML = ['상관없음', ...g.coaches].map(v => chip('coach', v)).join('');
+    function drawCards() {
+      const cur = form.cls && form.cls.value;
+      $('prefGroups').innerHTML = list.map(g => {
+        const cat = window.BD_CATS[g.key], full = classFull(g);
+        const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
+        return `<label style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
+          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}</span>
+          <span class="t">${first} – ${last} · ${g.times.length}타임</span>
+          <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
+      }).join('');
+    }
+
+    const chip = (name, v, st, on) => {
+      const off = st === 'full', note = off ? '마감' : (st.startsWith('later:') ? `${st.slice(6)}월부터` : '');
+      return `<label${off ? ' class="off"' : ''}><input type="radio" name="${name}" value="${esc(v)}"${on ? ' checked' : ''}${off ? ' disabled' : ''}><span>${esc(v)}${note ? `<small>${note}</small>` : ''}</span></label>`;
+    };
+    function drawSub() {
+      const k = form.cls && form.cls.value, g = k && groups[k];
+      if (!g) { $('prefSub').hidden = true; return; }
+      const curT = (form.time && form.time.value) || '상관없음', curC = (form.coach && form.coach.value) || '상관없음';
+      const tState = t => t === '상관없음' ? (classFull(g) ? 'full' : '') : slotState(k, t);
+      const okT = tState(curT) === 'full' ? '상관없음' : curT;    // 급수를 바꿔 고른 시간이 마감되면 '상관없음'으로
+      $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => chip('time', v, tState(v), v === okT)).join('');
+      $('prefCoach').innerHTML = ['상관없음', ...g.coaches].map(v => chip('coach', v, '', v === curC)).join('');
       $('prefSub').hidden = false;
+    }
+    function loadAvail() {
+      if (!CFG.api) return;
+      const no = ++loadNo, gr = (form.grade && form.grade.value) || '';
+      fetch(CFG.api + '?action=bd_slots' + (gr ? '&grade=' + encodeURIComponent(gr) : '')).then(r => r.json()).then(r => {
+        if (no !== loadNo || !r || !r.ok || !Array.isArray(r.slots)) return;
+        avail = {};
+        r.slots.forEach(s => { (avail[s.key] = avail[s.key] || {})[s.time] = s.months || []; });
+        drawCards();
+        drawSub();
+        updateSummary();
+      }).catch(() => { /* 못 받으면 마감 표시 없이 — 결제 화면이 정원·급수를 다시 본다 */ });
+    }
+    drawCards();
+    loadAvail();
+    form.addEventListener('change', e => {
+      if (e.target.name === 'cls') drawSub();
+      else if (e.target.name === 'grade') loadAvail();
     });
 
     return {
@@ -199,7 +239,8 @@
       const inp = first.querySelector('input,select'); if (inp) setTimeout(() => inp.focus({ preventScroll: true }), 300);
       return;
     }
-    const payload = { action: 'apply', ...v, clientId: CLIENT_ID, submittedAt: new Date().toISOString(), source: 'homepage' };
+    // test = 시험 주소(?paytest=1) — 결제가 켜져 있으면 관리프로그램이 신청서를 '결제 전'으로 받아 결제가 끝나야 신청으로 보여 준다 (2026-10-19)
+    const payload = { action: 'apply', ...v, test: isPayTest(), clientId: CLIENT_ID, submittedAt: new Date().toISOString(), source: 'homepage' };
 
     if (!CFG.api) { done(v, null, 'fallback'); return; }
 
@@ -240,7 +281,7 @@
     const text = receipt(v, id);
     const box = $('applyDone');
     const msg = mode === 'ok'
-      ? `신청이 접수됐어요${id ? ` (신청번호 ${esc(id)})` : ''}. 아래에서 결제하면 바로 등록돼요.`
+      ? `아래에서 결제하면 신청과 등록이 끝나요${id ? ` (신청번호 ${esc(id)})` : ''}. 결제 전에는 신청이 접수되지 않아요.`
       : `아래 신청 내용을 복사해 인스타그램 DM으로 보내주시거나<br>${esc(CFG.phone)}로 전화 주시면 바로 접수해드립니다.`;
     box.innerHTML = `<div class="ok">${mode === 'ok' ? '✓' : '!'}</div>
       <h2>${mode === 'ok' ? '신청 내용 확인' : '신청 내용을 보내주세요'}</h2>
@@ -342,11 +383,15 @@
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
     let r = null;
     try { r = await post({ action: 'pay_options', kind: 'apply', id: o.id, phone: o.phone, test: o.test }); } catch (e) { /* 아래 */ }
-    const say = t => {                          // 결제가 없으면 위 '아래에서 결제하면 바로 등록돼요' 줄도 접수 안내로 바꾼다
+    const say = t => {                          // 결제가 없으면 위 '결제하면 신청과 등록이 끝나요' 줄도 접수 안내로 바꾼다 (관리프로그램이 신청서를 드러냄)
       box.innerHTML = `<p class="ap-pay-msg">${t}</p>`;
       if ($('doneMsg')) $('doneMsg').textContent = `신청이 접수됐어요${o.id ? ` (신청번호 ${o.id})` : ''}.`;
     };
-    if (!r || r.error === 'bad_request') {      // 연결 실패 · 결제 기능 전의 관리프로그램
+    if (!r) {                                   // 연결 실패 — 신청서는 '결제 전'이라 아직 접수가 아님 (2026-10-19), 다시 열면 결제 칸이 다시 뜸
+      box.innerHTML = `<p class="ap-pay-msg">결제 정보를 불러오지 못했어요. 잠시 뒤 이 화면을 새로 고치거나 ${esc(CFG.phone)}로 연락 주세요.</p>`;
+      return;
+    }
+    if (r.error === 'bad_request') {            // 결제 기능 전의 관리프로그램
       return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     }
     if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
@@ -372,7 +417,10 @@
       ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
         : (o.test ? '<p class="ap-pay-note">시험 주소예요 — 실제로 결제되고 등록돼요.</p>' : '')}`;
     const go = box.querySelector('#payGo');
-    if (!go) return;
+    if (!go) {                                  // 모두 마감 — 관리프로그램이 신청서를 '새 신청'으로 드러내고 담당자가 연락
+      if ($('doneMsg')) $('doneMsg').textContent = `신청이 접수됐어요${o.id ? ` (신청번호 ${o.id})` : ''}.`;
+      return;
+    }
     const st = { busy: false, agreed: false };
     const sync = () => {                        // 버튼: 동의해야 켜짐, 결제 준비 중엔 꺼짐
       go.disabled = st.busy || !st.agreed;
@@ -475,7 +523,7 @@
     const why = payMsgOk(m) ? m : '결제가 완료되지 않았어요.';
     const unknown = m === PAY_UNKNOWN;
     box.innerHTML = `<div class="ok">!</div><h2>${unknown ? '결제 결과를 확인하고 있어요' : '결제가 완료되지 않았어요'}</h2>
-      <p>${esc(why)}${unknown ? '' : ' 신청은 접수돼 있어요.'}</p>
+      <p>${esc(why)}${unknown ? '' : ' 결제가 끝나야 신청이 접수돼요 — 아래에서 다시 결제할 수 있어요.'}</p>
       ${mine && !unknown ? '<div class="ap-pay" id="payBox"></div>' : ''}
       <div class="acts"><a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>${back}</div>`;
     if (mine && !unknown) {                     // 남은 결제 대기 주문을 닫고(이미 닫혔으면 할 일 없음) 다시 고르게
