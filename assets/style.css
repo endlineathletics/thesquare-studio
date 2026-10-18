@@ -756,7 +756,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-sum .ttl{font-size:21px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
 .ap-sum dl{margin-top:18px;display:grid;grid-template-columns:78px 1fr;gap:9px 10px;font-size:13.5px;border-top:1px solid rgba(255,255,255,.15);padding-top:16px}
 .ap-sum dt{color:rgba(255,255,255,.55)}
-.ap-sum dd{font-weight:600;word-break:break-all}
+.ap-sum dd{font-weight:600;overflow-wrap:anywhere;word-break:normal}   /* 띄어쓰기에서 먼저 줄바꿈 — 320px 요약 카드의 수강권 줄이 글자 중간에서 갈리지 않게 (2026-10-19) */
 .ap-sum dd.empty{color:rgba(255,255,255,.3);font-weight:500}
 .ap-note{font-size:12.5px;color:var(--ink-2);line-height:1.65}
 .ap-done{background:#fff;border:1px solid var(--line);padding:48px 40px;text-align:center}
@@ -795,6 +795,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-opt .p{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ap-opt.off{opacity:.45;cursor:not-allowed}
 .fld.err .ap-opt{border-color:#d0342c}   /* 요가 신청서 03 수강권 선택 — 안 고르고 제출하면 빨간 테두리 (2026-10-19) */
+.fld .ap-opt input:focus{outline:none}   /* 글 입력칸용 네모 outline(.fld input:focus)이 둥근 라디오엔 어색 — 키보드 포커스만 아래 규칙 */
+.ap-opt input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .ap-tickets .ap-pay-msg{margin:0;font-size:13.5px;color:var(--ink-3)}
 .ap-paybtn{width:100%;margin-top:14px;background:var(--blue);color:#fff;border:0;padding:16px;font:800 16px var(--sans);cursor:pointer}
 .ap-paybtn:disabled{opacity:.6;cursor:wait}

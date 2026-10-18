@@ -80,9 +80,11 @@
     const draw = () => {
       if (!box) return;
       const cur = (form.ticket && form.ticket.value) || '';
+      const had = box.contains(document.activeElement) ? document.activeElement.value : null;   // 가격표가 늦게 와 다시 그릴 때 포커스 유지
       box.innerHTML = list.map(x => `<label class="ap-opt"><input type="radio" name="ticket" value="${esc(x.key)}"${cur === x.key ? ' checked' : ''}>
         <span class="t">${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</span>
         ${x.amount != null ? `<span class="p">${wonText(x.amount)}</span>` : ''}</label>`).join('');
+      if (had != null) { const i = box.querySelector(`input[value="${had}"]`) || box.querySelector('input'); if (i) i.focus({ preventScroll: true }); }
     };
     draw();
     if (CFG.api && box) {
@@ -90,7 +92,8 @@
         if (r && r.ok && Array.isArray(r.tickets) && r.tickets.length) { list = r.tickets; draw(); updateSummary(); }
       }).catch(() => { /* 가격표를 못 받으면 종류 이름만 — 가격은 결제 화면에서 */ });
     }
-    const text = k => { const x = list.find(t => t.key === k); return x ? `${x.label}${x.badge ? ` (${x.badge})` : ''}${x.amount != null ? ` · ${wonText(x.amount)}` : ''}` : ''; };
+    // 요약·접수 글엔 종류·뱃지만 — 금액은 결제 화면이 그 사람 기준으로 다시 정한다(1회권 구매자 가격·날짜가 바뀌는 밤)
+    const text = k => { const x = list.find(t => t.key === k); return x ? `${x.label}${x.badge ? ` (${x.badge})` : ''}` : ''; };
     return { value: () => [], text, ticket: () => (form.ticket && form.ticket.value) || '' };
   }
 
@@ -403,7 +406,7 @@
     if (!p.enabled) return fail('지금은 온라인 결제를 받지 않아요. 담당자가 연락드릴게요.');
     try { await loadSdk(); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
     // 결제 완료 화면이 '무엇을 · 얼마에'를 보여 주게 고른 것도 남김 (같은 브라우저로 돌아올 때만 — 개인정보는 이 기기 sessionStorage 에만)
-    stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now(), what: o.what || '',
+    stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now(), what: o.what || '', pick: x.key,
       item: { text: optText(x), amount: p.amount } });
     window.AUTHNICE.requestPay({
       clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,

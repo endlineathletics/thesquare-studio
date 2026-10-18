@@ -67,6 +67,7 @@ text/plain으로 보내는 건 **사전요청(OPTIONS)만 생략**하는 것이�
   "phone": "010-9876-5432",
   "experience": "처음이에요",
   "preference": [],
+  "ticket": "pack8",
   "region": "서울 구로구",
   "guardian": null,
   "agreements": { "privacy": true, "notification": true, "guardian": false },
@@ -126,7 +127,7 @@ text/plain으로 보내는 건 **사전요청(OPTIONS)만 생략**하는 것이�
 - `#{희망반}` ← `preference.class + " " + preference.days`
 - `#{희망시간}` ← `preference.time`
 - `#{희망코치}` ← `preference.coach`
-- `#{희망수업}` ← 요가 `preference` 배열을 `"월 19:30 하타힐링(이꽃미), 수 19:30 빈야사(이꽃미)"`처럼 이어 붙인 값
+- `#{희망수업}` ← (2026-10-18 부터 요가 `preference` 는 늘 `[]` — 이제는 `ticket` 의 수강권 이름이 자연스러운 값. 초안일 뿐 관리앱엔 접수 알림톡 템플릿이 없음) 요가 `preference` 배열을 `"월 19:30 하타힐링(이꽃미), 수 19:30 빈야사(이꽃미)"`처럼 이어 붙인 값
 
 변수 길이 제한이 있으니, 요가 수업을 많이 고르면 앞 몇 개만 넣고 "외 N개"로 줄이는 걸 추천합니다.
 
