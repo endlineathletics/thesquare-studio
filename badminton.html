@@ -102,7 +102,7 @@
         <form class="bk-form" id="bkForm" novalidate>
           <label>이름 *<input name="name" required autocomplete="name"></label>
           <label>연락처 *<input name="phone" type="tel" required inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
-          <label>인원<input name="people" type="number" min="1" inputmode="numeric" placeholder="예: 8"></label>
+          <label>인원<input name="people" type="number" min="1" inputmode="numeric" placeholder="최대 12명"></label><!-- 2026-10-19 센터 피드백 "배드민턴 인원수 최대 12명이라고 쓰게" — 입력 샘플만 (막지는 않음) -->
           <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
           <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
           <div id="bkTerms"></div><!-- 대관 환불 규정 (관리프로그램 > 안내문, assets/pay-ui.js) — 체크해야 [결제하기] -->
