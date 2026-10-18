@@ -15,6 +15,8 @@
   const YOGA_TICKETS = [['trial1', '체험 1회권'], ['trial5', '체험 5회권'], ['pack8', '8회 회원권'], ['pack24', '24회 회원권'],
     ['private1', '프라이빗 1회'], ['private5', '프라이빗 5회']];
   const wonText = n => Number(n).toLocaleString('ko-KR') + '원';
+  // 가격 칸 — 할인가(10월 한정 등, 관리프로그램이 regular = 정가를 줄 때)면 정가를 취소선으로 위에 (2026-10-19)
+  const priceHtml = x => `${x.regular > x.amount ? `<s>${wonText(x.regular)}</s>` : ''}${wonText(x.amount)}`;
 
   /* ---------- 연락처 자동 하이픈 ---------- */
   form.phone.addEventListener('input', () => {
@@ -83,7 +85,7 @@
       const had = box.contains(document.activeElement) ? document.activeElement.value : null;   // 가격표가 늦게 와 다시 그릴 때 포커스 유지
       box.innerHTML = list.map(x => `<label class="ap-opt"><input type="radio" name="ticket" value="${esc(x.key)}"${cur === x.key ? ' checked' : ''}>
         <span class="t">${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</span>
-        ${x.amount != null ? `<span class="p">${wonText(x.amount)}</span>` : ''}</label>`).join('');
+        ${x.amount != null ? `<span class="p">${priceHtml(x)}</span>` : ''}</label>`).join('');
       if (had != null) { const i = box.querySelector(`input[value="${had}"]`) || box.querySelector('input'); if (i) i.focus({ preventScroll: true }); }
     };
     draw();
@@ -333,7 +335,8 @@
 
   /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(배드민턴 반 이름), pick(요가 — 신청서에서 고른 수강권 key) }
       고르기 → 환불 규정 체크(PAYUI.terms — 체크해야 버튼이 켜짐) → [N원 결제하기] → 확인창(종목·수강권·금액·이름·연락처) → 결제창.
-      요가는 신청서에서 고른 수강권(o.pick, 없으면 서버가 저장해 둔 r.picked)을 미리 체크 — 그 사람이 살 수 없는 것(체험권 1인 1번)이면 안내 + 고를 수 있는 첫 것 */
+      요가는 신청서에서 고른 수강권(o.pick, 없으면 서버가 저장해 둔 r.picked)을 다시 고르게 하지 않고 그것만 보여 준다(2026-10-19 사용자 "신청 누르면
+      수강권 선택이 다시 나와서 없애줘") — 고른 게 없거나(옛 신청서) 그 사람이 살 수 없는 것(체험권 1인 1번)이면 예전처럼 목록 + 고를 수 있는 첫 것 */
   async function payBox(box, o) {
     if (!box) return;
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
@@ -352,12 +355,14 @@
     const pick = o.pick || r.picked || '';
     const picked = pick ? r.options.find(x => x.key === pick) : null;
     const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
+    const fixed = TYPE === 'yoga' && picked && !picked.disabled;   // 신청서에서 고른 수강권 그대로
     const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
-    box.innerHTML = `<h3>${TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
-      <div class="ap-opts" role="radiogroup">${r.options.map(x => `
+    const optBody = x => `<span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${optSub(x)}</span>
+          <span class="p">${priceHtml(x)}</span>`;
+    box.innerHTML = `<h3>${fixed ? '결제할 수강권' : TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
+      ${fixed ? `<div class="ap-opt fixed">${optBody(first)}</div>` : `<div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
-          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${optSub(x)}</span>
-          <span class="p">${won(x.amount)}</span></label>`).join('')}</div>
+          ${optBody(x)}</label>`).join('')}</div>`}
       ${picked && picked.disabled ? `<p class="ap-pay-msg err" role="alert">신청서에서 고른 ${esc(picked.label)}은 지금 살 수 없어요 — 다른 수강권을 골라 주세요.</p>` : ''}
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
       ${first ? '<div id="payTerms"></div>' : ''}
@@ -381,7 +386,7 @@
     }));
     go.onclick = async () => {
       const sel = box.querySelector('input[name=payopt]:checked');
-      const x = sel && r.options.find(y => y.key === sel.value);
+      const x = fixed ? first : sel && r.options.find(y => y.key === sel.value);
       if (!x || st.busy || !st.terms.ok()) return;
       const yes = await window.PAYUI.confirm({
         title: '결제 전에 확인해 주세요',
