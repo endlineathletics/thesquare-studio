@@ -34,7 +34,7 @@
       badminton: {
         name: '배드민턴센터', phone: '010-7576-1861', unit: '1코트 1시간', price: 52800,
         courts: ['COURT 1', 'COURT 2', 'COURT 3'], title: 'COURT RESERVATION',
-        note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로 따로 신청해주세요',
+        note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로, 자정을 넘기는 대관은 날짜별로 따로 신청해주세요 · 레슨 시간과 레슨 뒤 정리 시간(30분~1시간)은 예약할 수 없어요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
       yoga: {
