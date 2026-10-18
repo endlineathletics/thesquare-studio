@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261018a">
+<link rel="stylesheet" href="assets/style.css?v=20261018b">
 <link rel="stylesheet" href="assets/booking.css?v=20261014h">
 </head>
 <body data-page="badminton">
@@ -106,6 +106,7 @@
           <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
           <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
           <div id="bkTerms"></div><!-- 대관 환불 규정 (관리프로그램 > 안내문, assets/pay-ui.js) — 체크해야 [결제하기] -->
+          <p class="bk-hold" id="bkHold" hidden aria-live="polite"></p><!-- 결제 대기 15분 경고 · 결제창이 열린 동안 남은 시간 (assets/booking.js holdNote) -->
           <button type="submit" class="bk-submit" id="bkSubmit" disabled>결제하기</button>
           <p class="bk-msg" id="bkMsg"></p>
         </form>
@@ -386,6 +387,6 @@
 <script src="assets/booking-config.js?v=20261014i"></script>
 <script src="assets/main.js?v=20261011a"></script>
 <script src="assets/pay-ui.js?v=20261018a"></script>
-<script src="assets/booking.js?v=20261018a"></script>
+<script src="assets/booking.js?v=20261018b"></script>
 </body>
 </html>

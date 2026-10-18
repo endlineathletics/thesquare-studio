@@ -639,6 +639,10 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}
 .bk-copy{border:1px solid var(--ink);background:#fff;font:700 13px var(--sans);padding:0 14px;cursor:pointer}
 .bk-msg small{color:var(--ink-3)}
+/* 결제 대기 15분 경고 (버튼 위, 빨강) — 결제창이 열린 동안은 남은 시간이 1초마다 줄어듦 (booking.js holdCountdown) */
+.bk-hold{margin:0;color:#c0392b;font-size:13.5px;font-weight:700;line-height:1.55}
+.bk-hold[hidden]{display:none}
+.bk-hold b{font-variant-numeric:tabular-nums;font-size:15px}
 @media (max-width:1020px){
   .bk-body{grid-template-columns:1fr}
   .bk-side{border-left:0;border-top:1px solid var(--line)}

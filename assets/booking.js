@@ -479,6 +479,31 @@
   // 대관 환불 규정 (2026-10-18 — 관리프로그램 > 안내문 '대관 환불 규정', assets/pay-ui.js). 체크해야 [결제하기]가 켜짐 · 문자 접수(api 없음)엔 없음
   const terms = CFG.api && $('bkTerms') && window.PAYUI
     ? window.PAYUI.terms($('bkTerms'), { api: CFG.api, key: 'refund_rental', phone: SP.phone, onChange: () => validate() }) : null;
+  /* 결제 대기 15분 경고 — [결제하기] 버튼 위 #bkHold (2026-10-18 센터 "빨간 글자로 경고문구, 시간 줄어들게").
+     관리프로그램은 신청(book)을 받는 순간 그 시간을 잡아 두고 PAY_HOLD_MIN(15)분 안에 결제가 안 끝나면 자동 취소 + 칸 해제(pay_expire_due).
+     결제창을 열기 전엔 고정 경고, 결제창이 열려 있는 동안(PC — 휴대폰은 결제 화면으로 넘어감)은 서버 expiresAt 기준 남은 시간을 1초마다 */
+  const HOLD_MIN = CFG.payHoldMin || 15;
+  const HOLD_NOTE = `결제창이 열리면 ${HOLD_MIN}분 안에 결제를 마쳐 주세요 — 시간이 지나면 신청이 자동 취소되고 고른 시간이 풀려요.`;
+  let holdTimer = 0;
+  function holdNote(html) {
+    const el = $('bkHold');
+    if (!el) return;
+    el.innerHTML = html || '';
+    el.hidden = !html;
+  }
+  function holdCountdown(until) {
+    clearInterval(holdTimer);
+    const tick = () => {
+      const left = Math.max(0, until - Date.now());
+      const m = Math.floor(left / 60e3), s = Math.floor(left / 1e3) % 60;
+      holdNote(`⏱ 남은 결제 시간 <b>${m}:${String(s).padStart(2, '0')}</b> — 시간이 지나면 신청이 자동 취소돼요.`);
+      if (!left) { clearInterval(holdTimer); holdTimer = 0; }
+    };
+    tick();
+    holdTimer = setInterval(tick, 1000);
+  }
+  function holdReset() { clearInterval(holdTimer); holdTimer = 0; holdNote(CFG.api ? esc(HOLD_NOTE) : ''); }
+  holdReset();
   function validate() {
     const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked
       && (!terms || terms.ok());
@@ -735,7 +760,9 @@
     // 결제 대기 시간(서버 expiresAt, KST)이 지나면 서버가 칸을 푼다 — 결제창이 결과 없이 사라졌을 때 화면도 되돌리게.
     // 기기 시계가 크게 어긋나 있으면 15분으로
     const left = Date.parse(String(p.expiresAt) + '+09:00') - Date.now();
-    cur.timer = setTimeout(() => payStop(cur, 'timeout'), (left > 60e3 && left < 16 * 60e3 ? left : 15 * 60e3) + 30e3);
+    const until = Date.now() + (left > 60e3 && left < 16 * 60e3 ? left : HOLD_MIN * 60e3);
+    cur.timer = setTimeout(() => payStop(cur, 'timeout'), until - Date.now() + 30e3);
+    holdCountdown(until);   // 버튼 위 빨간 남은 시간 — 결제창이 끝나면(payStop) 고정 경고로 되돌림
     btn.textContent = '결제 진행 중…';
     try {
       window.AUTHNICE.requestPay({
@@ -772,6 +799,7 @@
     const r = await release(cur);
     const freed = r === 'ok' || r === 'done';   // 풀었거나 이미 풀린 주문
     pay = null; stash(null);
+    holdReset();
     // 풀린 칸을 다시 불러오게 — 못 풀었으면(연결 실패) 그대로 둠: 내 신청이 잡은 칸이 '그 사이 예약됨'으로 보여 선택이 지워지지 않게
     if (freed) { await loading[cur.date]; delete booked[cur.date]; }
     let after;
