@@ -11,6 +11,10 @@
   const DAYS = ['월', '화', '수', '목', '금'];
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // 요가 수강권 종류(가격표를 못 받을 때의 이름) — pref 를 만들기 전에 있어야 함(const 는 끌어올려지지 않음)
+  const YOGA_TICKETS = [['trial1', '체험 1회권'], ['trial5', '체험 5회권'], ['pack8', '8회 회원권'], ['pack24', '24회 회원권'],
+    ['private1', '프라이빗 1회'], ['private5', '프라이빗 5회']];
+  const wonText = n => Number(n).toLocaleString('ko-KR') + '원';
 
   /* ---------- 연락처 자동 하이픈 ---------- */
   form.phone.addEventListener('input', () => {
@@ -67,9 +71,27 @@
     };
   }
 
-  // 요가는 신청서에서 시간·강사를 고르지 않는다 (2026-10-18 — 8회권 포함 전부, 수강권 결제 뒤 앱에서 예약). 서버엔 빈 목록
+  // 요가는 신청서에서 시간·강사를 고르지 않고(2026-10-18 — 수강권 결제 뒤 앱에서 예약) 수강권을 고른다(2026-10-19 — 03 '수업 예약' 칸 대신
+  // '수강권 선택'): 관리프로그램 가격표 6종(GET api?action=yoga_tickets — 오늘 가격·한정가 뱃지)을 라디오로, 못 받으면 종류 이름만(가격은 결제 화면에서).
+  // 고른 것은 신청서에 ticket 으로 같이 저장되고(관리자 수강신청·수강권 등록에 미리 채워짐) 결제 화면에서 미리 골라진다. preference 는 그대로 빈 목록
   function yogaPref() {
-    return { value: () => [], text: () => '' };
+    const box = $('ticketOpts');
+    let list = YOGA_TICKETS.map(([key, label]) => ({ key, label, sub: '', amount: null, badge: '' }));
+    const draw = () => {
+      if (!box) return;
+      const cur = (form.ticket && form.ticket.value) || '';
+      box.innerHTML = list.map(x => `<label class="ap-opt"><input type="radio" name="ticket" value="${esc(x.key)}"${cur === x.key ? ' checked' : ''}>
+        <span class="t">${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</span>
+        ${x.amount != null ? `<span class="p">${wonText(x.amount)}</span>` : ''}</label>`).join('');
+    };
+    draw();
+    if (CFG.api && box) {
+      fetch(CFG.api + '?action=yoga_tickets').then(r => r.json()).then(r => {
+        if (r && r.ok && Array.isArray(r.tickets) && r.tickets.length) { list = r.tickets; draw(); updateSummary(); }
+      }).catch(() => { /* 가격표를 못 받으면 종류 이름만 — 가격은 결제 화면에서 */ });
+    }
+    const text = k => { const x = list.find(t => t.key === k); return x ? `${x.label}${x.badge ? ` (${x.badge})` : ''}${x.amount != null ? ` · ${wonText(x.amount)}` : ''}` : ''; };
+    return { value: () => [], text, ticket: () => (form.ticket && form.ticket.value) || '' };
   }
 
   /* ---------- 값 수집 & 검증 ---------- */
@@ -86,6 +108,7 @@
       grade: f.grade ? f.grade.value : undefined,
       experience: f.experience.value,
       preference: pref.value(),
+      ticket: TYPE === 'yoga' ? pref.ticket() : undefined,     // 요가 수강권 종류 (2026-10-19)
       region: f.region.value.trim(),
       guardian: isMinor() ? { name: f.gName.value.trim(), relation: f.gRel.value } : null,
       agreements: { privacy: f.agree.checked, notification: f.agree.checked, guardian: isMinor() ? f.gAgree.checked : false },
@@ -105,6 +128,7 @@
     if (TYPE === 'badminton' && !v.grade) errs.push('grade');
     if (!v.experience) errs.push('experience');
     if (TYPE === 'badminton' && !v.preference) errs.push('preference');
+    if (TYPE === 'yoga' && !v.ticket) errs.push('ticket');
     if (!v.region) errs.push('region');
     if (!v.agreements.privacy) errs.push('agree');
     if (v.guardian) {
@@ -130,6 +154,7 @@
     if (TYPE === 'badminton') L.push(['급수', v.grade]);
     L.push(['경력', v.experience]);
     if (TYPE === 'badminton') L.push(['희망 수업', pref.text(v.preference)]);
+    if (TYPE === 'yoga') L.push(['수강권', pref.text(v.ticket)]);
     L.push(['거주 지역', v.region]);
     return L;
   }
@@ -230,7 +255,7 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (mode === 'ok' && id) {
       const what = TYPE === 'badminton' && v.preference ? `${v.preference.class} ${v.preference.days}` : '';
-      payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest(), what });
+      payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest(), what, pick: v.ticket || '' });
     }
   }
 
@@ -303,8 +328,9 @@
   };
   const appLogin = () => { try { return new URL(CFG.api).origin + '/login'; } catch (e) { return ''; } };
 
-  /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(배드민턴 반 이름) }
-      고르기 → 환불 규정 체크(PAYUI.terms — 체크해야 버튼이 켜짐) → [N원 결제하기] → 확인창(종목·수강권·금액·이름·연락처) → 결제창 */
+  /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(배드민턴 반 이름), pick(요가 — 신청서에서 고른 수강권 key) }
+      고르기 → 환불 규정 체크(PAYUI.terms — 체크해야 버튼이 켜짐) → [N원 결제하기] → 확인창(종목·수강권·금액·이름·연락처) → 결제창.
+      요가는 신청서에서 고른 수강권(o.pick, 없으면 서버가 저장해 둔 r.picked)을 미리 체크 — 그 사람이 살 수 없는 것(체험권 1인 1번)이면 안내 + 고를 수 있는 첫 것 */
   async function payBox(box, o) {
     if (!box) return;
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
@@ -320,13 +346,16 @@
     if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : errText(r, '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
     if (!r.options.length) return say(esc(r.note || '확인 후 담당자가 연락드릴게요.'));
-    const first = r.options.find(x => !x.disabled);
+    const pick = o.pick || r.picked || '';
+    const picked = pick ? r.options.find(x => x.key === pick) : null;
+    const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
     const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
     box.innerHTML = `<h3>${TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
       <div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
           <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${optSub(x)}</span>
           <span class="p">${won(x.amount)}</span></label>`).join('')}</div>
+      ${picked && picked.disabled ? `<p class="ap-pay-msg err" role="alert">신청서에서 고른 ${esc(picked.label)}은 지금 살 수 없어요 — 다른 수강권을 골라 주세요.</p>` : ''}
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
       ${first ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>

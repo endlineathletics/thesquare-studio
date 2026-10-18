@@ -794,6 +794,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-opt .tm{color:var(--blue)}
 .ap-opt .p{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ap-opt.off{opacity:.45;cursor:not-allowed}
+.fld.err .ap-opt{border-color:#d0342c}   /* 요가 신청서 03 수강권 선택 — 안 고르고 제출하면 빨간 테두리 (2026-10-19) */
+.ap-tickets .ap-pay-msg{margin:0;font-size:13.5px;color:var(--ink-3)}
 .ap-paybtn{width:100%;margin-top:14px;background:var(--blue);color:#fff;border:0;padding:16px;font:800 16px var(--sans);cursor:pointer}
 .ap-paybtn:disabled{opacity:.6;cursor:wait}
 .ap-done .ap-pay-msg,.ap-pay-msg{margin-top:12px;font-size:14px;color:var(--ink-2);line-height:1.6}
