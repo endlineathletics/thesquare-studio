@@ -48,12 +48,12 @@
     // GET api?action=bd_slots&grade= 가 정원·'붙은 두 급수까지'·입문 3명 조·타임별 받을 급수로 달마다 들어갈 수 있는지 준다.
     // avail[반 key][시작 HH:MM] = [{ym, ok}] (이번 달 남은 수업 → 다음 달 순). 못 받으면 {} — 마감 표시 없이 예전처럼(결제 화면이 다시 막음)
     let avail = {}, loadNo = 0;
-    const slotState = (k, t) => {               // '' 모름 · 'ok' · 'later:11'(그 달부터) · 'full'
+    // 첫 달(이번 달 남은 수업, 없으면 다음 달)이 마감이면 그 타임은 마감 — '11월부터' 같은 건 없음(2026-10-19 사용자 "11월에 재결제할 수도
+    // 있어서 마감인 건 신청 절대 못 해" — 관리프로그램도 이번 달이 마감이면 다음 달을 막음)
+    const slotState = (k, t) => {               // '' 모름 · 'ok' · 'full'
       const ms = (avail[k] || {})[t.split('~')[0]];
       if (!ms || !ms.length) return '';
-      if (ms[0].ok) return 'ok';
-      const m = ms.find(x => x.ok);
-      return m ? 'later:' + Number(m.ym.slice(5)) : 'full';
+      return ms[0].ok ? 'ok' : 'full';
     };
     const classFull = g => g.times.every(t => slotState(g.key, t) === 'full');
 
@@ -70,7 +70,7 @@
     }
 
     const chip = (name, v, st, on) => {
-      const off = st === 'full', note = off ? '마감' : (st.startsWith('later:') ? `${st.slice(6)}월부터` : '');
+      const off = st === 'full', note = off ? '마감' : '';
       return `<label${off ? ' class="off"' : ''}><input type="radio" name="${name}" value="${esc(v)}"${on ? ' checked' : ''}${off ? ' disabled' : ''}><span>${esc(v)}${note ? `<small>${note}</small>` : ''}</span></label>`;
     };
     function drawSub() {
@@ -95,6 +95,8 @@
         updateSummary();
       }).catch(() => { /* 못 받으면 마감 표시 없이 — 결제 화면이 정원·급수를 다시 본다 */ });
     }
+    if ($('prefNote')) $('prefNote').innerHTML = '급수를 먼저 고르면 들어갈 수 있는 시간만 열려요. <b>마감</b>은 정원이 찼거나 지금 다니는 분들과 급수가 맞지 않는 시간이에요 '
+      + `(한 타임엔 붙은 두 급수까지, 입문은 입문끼리 3명씩). 마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
     drawCards();
     loadAvail();
     form.addEventListener('change', e => {
@@ -383,6 +385,10 @@
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
     let r = null;
     try { r = await post({ action: 'pay_options', kind: 'apply', id: o.id, phone: o.phone, test: o.test }); } catch (e) { /* 아래 */ }
+    const closed = t => {                       // 살 수 있는 게 없음(마감 등) — 결제를 못 하니 신청도 아님 (2026-10-19, 담당자 연락 없음)
+      box.innerHTML = `<p class="ap-pay-msg">${t}</p>`;
+      if ($('doneMsg')) $('doneMsg').textContent = '선택한 시간이 마감돼 신청이 접수되지 않았어요.';
+    };
     const say = t => {                          // 결제가 없으면 위 '결제하면 신청과 등록이 끝나요' 줄도 접수 안내로 바꾼다 (관리프로그램이 신청서를 드러냄)
       box.innerHTML = `<p class="ap-pay-msg">${t}</p>`;
       if ($('doneMsg')) $('doneMsg').textContent = `신청이 접수됐어요${o.id ? ` (신청번호 ${o.id})` : ''}.`;
@@ -396,7 +402,7 @@
     }
     if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : errText(r, '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
-    if (!r.options.length) return say(esc(r.note || '확인 후 담당자가 연락드릴게요.'));
+    if (!r.options.length) return closed(esc(r.note || `지금은 신청할 수 없어요. 문의는 ${CFG.phone}로 연락 주세요.`));
     const pick = o.pick || r.picked || '';
     const picked = pick ? r.options.find(x => x.key === pick) : null;
     const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
@@ -412,13 +418,13 @@
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
       ${first ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
-        <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : '<p class="ap-pay-msg">지금은 모두 마감이에요. 담당자가 연락드릴게요.</p>'}
+        <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 대기 신청은 ${esc(CFG.phone)}로 연락 주세요.</p>`}
       <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
       ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
         : (o.test ? '<p class="ap-pay-note">시험 주소예요 — 실제로 결제되고 등록돼요.</p>' : '')}`;
     const go = box.querySelector('#payGo');
-    if (!go) {                                  // 모두 마감 — 관리프로그램이 신청서를 '새 신청'으로 드러내고 담당자가 연락
-      if ($('doneMsg')) $('doneMsg').textContent = `신청이 접수됐어요${o.id ? ` (신청번호 ${o.id})` : ''}.`;
+    if (!go) {                                  // 모두 마감 — 결제를 못 하니 신청도 아님(관리프로그램은 결제 전 신청서를 24시간 뒤 지움), 대기는 전화
+      if ($('doneMsg')) $('doneMsg').textContent = '선택한 시간이 마감돼 신청이 접수되지 않았어요.';
       return;
     }
     const st = { busy: false, agreed: false };
