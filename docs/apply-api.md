@@ -66,10 +66,7 @@ text/plain으로 보내는 건 **사전요청(OPTIONS)만 생략**하는 것이�
   "age": 29,
   "phone": "010-9876-5432",
   "experience": "처음이에요",
-  "preference": [
-    { "day": "월", "time": "19:30~20:20", "class": "하타힐링", "teacher": "이꽃미" },
-    { "day": "수", "time": "19:30~20:20", "class": "빈야사", "teacher": "이꽃미" }
-  ],
+  "preference": [],
   "region": "서울 구로구",
   "guardian": null,
   "agreements": { "privacy": true, "notification": true, "guardian": false },
@@ -78,7 +75,7 @@ text/plain으로 보내는 건 **사전요청(OPTIONS)만 생략**하는 것이�
   "source": "homepage"
 }
 ```
-- 요가는 `grade`가 없고, `preference`가 **배열**(여러 수업 선택)입니다.
+- 요가는 `grade`가 없고, `preference`는 **빈 배열**입니다 (2026-10-18 — 신청서에서 시간·강사를 고르지 않고 수강권 결제 뒤 앱에서 예약. 그 전 화면은 `{ day, time, class, teacher }` 배열을 보냈고 관리프로그램은 둘 다 받음).
 
 ## 응답
 ```json

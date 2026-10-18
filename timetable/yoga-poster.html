@@ -68,7 +68,7 @@
 <script src="../assets/schedule.js"></script>
 <script>
   const D = ['월','화','수','목','금'], E = ['MON','TUE','WED','THU','FRI'];
-  const cats = YOGA_CATS, data = YOGA_SCHEDULE;
+  const cats = yogaTeacherCats(), data = YOGA_SCHEDULE;   // 강사별 색 (2026-10-18 — 홈페이지 시간표와 같음)
   document.getElementById('legend').innerHTML = Object.values(cats).map(c => `<span><i style="background:${c.c}"></i>${c.label}</span>`).join('');
   let h = '<thead><tr><th class="time"></th>' + D.map((d,i)=>`<th>${d}<small>${E[i]}</small></th>`).join('') + '</tr></thead><tbody>';
   const skip = {};
@@ -82,7 +82,7 @@
         let n = 1; while (data[r+n] && data[r+n].cells && data[r+n].cells[c] === 'R') { skip[(r+n)+','+c] = 1; n++; }
         h += `<td class="band" rowspan="${n}">대관</td>`;
       } else if (!cell) h += '<td class="empty"></td>';
-      else { const k = yogaCat(cell[0]), cc = cats[k]; h += `<td><div class="cls" style="--c:${cc.c};--bg:${cc.bg}"><b>${cell[0]}</b><span>${cell[1]}</span></div></td>`; }
+      else { const cc = cats[cell[1]]; h += `<td><div class="cls" style="--c:${cc.c};--bg:${cc.bg}"><b>${cell[0]}</b><span>${cell[1]}</span></div></td>`; }
     });
     h += '</tr>';
   });

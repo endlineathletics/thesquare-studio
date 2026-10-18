@@ -55,7 +55,7 @@
   const DAYS_EN = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 
   function clsHTML(cell, cats, catFn) {
-    const k = cell[2] || catFn(cell[0]);
+    const k = cell[2] || catFn(cell[0], cell);
     const c = cats[k];
     return `<div class="cls" data-cat="${k}" style="--c:${c.c};--bg:${c.bg}"><b>${cell[0]}</b><span>${cell[1]}</span></div>`;
   }
@@ -109,8 +109,9 @@
     const kind = root.dataset.timetable;
     const bd = kind === 'badminton';
     const data = bd ? window.BD_SCHEDULE : window.YOGA_SCHEDULE;
-    const cats = bd ? window.BD_CATS : window.YOGA_CATS;
-    const catFn = bd ? window.bdCat : window.yogaCat;
+    // 요가는 강사별 색 (2026-10-18 — 같은 강사 수업은 같은 색, 칩 = 강사 범례 가나다순 · 누르면 그 강사 수업만 진하게)
+    const cats = bd ? window.BD_CATS : window.yogaTeacherCats();
+    const catFn = bd ? window.bdCat : (name, cell) => cell[1];
     const nd = data.find(s => s.cells).cells.length;
     const table = root.querySelector('table');
     const list = root.querySelector('.daylist');

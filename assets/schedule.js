@@ -17,6 +17,33 @@ window.YOGA_CATS = {
   hot:      { label: '핫요가',      c: '#e0445a', bg: '#ffe8eb' },
 };
 
+/* 요가 강사별 색 (2026-10-18 센터 요청 "같은 강사 수업은 같은 색") — yoga.html 시간표 · timetable/yoga-poster.html 이 씀.
+   범례(칩)는 시간표에 나오는 강사를 가나다순으로. 새 강사는 여기에 한 줄 — 없으면 YOGA_TEACHER_SPARE 색을 이름순으로 돌려 씀.
+   (수업 종류 색 YOGA_CATS · yogaCat 은 관리프로그램 수강생 앱 색과 맞춰 둔 것이라 그대로 둠) */
+window.YOGA_TEACHERS = {
+  '김도휘': { c: '#12a38a', bg: '#e2f6f2' },
+  '서수옥': { c: '#c99a0e', bg: '#fdf5d9' },
+  '안유림': { c: '#0058FC', bg: '#e6eeff' },
+  '오지운': { c: '#7a5ce0', bg: '#efebff' },
+  '이꽃미': { c: '#c2418f', bg: '#fbe8f3' },
+  '이은빈': { c: '#e0445a', bg: '#ffe8eb' },
+  '이지영': { c: '#6f9a12', bg: '#f0f9dc' },
+  '이진선': { c: '#e0752f', bg: '#fff0e6' },
+};
+window.YOGA_TEACHER_SPARE = [{ c: '#1a9fd6', bg: '#e0f3fb' }, { c: '#5b6474', bg: '#eef0f3' }, { c: '#9a6b3f', bg: '#f6eee6' }];
+/** 시간표(YOGA_SCHEDULE)에 나오는 강사 → { 이름: { label, c, bg } } — 가나다순 (범례 순서) */
+window.yogaTeacherCats = function () {
+  const names = [...new Set(window.YOGA_SCHEDULE.filter(s => s.cells).flatMap(s => s.cells.filter(c => c && c !== 'R').map(c => c[1])))]
+    .sort((a, b) => a.localeCompare(b, 'ko'));
+  const out = {};
+  let spare = 0;
+  names.forEach(n => {
+    const t = window.YOGA_TEACHERS[n] || window.YOGA_TEACHER_SPARE[spare++ % window.YOGA_TEACHER_SPARE.length];
+    out[n] = { label: n, c: t.c, bg: t.bg };
+  });
+  return out;
+};
+
 window.yogaCat = function (name) {
   if (name.includes('핫요가')) return 'hot';
   if (name.includes('필라테스')) return 'pilates';

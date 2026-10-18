@@ -476,8 +476,12 @@
 
   /* ---------- 신청 폼 ---------- */
   const form = $('bkForm');
+  // 대관 환불 규정 (2026-10-18 — 관리프로그램 > 안내문 '대관 환불 규정', assets/pay-ui.js). 체크해야 [결제하기]가 켜짐 · 문자 접수(api 없음)엔 없음
+  const terms = CFG.api && $('bkTerms') && window.PAYUI
+    ? window.PAYUI.terms($('bkTerms'), { api: CFG.api, key: 'refund_rental', phone: SP.phone, onChange: () => validate() }) : null;
   function validate() {
-    const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked;
+    const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked
+      && (!terms || terms.ok());
     $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
     return ok && !state.sending;
   }
@@ -546,11 +550,23 @@
       return;
     }
 
+    const name = form.name.value.trim(), phone = form.phone.value.trim();
+    // 결제 전 확인창 (2026-10-18) — 공간 · 날짜 · 코트 · 시간 · 금액 · 이름 · 연락처. 취소하면 아무것도 안 보냄(칸도 안 잡음)
+    if (window.PAYUI) {
+      const yes = await window.PAYUI.confirm({
+        title: '예약·결제 전에 확인해 주세요',
+        rows: [['공간', SP.name], ['날짜', dayLabel(sel.date)], NC > 1 ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
+          ['이름', name], ['연락처', phone]],
+        amount: priceOf(sel),
+        note: isPayTest() ? '시험 주소예요 — 테스트 결제창이 열려요.' : '카드 결제가 끝나면 바로 확정되고, 입력하신 번호로 확정 문자가 가요.',
+      });
+      if (!yes) return;
+      if (state.sending || state.sel !== sel || !validate() || !keepSel()) return;   // 확인창을 보는 사이 바뀐 것 (다른 칸 · 그 사이 예약됨)
+    }
     const btn = $('bkSubmit');
     state.sending = true;
     btn.disabled = true; btn.textContent = '결제 준비 중…';
     clearDraft();   // 지난 결제 실패 안내 등은 내림 (새 결과가 다시 씀)
-    const name = form.name.value.trim(), phone = form.phone.value.trim();
     let after = null;   // 끝난 뒤 할 일 (선택 지우기 등) — 버튼 문구를 되돌린 다음에. 결과는 보낸 신청(sel) 기준
     try {
       if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
@@ -559,7 +575,11 @@
         // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
         const p = await prepare(r.id, phone);
-        if (p && p.enabled) { openPay(p, { id: r.id, name, phone, date: sel.date }); return; }
+        if (p && p.enabled) {
+          openPay(p, { id: r.id, name, phone, date: sel.date,
+            sum: { where: SP.name + (NC > 1 ? ` · ${courtText(sel.courts)}` : ''), when: dayLabel(sel.date), time: timeText(sel), amount: p.amount } });
+          return;
+        }
         const err = p && p.error;
         let rr = '';
         // 결제 대기 시간이 (거의) 지난 신청(같은 칸을 조금 전에 신청해 둔 것 등) — 잡아 둔 칸을 바로 풀어 다시 결제할 수 있게
@@ -673,7 +693,7 @@
   const PREP_ERRORS = ['already_paid', 'in_progress', 'expired', 'not_payable'];
   async function prepare(id, phone) {
     try {
-      const p = await post({ action: 'pay_prepare', kind: 'rental', id, phone, test: isPayTest() });
+      const p = await post({ action: 'pay_prepare', kind: 'rental', id, phone, test: isPayTest(), agreeRefund: !!(terms && terms.ok()) });
       if (p && p.ok) return p;
       if (p && p.error === 'bad_request') return { enabled: false };
       return p && PREP_ERRORS.includes(p.error) ? { error: p.error, test: p.test === true } : null;
@@ -707,7 +727,7 @@
   async function openPay(p, o) {
     const test = p.mode !== 'live';
     const cur = pay = { id: o.id, phone: o.phone, orderId: p.orderId, date: o.date, test, timer: 0, closing: false };
-    stash({ id: o.id, phone: o.phone, orderId: p.orderId, space, test, at: Date.now() });
+    stash({ id: o.id, phone: o.phone, orderId: p.orderId, space, test, at: Date.now(), sum: o.sum || null });   // sum = 결제 완료 화면 '무엇을 · 얼마에'
     const btn = $('bkSubmit');
     btn.textContent = '결제창 여는 중…';
     try { await loadSdk(p.mode); } catch (e) { payStop(cur, 'sdk'); return; }
@@ -780,12 +800,14 @@
 
   /** 결제 결과 안내 — 대관 화면 맨 위(#bkResult). kind: ok / fail / wait(결과 확인 중), test: 테스트 결제(샌드박스 — 신청은 확정 안 됨).
       화면 안으로 스크롤하고 포커스 */
-  function payBanner(kind, no, msg, test) {
+  function payBanner(kind, no, msg, test, s) {
     const el = $('bkResult');
     if (!el) return;
     const num = no ? ` — 신청번호 <span class="bk2-no">${esc(no)}</span>` : '';
-    el.className = 'bk2-result ' + (kind === 'ok' ? 'ok' : kind === 'wait' ? 'info' : 'err');
-    el.innerHTML = kind === 'ok' ? (test ? `<b>테스트 결제 완료</b>${num}<small>${PAY_TEST_NOTE}</small>` : `<b>결제 완료 · 예약 확정</b>${num}`)
+    const doneView = kind === 'ok' && !test && window.PAYUI;   // 결제 완료 화면 (2026-10-18 — 무엇을 · 얼마에 · 다음 할 일)
+    el.className = 'bk2-result ' + (doneView ? 'done' : kind === 'ok' ? 'ok' : kind === 'wait' ? 'info' : 'err');
+    el.innerHTML = doneView ? paidView(no, s)
+      : kind === 'ok' ? (test ? `<b>테스트 결제 완료</b>${num}<small>${PAY_TEST_NOTE}</small>` : `<b>결제 완료 · 예약 확정</b>${num}`)
       : kind === 'wait' ? `<b>결제 결과를 확인하고 있어요</b>${num}<small>결과는 문자로 알려드릴게요.</small>`
       : `<b>${PAY_FAIL}</b> — 시간을 다시 골라주세요${msg ? `<small>${esc(msg)}</small>` : ''}`;
     el.hidden = false;
@@ -802,6 +824,18 @@
     });
     if (document.readyState === 'complete') show(); else addEventListener('load', show, { once: true });
   }
+  /** 대관 결제 완료 화면 — s: 결제창으로 넘어갈 때 남긴 기록(bkPay — 같은 신청이면 공간 · 날짜 · 시간 · 금액), 없으면 신청번호만 */
+  function paidView(no, s) {
+    const sum = s && s.sum;
+    const rows = sum ? [['예약', `${sum.where}\n${sum.when} · ${sum.time}`], ['결제 금액', won(sum.amount)]] : [];
+    if (no) rows.push(['신청번호', no]);
+    const to = s && s.phone ? `입력하신 번호(${window.PAYUI.maskPhone(s.phone)})` : '입력하신 번호';
+    return window.PAYUI.done({ title: '결제 완료 · 예약 확정', rows, steps: [
+      `${to}로 예약 확정 문자를 보내드려요.`,
+      '예약한 시간에 맞춰 오시면 돼요. 이용 시간이 지나면 다음 예약을 위해 정리해 주세요.',
+      `취소·변경은 ${SP.phone}로 연락 주세요 — 결제 전에 확인한 대관 환불 규정대로 처리해 드려요.`,
+    ] });
+  }
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=&msg=) → 안내 후 주소에서 pay · no · msg 를 뗌 (paytest · #rental 은 그대로).
       → { kind: ok | wait | fail, no } 또는 null(결과 주소 아님). 관리프로그램은 테스트(샌드박스) 주문에만 paytest=1 을 붙여 돌려보낸다 */
   function payResult() {
@@ -813,7 +847,8 @@
     const qs = q.toString();
     history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
     const res = { kind: kind === 'ok' ? 'ok' : msg === PAY_UNKNOWN ? 'wait' : 'fail', no };
-    if (res.kind === 'ok') payBanner('ok', no, '', isPayTest());
+    const s = stashed();                          // resumePay 가 지우기 전에 — 같은 신청이면 완료 화면에 예약 내용
+    if (res.kind === 'ok') payBanner('ok', no, '', isPayTest(), s && s.id === no && s.space === space ? s : null);
     else if (res.kind === 'wait') payBanner('wait', no);
     else payBanner('fail', no, payMsgOk(msg) ? msg : '');
     return res;
@@ -830,7 +865,7 @@
     if (s.space !== space || typeof s.id !== 'string' || !(Date.now() - s.at < 20 * 60e3)) return;   // 다른 공간 · 오래된 기록 — 서버가 15분 뒤 풂
     if (res && res.no && res.no !== s.id) return;   // 다른 신청의 결과
     const r = await release(s);
-    if (r === 'paid') payBanner('ok', s.id, '', s.test === true);
+    if (r === 'paid') payBanner('ok', s.id, '', s.test === true, s);
     else if (r === 'busy') payBanner('wait', s.id);
     else if (!res) payBanner('fail', '');
     if (r === 'ok' || r === 'done') { await loading[state.date]; delete booked[state.date]; load(state.date); }   // 풀린 칸을 다시 불러옴 (처음 조회가 끝난 뒤)

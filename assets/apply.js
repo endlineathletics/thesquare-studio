@@ -67,53 +67,9 @@
     };
   }
 
+  // 요가는 신청서에서 시간·강사를 고르지 않는다 (2026-10-18 — 8회권 포함 전부, 수강권 결제 뒤 앱에서 예약). 서버엔 빈 목록
   function yogaPref() {
-    const classes = [];
-    window.YOGA_SCHEDULE.forEach(s => {
-      if (!s.cells) return;
-      s.cells.forEach((c, i) => {
-        if (!c || c === 'R') return;
-        classes.push({ id: `${i}-${s.time}`, dayIndex: i, day: DAYS[i], time: `${s.time}~${s.end}`, class: c[0], teacher: c[1], cat: window.yogaCat(c[0]) });
-      });
-    });
-    const picked = new Set();
-    let day = Math.min(Math.max(new Date().getDay() - 1, 0), 4);
-
-    $('prefDays').innerHTML = DAYS.map((d, i) => `<button type="button" data-d="${i}" aria-pressed="false">${d}<i hidden></i></button>`).join('');
-    function renderDays() {   // 버튼은 그대로 두고 상태만 갱신 (키보드 포커스 유지)
-      $('prefDays').querySelectorAll('button').forEach(b => {
-        const i = +b.dataset.d, n = classes.filter(c => c.dayIndex === i && picked.has(c.id)).length;
-        b.classList.toggle('on', i === day);
-        b.setAttribute('aria-pressed', String(i === day));
-        const badge = b.querySelector('i');
-        badge.hidden = !n; badge.textContent = n || '';
-      });
-    }
-    function renderList() {
-      const list = classes.filter(c => c.dayIndex === day);
-      $('prefList').innerHTML = list.length ? list.map(c => {
-        const cat = window.YOGA_CATS[c.cat];
-        return `<label style="--c:${cat.c};--bg:${cat.bg}"><input type="checkbox" value="${c.id}"${picked.has(c.id) ? ' checked' : ''}>
-          <span class="yc"><span class="tm">${c.time.split('~')[0]}</span><b>${esc(c.class)}</b><small>${esc(c.teacher)} · ${c.time.replace('~', ' – ')}</small></span></label>`;
-      }).join('') : '<p class="none">이 요일에는 수업이 없습니다.</p>';
-    }
-    $('prefDays').addEventListener('click', e => {
-      const b = e.target.closest('button'); if (!b) return;
-      day = +b.dataset.d; renderDays(); renderList();
-    });
-    $('prefList').addEventListener('change', e => {
-      if (e.target.checked) picked.add(e.target.value); else picked.delete(e.target.value);
-      renderDays(); updateSummary();
-    });
-    renderDays(); renderList();
-
-    return {
-      value() {
-        const v = classes.filter(c => picked.has(c.id)).map(({ day, time, class: cls, teacher }) => ({ day, time, class: cls, teacher }));
-        return v.length ? v : null;
-      },
-      text(v) { return v ? v.map(x => `${x.day} ${x.time} ${x.class}(${x.teacher})`).join('\n') : ''; },
-    };
+    return { value: () => [], text: () => '' };
   }
 
   /* ---------- 값 수집 & 검증 ---------- */
@@ -148,7 +104,7 @@
     if (!PHONE_RE.test(v.phone)) errs.push('phone');
     if (TYPE === 'badminton' && !v.grade) errs.push('grade');
     if (!v.experience) errs.push('experience');
-    if (!v.preference) errs.push('preference');
+    if (TYPE === 'badminton' && !v.preference) errs.push('preference');
     if (!v.region) errs.push('region');
     if (!v.agreements.privacy) errs.push('agree');
     if (v.guardian) {
@@ -173,7 +129,7 @@
     if (v.guardian) L.push(['법정대리인', [v.guardian.name, v.guardian.relation].filter(Boolean).join(' · ')]);
     if (TYPE === 'badminton') L.push(['급수', v.grade]);
     L.push(['경력', v.experience]);
-    L.push([TYPE === 'badminton' ? '희망 수업' : '희망 수업', pref.text(v.preference)]);
+    if (TYPE === 'badminton') L.push(['희망 수업', pref.text(v.preference)]);
     L.push(['거주 지역', v.region]);
     return L;
   }
@@ -272,7 +228,10 @@
     $('applyWrap').hidden = true;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (mode === 'ok' && id) payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest() });
+    if (mode === 'ok' && id) {
+      const what = TYPE === 'badminton' && v.preference ? `${v.preference.class} ${v.preference.days}` : '';
+      payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest(), what });
+    }
   }
 
   /* ---------- 온라인 결제 (2026-10 — 관리프로그램 api 'pay_options' → 'pay_prepare' → 나이스페이 결제창) ----------
@@ -333,7 +292,14 @@
     return sdk;
   }
 
-  /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test } */
+  /** 서버가 준 안내 글(message — 예: 체험권 제한 이유)이 있으면 그 글, 없으면 오류 코드별 문구 (2026-10-18 — [1/6] 체험권 제한과 맞춘 자리) */
+  const errText = (r, dflt) => (r && typeof r.message === 'string' && r.message.trim()) ? r.message.trim().slice(0, 200) : (PAY_ERR[r && r.error] || dflt);
+  /** 고른 것 한 줄 — '8회 회원권 (10월 한정)\n8회 · 결제일부터 30일' / '19:30~20:30 · 11월\n한 달 · 8회' */
+  const optText = x => `${x.time ? x.time + ' · ' : ''}${x.label}${x.badge ? ` (${x.badge})` : ''}${x.sub ? '\n' + x.sub : ''}`;
+  const appLogin = () => { try { return new URL(CFG.api).origin + '/login'; } catch (e) { return ''; } };
+
+  /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(배드민턴 반 이름) }
+      고르기 → 환불 규정 체크(PAYUI.terms — 체크해야 버튼이 켜짐) → [N원 결제하기] → 확인창(종목·수강권·금액·이름·연락처) → 결제창 */
   async function payBox(box, o) {
     if (!box) return;
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
@@ -347,43 +313,64 @@
       return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     }
     if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
-    if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : (PAY_ERR[r.error] || '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
+    if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : errText(r, '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
     if (!r.options.length) return say(esc(r.note || '확인 후 담당자가 연락드릴게요.'));
     const first = r.options.find(x => !x.disabled);
     const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
     box.innerHTML = `<h3>${TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
       <div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
-          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}<small>${esc(x.sub)}</small></span>
+          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}<small>${esc(x.sub)}</small>${x.disabled && x.reason ? `<span class="why">${esc(x.reason)}</span>` : ''}</span>
           <span class="p">${won(x.amount)}</span></label>`).join('')}</div>
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
-      ${first ? `<button type="button" class="ap-paybtn" id="payGo">${won(first.amount)} 결제하기</button>` : '<p class="ap-pay-msg">지금은 모두 마감이에요. 담당자가 연락드릴게요.</p>'}
+      ${first ? '<div id="payTerms"></div>' : ''}
+      ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
+        <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : '<p class="ap-pay-msg">지금은 모두 마감이에요. 담당자가 연락드릴게요.</p>'}
       <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
       ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
         : (o.test ? '<p class="ap-pay-note">시험 주소예요 — 실제로 결제되고 등록돼요.</p>' : '')}`;
     const go = box.querySelector('#payGo');
     if (!go) return;
+    const st = { busy: false, agreed: false };
+    const sync = () => {                        // 버튼: 동의해야 켜짐, 결제 준비 중엔 꺼짐
+      go.disabled = st.busy || !st.agreed;
+      box.querySelector('#payHint').hidden = st.agreed;
+    };
+    st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
+      onChange: ok => { st.agreed = ok; sync(); } });
     box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
       const x = r.options.find(y => y.key === i.value);
-      if (x && !go.disabled) go.textContent = `${won(x.amount)} 결제하기`;
+      if (x && !st.busy) go.textContent = `${won(x.amount)} 결제하기`;
     }));
-    go.onclick = () => startPay(box, o, go);
+    go.onclick = async () => {
+      const sel = box.querySelector('input[name=payopt]:checked');
+      const x = sel && r.options.find(y => y.key === sel.value);
+      if (!x || st.busy || !st.terms.ok()) return;
+      const yes = await window.PAYUI.confirm({
+        title: '결제 전에 확인해 주세요',
+        rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], [TYPE === 'yoga' ? '수강권' : '수강', optText(x)],
+          ['이름', o.name], ['연락처', o.phone]],
+        amount: x.amount,
+        note: r.mode !== 'live' ? '테스트 결제창이 열려요 — 실제로 돈이 나가지 않아요.' : '결제하면 바로 등록되고, 입력하신 번호로 안내 문자가 가요.',
+      });
+      if (yes) startPay(box, o, go, x, st, sync);
+    };
   }
 
-  async function startPay(box, o, go) {
-    const sel = box.querySelector('input[name=payopt]:checked');
+  async function startPay(box, o, go, x, st, sync) {
     const msg = box.querySelector('#payMsg');
-    if (!sel || go.disabled) return;
-    const label = go.textContent;
-    const fail = t => { go.disabled = false; go.textContent = label; msg.textContent = t; };
-    go.disabled = true; go.textContent = '결제창을 여는 중…'; msg.textContent = '';
+    const label = `${won(x.amount)} 결제하기`;
+    const fail = t => { st.busy = false; go.classList.remove('busy'); go.textContent = label; sync(); msg.textContent = t; };
+    st.busy = true; go.classList.add('busy'); sync(); go.textContent = '결제창을 여는 중…'; msg.textContent = '';
     let p;
-    try { p = await post({ action: 'pay_prepare', kind: 'apply', id: o.id, phone: o.phone, test: o.test, option: sel.value }); }
+    try { p = await post({ action: 'pay_prepare', kind: 'apply', id: o.id, phone: o.phone, test: o.test, option: x.key, agreeRefund: st.terms.ok() }); }
     catch (e) { return fail('인터넷 연결을 확인하고 다시 눌러주세요.'); }
-    if (!p.ok) return fail(PAY_ERR[p.error] || '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.');
+    if (!p.ok) return fail(errText(p, '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.'));
     if (!p.enabled) return fail('지금은 온라인 결제를 받지 않아요. 담당자가 연락드릴게요.');
     try { await loadSdk(); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
-    stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now() });
+    // 결제 완료 화면이 '무엇을 · 얼마에'를 보여 주게 고른 것도 남김 (같은 브라우저로 돌아올 때만 — 개인정보는 이 기기 sessionStorage 에만)
+    stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now(), what: o.what || '',
+      item: { text: optText(x), amount: p.amount } });
     window.AUTHNICE.requestPay({
       clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
       returnUrl: p.returnUrl, buyerName: cutBytes(o.name, 30), buyerTel: String(o.phone || '').replace(/\D/g, ''),
@@ -393,7 +380,24 @@
         fail(`결제가 완료되지 않았어요${why ? ` (${why})` : ''}. 다시 눌러 결제할 수 있어요.`);
       },
     });
-    setTimeout(() => { if (go.disabled) { go.disabled = false; go.textContent = label; } }, 8000);   // PC: 결제창(레이어)을 그냥 닫았을 때 다시 누를 수 있게
+    setTimeout(() => { if (st.busy) { st.busy = false; go.classList.remove('busy'); go.textContent = label; sync(); } }, 8000);   // PC: 결제창(레이어)을 그냥 닫았을 때 다시 누를 수 있게
+  }
+
+  /** 결제 완료 화면 — 무엇을 · 얼마에 · 다음 할 일(입력한 번호로 결제 확인 + 첫 등록이면 앱 로그인 링크 문자 — 관리프로그램 on_first_payment) */
+  function paidView(no, mine) {
+    const rows = [['종목', TYPE_NAME + (mine && mine.what ? ` · ${mine.what}` : '')]];
+    if (mine && mine.item) rows.push([TYPE === 'yoga' ? '수강권' : '수강', mine.item.text], ['결제 금액', won(mine.item.amount)]);
+    if (no) rows.push(['신청번호', no]);
+    const to = mine && mine.phone ? `입력하신 번호(${window.PAYUI.maskPhone(mine.phone)})` : '입력하신 번호';
+    const steps = [`${to}로 결제 확인 문자(카카오톡 또는 문자)를 보내드려요. 처음 등록하셨다면 앱 로그인 링크도 같이 가요.`,
+      '문자의 링크를 누르면 아이디·비밀번호 없이 바로 앱에 들어가요.',
+      TYPE === 'yoga' ? '앱의 [요가 예약]에서 듣고 싶은 수업을 골라 예약하세요. 예약·취소는 수업 3시간 전까지예요.'
+        : '앱에서 수업일·출석과 다음 달 재등록을 확인할 수 있어요.'];
+    const login = appLogin();
+    return window.PAYUI.done({ title: '결제가 완료됐어요', sub: '등록이 끝났어요.', rows, steps,
+      foot: `문자가 오지 않으면 ${CFG.phone}로 연락 주세요.` })
+      + `<div class="acts">${login ? `<a href="${esc(login)}" target="_blank" rel="noopener">이미 앱을 쓰고 있다면 · 앱 열기</a>` : ''}
+        <a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
   }
 
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=신청번호&msg=) → 결과 화면 + 주소에서 pay·no·msg 를 뗌 (paytest 는 그대로) */
@@ -413,14 +417,17 @@
     const back = `<a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>`;
     if (st === 'ok') {
       stash(null);
-      box.innerHTML = `<div class="ok">✓</div><h2>결제가 완료됐어요</h2>
-        <p id="doneMsg">${no ? `신청번호 ${esc(no)} · ` : ''}등록이 끝났어요. 입력하신 번호로 결제 확인과 앱 로그인 안내를 보내드려요.</p>
-        <div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+      box.innerHTML = paidView(no, mine);
       if (mine) {                               // 샌드박스 시험 결제면 등록되지 않는다 — 서버에 물어 안내를 바꿈
         post({ action: 'pay_options', kind: 'apply', id: mine.id, phone: mine.phone, test: mine.test }).then(r => {
-          if (r && r.error === 'already_paid' && r.test) $('doneMsg').textContent = '테스트 결제가 끝났어요 — 샌드박스라 실제 결제·등록은 되지 않았어요.';
+          if (r && r.error === 'already_paid' && r.test) {
+            box.innerHTML = window.PAYUI.done({ title: '테스트 결제가 끝났어요', sub: '샌드박스라 실제 결제·등록은 되지 않았어요.',
+              rows: [['종목', TYPE_NAME], ...(mine.item ? [[TYPE === 'yoga' ? '수강권' : '수강', mine.item.text], ['금액', won(mine.item.amount)]] : []),
+                ['신청번호', no]] }) + `<div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+          }
         }).catch(() => {});
       }
+      box.scrollIntoView({ block: 'start' });
       return;
     }
     const why = payMsgOk(m) ? m : '결제가 완료되지 않았어요.';
