@@ -296,6 +296,11 @@
   const errText = (r, dflt) => (r && typeof r.message === 'string' && r.message.trim()) ? r.message.trim().slice(0, 200) : (PAY_ERR[r && r.error] || dflt);
   /** 고른 것 한 줄 — '8회 회원권 (10월 한정)\n8회 · 결제일부터 30일' / '19:30~20:30 · 11월\n한 달 · 8회' */
   const optText = x => `${x.time ? x.time + ' · ' : ''}${x.label}${x.badge ? ` (${x.badge})` : ''}${x.sub ? '\n' + x.sub : ''}`;
+  /** 옵션 아래 글 — 서버가 못 사는 까닭(why — 체험권 1인 1번 등, 관리프로그램 apply_pay_options)을 주면 빨간 글로 (sub 에도 같은 글이 와서 한 번만) */
+  const optSub = x => {
+    const why = x.disabled && (x.why || x.reason);
+    return `${!why || x.sub !== why ? `<small>${esc(x.sub)}</small>` : ''}${why ? `<span class="why">${esc(why)}</span>` : ''}`;
+  };
   const appLogin = () => { try { return new URL(CFG.api).origin + '/login'; } catch (e) { return ''; } };
 
   /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(배드민턴 반 이름) }
@@ -320,7 +325,7 @@
     box.innerHTML = `<h3>${TYPE === 'yoga' ? '수강권을 골라주세요' : '시작할 달을 골라주세요'}</h3>
       <div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
-          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}<small>${esc(x.sub)}</small>${x.disabled && x.reason ? `<span class="why">${esc(x.reason)}</span>` : ''}</span>
+          <span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${optSub(x)}</span>
           <span class="p">${won(x.amount)}</span></label>`).join('')}</div>
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
       ${first ? '<div id="payTerms"></div>' : ''}
