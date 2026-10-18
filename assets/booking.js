@@ -1,7 +1,8 @@
 /* ============================================================
    대관 예약 (배드민턴·요가 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
    01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
-   한 신청 = 날짜 하나 + 이어진 시간 범위 하나 + 코트 1~3개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
+   한 신청 = 이어진 시간 범위 하나 + 코트 1~3개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
+   범위는 보통 날짜 하나 안이고, 배드민턴처럼 24시간 칸이면 자정을 넘겨 다음 날 새벽까지 한 신청으로 이어 담을 수 있음 (다음 날을 눌러 그 날 칸을 누름).
    신청은 1코트 1시간 칸(items = 선택 코트 × 범위 칸, court 는 0부터) 단위로 관리프로그램 /api/site 에 보냄 — api 가 비면 문자 접수.
    [결제하기] 뒤 결제 흐름이 켜져 있으면 나이스페이 결제창 → 결과는 관리프로그램이 받아 ?pay=ok|fail 로 돌려보냄 (아래 '온라인 결제').
    ============================================================ */
@@ -60,17 +61,38 @@
     const x = list[i];
     return !!x && !isPast(date, x.start) && !(booked[date] && booked[date].has(`${c}|${x.start}`));
   }
-  /** lo~hi 칸이 코트 cs 모두에 비어 있는지 */
-  function freeRange(date, lo, hi, cs) {
-    const list = slotsFor(date);
-    for (let i = lo; i <= hi; i++) if (!cs.every(c => free(date, i, c, list))) return false;
+  const dayAfter = s => { const d = toDate(s); d.setDate(d.getDate() + 1); return ymd(d); };
+  /** 그 날 마지막 칸이 24:00 에 끝나고 다음 날이 00:00 칸으로 시작하면(배드민턴 24시간) 자정을 넘겨 다음 날까지 한 신청으로 이어 담을 수 있음
+      (2026-10-19 "새벽에 하고 싶은 사람이 있을 수 있으니 다음 날을 눌러 같이 담게") — 다음 날이 예약 범위 안일 때만 */
+  function joins(date) {
+    const a = slotsFor(date), n = dayAfter(date), b = slotsFor(n);
+    return a.length > 0 && b.length > 0 && a[a.length - 1].end === '24:00' && b[0].start === '00:00' && inRange(n);
+  }
+  /** 신청의 시간 줄 [{date, start, end}] — 그 날 칸 + (이어 담을 수 있으면) 다음 날 칸. sel.s~sel.e 는 이 줄의 index */
+  function lineOf(date) {
+    const a = slotsFor(date).map(x => ({ date, ...x }));
+    if (!joins(date)) return a;
+    const n = dayAfter(date);
+    return a.concat(slotsFor(n).map(x => ({ date: n, ...x })));
+  }
+  /** 담은 신청의 칸 [{date, start, end}] · 걸친 날짜 [그 날(, 다음 날)] */
+  const cellsIn = sel => lineOf(sel.date).slice(sel.s, sel.e + 1);
+  const datesOf = sel => [...new Set(cellsIn(sel).map(x => x.date))];
+  /** 신청 시간 줄의 lo~hi 칸이 코트 cs 모두에 비어 있는지 (자정 넘어 다음 날 칸 포함 · 아직 안 불러온 날은 비어 있다고 봄 — 신청 때 관리프로그램이 다시 확인) */
+  function freeLine(date, lo, hi, cs) {
+    const l = lineOf(date);
+    for (let i = lo; i <= hi; i++) {
+      const x = l[i];
+      if (!x || isPast(x.date, x.start) || cs.some(c => booked[x.date] && booked[x.date].has(`${c}|${x.start}`))) return false;
+    }
     return true;
   }
 
   /* ---------- 상태 ----------
      date: 보고 있는 날짜, month: 달력에서 보고 있는 달("YYYY-MM")
-     sel: 담은 신청 { date, courts: [코트 index 오름차순], s, e } — s~e 는 그 날 시간 칸 index (양 끝 포함), 없으면 null
-          날짜를 바꿔 보기만 해서는 지우지 않음 (다른 날 칸을 누르면 새로 잡힘)
+     sel: 담은 신청 { date, courts: [코트 index 오름차순], s, e } — s~e 는 시간 줄(lineOf(date) — 그 날 칸 + 이어 담을 수 있으면 다음 날 칸)
+          index (양 끝 포함, s 는 늘 그 날 안), 없으면 null. 날짜를 바꿔 보기만 해서는 지우지 않음 (다른 날 칸을 누르면 새로 잡힘 —
+          단 바로 다음 날(앞날) 칸을 같은 코트로 누르면 자정 넘어 이어 붙음)
      focus: 키보드로 움직이는 칸 { c: 열, i: 줄 } (표 안에서 Tab 이 머무는 칸 하나 — 화살표로 이동)
      scroll: 다음에 표를 그릴 때 상자 안 스크롤을 처음 위치(오늘 지금 시각 · 첫 빈 칸 · 담은 시간)로 맞출지
      lost: 그 사이 막혀서 지운 신청 { date, courts, s } — '시간 다시 고르기' 때 그 줄로 표를 보여줌 (새로 담으면 지움)
@@ -79,11 +101,14 @@
   const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (요가 50분 칸도 1시간 단위)
   const cellsOf = sel => sel.courts.length * hoursOf(sel);
   const priceOf = sel => cellsOf(sel) * SP.price;
-  function timeText(sel) {
-    const l = slotsFor(sel.date);
-    return `${l[sel.s].start}~${l[sel.e].end} (${hoursOf(sel)}시간)`;
+  function timeText(sel) { return `${rangeOnly(sel)} (${hoursOf(sel)}시간)`; }
+  /** "22:00~24:00" · 자정을 넘기면 "22:00~다음 날 02:00" */
+  function rangeOnly(sel) {
+    const l = lineOf(sel.date), a = l[sel.s], b = l[sel.e];
+    return `${a.start}~${b.date !== a.date ? '다음 날 ' : ''}${b.end}`;
   }
-  const rangeOnly = sel => { const l = slotsFor(sel.date); return `${l[sel.s].start}~${l[sel.e].end}`; };
+  /** 날짜 — 자정을 넘기면 "10월 19일(월) ~ 10월 20일(화)" */
+  const dateText = sel => datesOf(sel).map(dayLabel).join(' ~ ');
   /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (요가는 코트 없이) */
   const selText = sel => `${NC > 1 ? courtText(sel.courts) + ' ' : ''}${timeText(sel)}`;
   /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (요가는 코트 없이) */
@@ -91,7 +116,7 @@
   /** 요약 한 줄 "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간) · 844,800원" */
   const summary = sel => `${head(sel)} · ${won(priceOf(sel))}`;
   /** 담은 신청이 아직 그대로 신청 가능한지 (그 사이 지난 시간 · 새로 들어온 예약) */
-  const selOk = sel => !ready(sel.date) || freeRange(sel.date, sel.s, sel.e, sel.courts);
+  const selOk = sel => freeLine(sel.date, sel.s, sel.e, sel.courts);
 
   /* ---------- 안내 ----------
      화면낭독기 안내는 #bkLive(role=status) 한 곳 — 칸마다 aria-pressed 가 바뀌어도 범위 전체는 읽히지 않으므로 결과를 한 줄로.
@@ -107,6 +132,7 @@
   /** 다음 동작이 잘 되면 남아 있던 경고는 바로 내림 (지금 상태와 안 맞는 경고가 3초 남지 않게) */
   function hideWarn() { clearTimeout(warnTimer); $('bkWarn').classList.remove('show'); }
   const DATE_WARN = '날짜를 바꾸면 담은 시간이 새로 잡혀요';
+  const NEXT_TIP = '자정 넘어 쓰려면 다음 날 칸도 같은 코트로 이어서 고를 수 있어요';
   const GAP_WARN = '중간에 예약된 시간이 있어 이어서 선택할 수 없어요 · 누른 칸부터 새로 선택했어요';
   const LOST_WARN = '그 사이 예약된 시간이 있어요. 다시 골라주세요';
   const PAST_WARN = '선택한 시간이 지났어요. 다시 골라주세요';
@@ -129,14 +155,14 @@
     const [y, m] = state.month.split('-').map(Number);
     const first = new Date(y, m - 1, 1);
     const start = new Date(first); start.setDate(1 - first.getDay());        // 그 주 일요일부터 6주
-    const tv = ymd(today0()), minM = ym(today0()), maxM = ym(lastDay()), has = state.sel && state.sel.date;
+    const tv = ymd(today0()), minM = ym(today0()), maxM = ym(lastDay()), has = state.sel ? datesOf(state.sel) : [];
     let cells = '';
     for (let i = 0; i < 42; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
       const v = ymd(d), wd = d.getDay();
       const off = !inRange(v) || !slotsFor(v).length;
-      const cls = [d.getMonth() !== m - 1 ? 'out' : '', wd === 0 ? 'sun' : wd === 6 ? 'sat' : '', v === state.date ? 'on' : '', v === has ? 'bk2-has' : ''].filter(Boolean).join(' ');
-      cells += `<button type="button" data-date="${v}" class="${cls}"${off ? ' disabled' : ''} aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일${off ? ' (예약 불가)' : ''}${v === has ? ' (담은 시간 있음)' : ''}" aria-pressed="${v === state.date}">
+      const cls = [d.getMonth() !== m - 1 ? 'out' : '', wd === 0 ? 'sun' : wd === 6 ? 'sat' : '', v === state.date ? 'on' : '', has.includes(v) ? 'bk2-has' : ''].filter(Boolean).join(' ');
+      cells += `<button type="button" data-date="${v}" class="${cls}"${off ? ' disabled' : ''} aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일${off ? ' (예약 불가)' : ''}${has.includes(v) ? ' (담은 시간 있음)' : ''}" aria-pressed="${v === state.date}">
         <b>${d.getDate()}</b>${v === tv ? '<small>오늘</small>' : ''}</button>`;
     }
     $('bkCal').innerHTML = `
@@ -189,11 +215,18 @@
   /* ---------- 표 (세로 = 시간 칸, 가로 = 코트) ---------- */
   /** 표의 열 — 코트마다 한 열 (코트를 모두 고르면 '전체대관') */
   const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c] }));
-  /** 그 날 sel (보고 있는 날짜에 담은 게 없으면 null) */
-  const selHere = () => (state.sel && state.sel.date === state.date ? state.sel : null);
-  /** 선택 안 된 코트 c 를 지금 범위에 더할 수 있는지 (코트별 보기의 '+ 추가' 표시) */
+  /** 보고 있는 날짜에서 본 담은 신청 — { ...sel, s, e, off } (s~e 는 이 날 칸 index: 앞날에서 자정 넘어 이어 온 신청이면 s 가 음수,
+      다음 날로 넘어가면 e 가 이 날 칸 수 이상, off = 시간 줄 index − 이 날 index). 이 날에 걸친 칸이 없으면 null */
+  function selHere() {
+    const sel = state.sel, D = state.date;
+    if (!sel) return null;
+    const off = sel.date === D ? 0 : joins(sel.date) && dayAfter(sel.date) === D ? slotsFor(sel.date).length : -1;
+    if (off < 0 || sel.e - off < 0 || sel.s - off >= slotsFor(D).length) return null;
+    return { ...sel, s: sel.s - off, e: sel.e - off, off };
+  }
+  /** 선택 안 된 코트 c 를 지금 범위에 더할 수 있는지 (코트별 보기의 '+ 추가' 표시) — sel 은 담은 신청(state.sel) */
   function canAdd(sel, c) {
-    return sel.courts.length < COURT_MAX && (sel.courts.length + 1) * hoursOf(sel) <= MAX && freeRange(sel.date, sel.s, sel.e, [c]);
+    return sel.courts.length < COURT_MAX && (sel.courts.length + 1) * hoursOf(sel) <= MAX && freeLine(sel.date, sel.s, sel.e, [c]);
   }
   /** 칸 모양 — cls: '' 빈 칸('선택') · off('—': 지난 시간 · 예약됨 · 레슨) · on(담김, s 시작 · e 끝) · add(선택 안 된 코트의 범위 줄 — 누르면 같은 시간으로 추가)
       · wait(예약 현황 불러오는 중) */
@@ -210,7 +243,7 @@
     if (!col.courts.every(c => free(D, i, c, list))) {
       return { cls: 'off', text: '—', off: true, label: `${col.name} ${t} ${isPast(D, x.start) ? '지난 시간' : '예약 마감'}` };
     }
-    if (inR && canAdd(sel, col.courts[0])) {
+    if (inR && canAdd(state.sel, col.courts[0])) {
       return { cls: 'add', text: '+ 추가', label: `${col.name} ${t} 선택 가능, 누르면 같은 시간으로 추가` };
     }
     return { cls: '', text: '선택', label: `${col.name} ${t} 선택 가능` };
@@ -222,7 +255,7 @@
     const sel = selHere() || lostHere();
     if (sel && sel.s < list.length) {
       const c = cs.findIndex(col => col.courts.every(k => sel.courts.includes(k)));
-      return { c: c >= 0 ? c : Math.max(0, cs.findIndex(col => col.courts.includes(sel.courts[0]))), i: sel.s };
+      return { c: c >= 0 ? c : Math.max(0, cs.findIndex(col => col.courts.includes(sel.courts[0]))), i: Math.max(0, sel.s) };
     }
     for (let i = startRow(list); i < list.length; i++) {
       const c = cs.findIndex(col => col.courts.every(k => free(state.date, i, k, list)));
@@ -253,11 +286,17 @@
     const D = state.date, list = slotsFor(D), grid = $('bkGrid'), cs = cols(), sel = selHere();
     $('bkDay').textContent = dayLabel(D);
     $('bkClear').hidden = !state.sel;
-    // 다른 날에 담아 둔 시간 — 이 날 칸을 누르면 새로 잡힌다는 것도 미리 알려 둠
+    // 다른 날에 담아 둔 시간 — 이 날 칸을 누르면 새로 잡힌다는 것(바로 다음 날 · 앞날이면 자정 넘어 이어 붙는다는 것)도 미리 알려 둠.
+    // 담은 시간이 이 날 24:00 에 끝나고 다음 날로 이어 담을 수 있으면 [다음 날 보기]
     const other = state.sel && !sel;
-    $('bkElse').hidden = !other;
+    const near = other && (joins(state.sel.date) && dayAfter(state.sel.date) === D
+      || joins(D) && dayAfter(D) === state.sel.date && state.sel.e < slotsFor(state.sel.date).length);
+    const tip = sel && sel.off === 0 && sel.e === list.length - 1 && joins(D);
+    $('bkElse').hidden = !other && !tip;
     if (other) {
-      $('bkElse').innerHTML = `<span>담아 둔 시간 <b>${esc(head(state.sel))}</b> · 이 날 칸을 누르면 새로 잡혀요</span><button type="button" data-go>그 날 보기</button>`;
+      $('bkElse').innerHTML = `<span>담아 둔 시간 <b>${esc(head(state.sel))}</b> · ${near ? '같은 코트의 이 날 칸을 누르면 자정 넘어 이어서 담겨요' : '이 날 칸을 누르면 새로 잡혀요'}</span><button type="button" data-go>그 날 보기</button>`;
+    } else if (tip) {
+      $('bkElse').innerHTML = `<span>${NEXT_TIP}</span><button type="button" data-next>다음 날 보기 →</button>`;
     }
     $('bkEmpty').hidden = list.length > 0;
     if (!list.length) { grid.innerHTML = ''; return; }
@@ -335,9 +374,11 @@
     if (!e.detail && a && a.closest('#bkGrid')) reveal(a);
   });
 
-  /* 칸 누름 — 결과는 sel 하나만 바꿈 (한 신청 = 날짜 하나 · 이어진 범위 하나 · 같은 시간의 코트 1~3개)
+  /* 칸 누름 — 결과는 sel 하나만 바꿈 (한 신청 = 이어진 범위 하나 · 같은 시간의 코트 1~3개)
      - '—' 칸은 아무 일 없음 (단, 코트별 보기에서 선택 안 된 코트의 범위 줄 '—' 칸 → 그 코트를 더할 수 없는 까닭을 안내)
-     - 신청을 보내는 중이면 바꾸지 않음. 다른 날짜에 담아 둔 게 있으면 지우고 이 날짜에서 새로 시작
+     - 신청을 보내는 중이면 바꾸지 않음. 다른 날짜에 담아 둔 게 있으면 지우고 이 날짜에서 새로 시작 —
+       단 담은 날의 다음 날(자정 넘김)이나 앞날의 칸을 선택된 코트 열에서 누르면 그 칸까지 이어 붙임(사이 칸이 다 비어 있어야 — 아니면 안내 후
+       새로 시작). 이 날에 걸친 칸이 있으면 아래 규칙 그대로, 없는 날에서 다른 코트 열을 누르면 새로 시작
      - 담은 게 없음 → 그 열(코트 · 전체대관)의 그 칸 1칸 = 시작점
      - 선택된 열:
          첫 칸(1칸뿐인 시작점 포함) → 그 열의 코트를 뺌 (마지막 코트면 전부 해제)
@@ -354,49 +395,66 @@
     if (v.off) {
       if (v.cls === 'off' && here && i >= here.s && i <= here.e && !isPast(D, list[i].start)
         && !col.courts.every(c => here.courts.includes(c))) {
-        const w = here.courts.length >= COURT_MAX ? COURT_MAX_WARN : busyWarn(col.courts[0], here);
+        const w = here.courts.length >= COURT_MAX ? COURT_MAX_WARN : busyWarn(col.courts[0], state.sel);
         flashWarn(w); say(w);
       }
       return;
     }
-    let sel = state.sel, warn = '', said = '', next, jump = false;
-    if (sel && sel.date !== D) { sel = null; warn = DATE_WARN; }
+    let sel = state.sel, g = i, cross = false, warn = '', said = '', next, jump = false;
+    // 담은 신청과 누른 칸을 한 시간 줄에 놓기: 같은 날 / 담은 날의 다음 날(자정 넘김 — g = 그 날 칸 수 + i) /
+    // 담은 날의 앞날(신청이 그 날 안에 있을 때만 — 신청을 이 날 기준 줄로 옮김). 그 밖의 날이면 새로 시작
+    if (sel && sel.date !== D) {
+      const n0 = slotsFor(sel.date).length;
+      if (joins(sel.date) && dayAfter(sel.date) === D) { g = n0 + i; cross = true; }
+      else if (joins(D) && dayAfter(D) === sel.date && sel.e < n0) { sel = { ...sel, date: D, s: sel.s + list.length, e: sel.e + list.length }; cross = true; }
+      else { sel = null; warn = DATE_WARN; }
+    }
     const lone = () => ({ date: D, courts: col.courts.slice(), s: i, e: i });
     if (!sel) {
       next = lone(); said = `${selText(next)} 선택됨. ${ANCHOR_TIP}`;
     } else {
-      const mine = col.courts.every(c => sel.courts.includes(c)), inR = i >= sel.s && i <= sel.e;
-      if (mine && i === sel.s) {
+      const mine = col.courts.every(c => sel.courts.includes(c)), inR = g >= sel.s && g <= sel.e;
+      if (mine && g === sel.s) {
         const left = sel.courts.filter(c => !col.courts.includes(c));
         next = left.length ? { ...sel, courts: left } : null;
         said = next ? `${courtLabel(col.courts)} 선택 해제. ${selText(next)} 남음` : `${selText(sel)} 선택 해제`;
-      } else if (mine && sel.s === sel.e) {
-        const lo = Math.min(sel.s, i), hi = Math.max(sel.s, i);
-        if (freeRange(D, lo, hi, sel.courts)) { next = { ...sel, s: lo, e: hi }; said = `${selText(next)} 선택됨`; }
+      } else if (mine && (sel.s === sel.e || (cross && !inR))) {
+        // 시작점만 있을 때 · 자정 넘어 다음 날(앞날) 칸 → 지금 범위에서 그 칸까지 이어서
+        const lo = Math.min(sel.s, g), hi = Math.max(sel.e, g);
+        if (freeLine(sel.date, lo, hi, sel.courts)) { next = { ...sel, s: lo, e: hi }; said = `${selText(next)} 선택됨`; }
         else { warn = GAP_WARN; next = lone(); said = `${selText(next)} 새로 선택됨. ${ANCHOR_TIP}`; }
       } else if (mine && inR) {
-        if (i === sel.e) { next = sel; said = `끝 칸이라 그대로예요. ${selText(sel)}`; }
-        else { next = { ...sel, e: i }; said = `${selText(next)}으로 줄었어요`; }
+        if (g === sel.e) { next = state.sel; said = `끝 칸이라 그대로예요. ${selText(sel)}`; }
+        else { next = { ...sel, e: g }; said = `${selText(next)}으로 줄었어요`; }
       } else if (mine) {
         next = lone(); said = `이전 선택 해제. ${selText(next)} 선택됨. ${ANCHOR_TIP}`;
       } else {
         const c = col.courts[0];
-        if (sel.courts.length >= COURT_MAX) { warn = COURT_MAX_WARN; next = sel; }
-        else if (!freeRange(D, sel.s, sel.e, [c])) { warn = busyWarn(c, sel); next = sel; }
+        if (cross && !here) { warn = DATE_WARN; next = lone(); said = `${selText(next)} 새로 선택됨. ${ANCHOR_TIP}`; }   // 이 날엔 담은 시간이 없음
+        else if (sel.courts.length >= COURT_MAX) { warn = COURT_MAX_WARN; next = state.sel; }
+        else if (!freeLine(sel.date, sel.s, sel.e, [c])) { warn = busyWarn(c, sel); next = state.sel; }
         else {
           next = { ...sel, courts: sel.courts.concat(c).sort((a, b) => a - b) }; said = `${SP.courts[c]} 추가. ${selText(next)}`;
           jump = !inR;
         }
       }
     }
-    if (next && next !== sel && cellsOf(next) > MAX) {   // 넘으면 하나도 안 바꿈
+    if (next && next !== state.sel && cellsOf(next) > MAX) {   // 넘으면 하나도 안 바꿈
       flashWarn(MAX_WARN); say(MAX_WARN);
       return;
+    }
+    // 시작이 다음 날로 넘어간 범위(앞 칸을 줄여 다음 날만 남음)는 그 날 기준 줄로
+    if (next && next !== state.sel && next.s >= slotsFor(next.date).length) {
+      const n0 = slotsFor(next.date).length;
+      next = { ...next, date: dayAfter(next.date), s: next.s - n0, e: next.e - n0 };
     }
     if (next !== state.sel) clearDraft();   // 끝 칸을 다시 누른 것처럼 그대로면 문자 신청 초안도 그대로
     state.sel = next; state.lost = null;
     // 범위 밖 줄을 눌러 코트를 더했으면 바뀐 범위가 화면 밖 — 표 상자를 범위 시작으로 옮기고 포커스도 그 코트의 시작 칸으로
-    if (jump && state.focus) { state.focus = { c: state.focus.c, i: next.s }; state.scroll = true; }
+    if (jump && state.focus) {
+      const h = selHere();
+      state.focus = { c: state.focus.c, i: Math.max(0, h ? h.s : 0) }; state.scroll = true;
+    }
     update();
     if (warn) flashWarn(warn); else hideWarn();
     say([warn, said].filter(Boolean).join('. '));
@@ -406,7 +464,7 @@
   function keepSel() {
     const sel = state.sel;
     if (!sel || selOk(sel)) return true;
-    const past = slotsFor(sel.date).slice(sel.s, sel.e + 1).some(x => isPast(sel.date, x.start));
+    const past = cellsIn(sel).some(x => isPast(x.date, x.start));
     lose(past ? PAST_WARN : LOST_WARN);
     return false;
   }
@@ -417,10 +475,11 @@
     if (!sel) return;
     state.lost = { date: sel.date, courts: sel.courts.slice(), s: sel.s };
     if (state.sel === sel) state.sel = null;
-    if (sent) delete booked[sel.date];
+    const days = datesOf(sel);
+    if (sent) days.forEach(d => { delete booked[d]; });
     update();
     flashWarn(text);
-    if (sent) load(sel.date); else say(text);
+    if (sent) days.forEach(load); else say(text);
   }
 
   /* ---------- 아래 고정 요약 바 · 신청 요약 ---------- */
@@ -436,7 +495,7 @@
     $('bkSel').innerHTML = sel
       ? `<div class="bk2-sel-h">선택한 예약</div>
         <dl>
-          <div><dt>날짜</dt><dd>${esc(dayLabel(sel.date))}</dd></div>
+          <div><dt>날짜</dt><dd>${esc(dateText(sel))}</dd></div>
           ${NC > 1 ? `<div><dt>코트</dt><dd>${esc(courtText(sel.courts))}${sel.courts.length === NC ? ` <small>(${esc(courtLabel(ALL))})</small>` : ''}</dd></div>` : ''}
           <div><dt>시간</dt><dd>${esc(timeText(sel))}</dd></div>
           <div><dt>금액</dt><dd><b class="bk2-won">${won(priceOf(sel))}</b><small>${esc(SP.unit)} ${won(SP.price)} × ${cellsOf(sel)}</small></dd></div>
@@ -464,7 +523,10 @@
     say(`${summary(state.sel)}. 이름과 연락처를 입력해 예약을 신청해주세요`);
   });
   $('bkSel').addEventListener('click', e => { if (e.target.closest('[data-edit]')) backToGrid(); });
-  $('bkElse').addEventListener('click', e => { if (e.target.closest('[data-go]')) backToGrid(); });
+  $('bkElse').addEventListener('click', e => {
+    if (e.target.closest('[data-go]')) backToGrid();
+    else if (e.target.closest('[data-next]') && joins(state.date)) goDate(dayAfter(state.date));
+  });
   $('bkClear').addEventListener('click', () => {
     if (!state.sel) return;
     if (state.sending) { flashWarn(SENDING_WARN); say(SENDING_WARN); return; }
@@ -559,8 +621,8 @@
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validate() || !keepSel()) return;
-    const sel = state.sel, list = slotsFor(sel.date);
-    const items = sel.courts.flatMap(c => list.slice(sel.s, sel.e + 1).map(x => ({ date: sel.date, court: c, start: x.start })));
+    const sel = state.sel;
+    const items = sel.courts.flatMap(c => cellsIn(sel).map(x => ({ date: x.date, court: c, start: x.start })));   // 자정을 넘기면 다음 날 칸도
 
     if (!CFG.api) {
       const text = message(sel);
@@ -580,7 +642,7 @@
     if (window.PAYUI) {
       const yes = await window.PAYUI.confirm({
         title: '예약·결제 전에 확인해 주세요',
-        rows: [['공간', SP.name], ['날짜', dayLabel(sel.date)], NC > 1 ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
+        rows: [['공간', SP.name], ['날짜', dateText(sel)], NC > 1 ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
           ['이름', name], ['연락처', phone]],
         amount: priceOf(sel),
         note: isPayTest() ? '시험 주소예요 — 테스트 결제창이 열려요.' : '카드 결제가 끝나면 바로 확정되고, 입력하신 번호로 확정 문자가 가요.',
@@ -601,8 +663,8 @@
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
         const p = await prepare(r.id, phone);
         if (p && p.enabled) {
-          openPay(p, { id: r.id, name, phone, date: sel.date,
-            sum: { where: SP.name + (NC > 1 ? ` · ${courtText(sel.courts)}` : ''), when: dayLabel(sel.date), time: timeText(sel), amount: p.amount } });
+          openPay(p, { id: r.id, name, phone, dates: datesOf(sel),
+            sum: { where: SP.name + (NC > 1 ? ` · ${courtText(sel.courts)}` : ''), when: dateText(sel), time: timeText(sel), amount: p.amount } });
           return;
         }
         const err = p && p.error;
@@ -611,8 +673,9 @@
         if (err === 'expired') rr = await release({ id: r.id, phone });
         if (rr === 'ok') {
           // 풀었음 — 고른 시간 · 입력은 그대로 (다시 [결제하기] 하면 새 신청 · 새 결제 대기 5분)
-          await loading[sel.date]; delete booked[sel.date];
-          after = () => { load(sel.date); showMsg('결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요', 'err'); };
+          const days = datesOf(sel);
+          for (const d of days) { await loading[d]; delete booked[d]; }
+          after = () => { days.forEach(load); showMsg('결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요', 'err'); };
         } else {
           // 꺼져 있으면 지금처럼 신청만 저장 — '신청 접수' 안내 없이 선택 · 입력을 비우고 표를 새로 불러옴 (관리자가 확인 후 연락).
           // 결제 준비가 안 된 이유가 있으면(이미 결제됨 · 승인 중 · 이미 처리 중 · 연결 실패) 그 상황대로 알림
@@ -681,7 +744,7 @@
   // 샌드박스(테스트) 결제는 돈이 오가지 않아 관리프로그램이 신청을 확정하지 않는다 (확인 전 그대로 — 관리프로그램 pay_rental_paid)
   const PAY_TEST_NOTE = '샌드박스 시험 결제예요 — 실제 결제가 아니라 예약은 확정되지 않았어요 (확인 전).';
   const isPayTest = () => new URLSearchParams(location.search).get('paytest') === '1';
-  let pay = null;    // 결제창이 열린 신청 { id, phone, orderId, date, test, timer, closing }
+  let pay = null;    // 결제창이 열린 신청 { id, phone, orderId, dates(신청이 걸친 날짜), test, timer, closing }
   let held = null;   // 풀지 못한(연결 실패) 결제 대기 신청 { id, phone, orderId } — 다음 [결제하기] 전에 다시 풂
 
   /** 관리프로그램 /api/site POST → 응답 JSON (연결 실패 · JSON 아님은 throw — 오류 응답 4xx 도 JSON 이라 그대로 읽음) */
@@ -748,10 +811,10 @@
     return sdk;
   }
 
-  /** 결제창 열기 — p: pay_prepare 응답(서버가 정한 clientId · orderId · amount · goodsName · returnUrl), o: { id(신청번호), name, phone, date } */
+  /** 결제창 열기 — p: pay_prepare 응답(서버가 정한 clientId · orderId · amount · goodsName · returnUrl), o: { id(신청번호), name, phone, dates } */
   async function openPay(p, o) {
     const test = p.mode !== 'live';
-    const cur = pay = { id: o.id, phone: o.phone, orderId: p.orderId, date: o.date, test, timer: 0, closing: false };
+    const cur = pay = { id: o.id, phone: o.phone, orderId: p.orderId, dates: o.dates, test, timer: 0, closing: false };
     stash({ id: o.id, phone: o.phone, orderId: p.orderId, space, test, at: Date.now(), sum: o.sum || null });   // sum = 결제 완료 화면 '무엇을 · 얼마에'
     const btn = $('bkSubmit');
     btn.textContent = '결제창 여는 중…';
@@ -801,7 +864,7 @@
     pay = null; stash(null);
     holdReset();
     // 풀린 칸을 다시 불러오게 — 못 풀었으면(연결 실패) 그대로 둠: 내 신청이 잡은 칸이 '그 사이 예약됨'으로 보여 선택이 지워지지 않게
-    if (freed) { await loading[cur.date]; delete booked[cur.date]; }
+    if (freed) for (const d of cur.dates) { await loading[d]; delete booked[d]; }
     let after;
     if (r === 'paid' || r === 'busy') {
       // 그 사이 결제가 끝났거나 승인 중 — 같은 시간을 다시 잡지 않게 선택 · 입력을 비움
@@ -817,7 +880,7 @@
         : `${PAY_FAIL} — 다시 결제하거나 시간을 다시 골라주세요`;
       const sub = why === 'error' && res && typeof res.msg === 'string' ? res.msg.trim().slice(0, 100) : '';   // 나이스페이 SDK 의 고객용 문구
       after = () => {
-        if (freed) load(cur.date);
+        if (freed) cur.dates.forEach(load);
         showMsg(`${esc(head)}${sub ? `<br><small>${esc(sub)}</small>` : ''}`, 'err');
       };
     }
@@ -910,7 +973,7 @@
         booked[date] = new Set();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
       }
       delete loading[date];
-      if (state.sel && state.sel.date === date && !keepSel()) return;   // 담은 시간이 그 사이 막혔으면 지우고 다시 그림
+      if (state.sel && datesOf(state.sel).includes(date) && !keepSel()) return;   // 담은 시간이 그 사이 막혔으면 지우고 다시 그림
       if (date === state.date) renderGrid();
     })();
     return loading[date];
