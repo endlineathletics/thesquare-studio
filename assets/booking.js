@@ -572,6 +572,27 @@
     $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
     return ok && !state.sending;
   }
+  /* 연락처 자동 하이픈 (2026-10-20 "요가 대관할 때 번호 쓰면 - 가 자동으로 안 들어가" — 수강신청서 apply.js 와 같게, 대관은 유선번호도 받아
+     서울 02 는 02-123-4567 / 02-1234-5678, 그 밖은 010-1234-5678 · 031-123-4567). '+82' 처럼 숫자·하이픈·공백 말고 다른 글자가 있으면 그대로 둔다.
+     고친 자리 앞의 숫자 개수로 커서를 되돌려 가운데를 고쳐도 커서가 끝으로 튀지 않게 */
+  const phoneFmt = v => {
+    if (/[^\d\-\s]/.test(v)) return v;
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    if (d.startsWith('02')) {
+      const x = d.slice(0, 10);
+      return x.length <= 2 ? x : x.length <= 6 ? `02-${x.slice(2)}` : `02-${x.slice(2, x.length - 4)}-${x.slice(-4)}`;
+    }
+    return d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}` : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`;
+  };
+  form.phone.addEventListener('input', () => {
+    const el = form.phone, v = el.value, f = phoneFmt(v);
+    if (f === v) return;
+    const digits = v.slice(0, el.selectionStart ?? v.length).replace(/\D/g, '').length;
+    el.value = f;
+    let pos = 0;
+    for (let n = 0; pos < f.length && n < digits; pos++) if (/\d/.test(f[pos])) n++;
+    try { el.setSelectionRange(pos, pos); } catch (e) { /* type=tel 은 되지만 혹시 모를 브라우저 */ }
+  });
   form.addEventListener('input', validate);
   form.addEventListener('change', validate);
 
