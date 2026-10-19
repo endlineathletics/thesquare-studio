@@ -657,7 +657,8 @@
     let after = null;   // 끝난 뒤 할 일 (선택 지우기 등) — 버튼 문구를 되돌린 다음에. 결과는 보낸 신청(sel) 기준
     try {
       if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
-      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim() });
+      // test = 시험 주소(?paytest=1) — 관리프로그램이 운영 결제처럼 '결제 전'으로 받아 결제가 끝나야 신청으로 드러냄 (2026-10-19)
+      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest() });
       if (r.ok) {
         // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
@@ -669,13 +670,21 @@
         }
         const err = p && p.error;
         let rr = '';
-        // 결제 대기 시간이 (거의) 지난 신청(같은 칸을 조금 전에 신청해 둔 것 등) — 잡아 둔 칸을 바로 풀어 다시 결제할 수 있게
-        if (err === 'expired') rr = await release({ id: r.id, phone });
+        // 결제 대기 시간이 (거의) 지난 신청(같은 칸을 조금 전에 신청해 둔 것 등) — 잡아 둔 칸을 바로 풀어 다시 결제할 수 있게.
+        // 결제창을 열지 못함(결제 준비 연결 실패 · !p)도 — 결제가 켜져 있으면 결제를 끝내야 신청이라(관리프로그램 '결제 전', 2026-10-19) 칸을 풀고 다시 하게.
+        // 결제가 꺼진 동안 들어온 '접수' 신청은 서버가 풀지 않는다(released:false → 'done') — 그땐 예전처럼 '접수됐으니 연락' 안내
+        const noPay = !p;
+        if (err === 'expired' || noPay) rr = await release({ id: r.id, phone });
         if (rr === 'ok') {
           // 풀었음 — 고른 시간 · 입력은 그대로 (다시 [결제하기] 하면 새 신청 · 새 결제 대기 5분)
           const days = datesOf(sel);
           for (const d of days) { await loading[d]; delete booked[d]; }
-          after = () => { days.forEach(load); showMsg('결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요', 'err'); };
+          const t = noPay ? '결제창을 열지 못했어요 — 신청은 접수되지 않았어요. 잠시 뒤 다시 [결제하기]를 눌러 주세요'
+            : '결제 시간이 지났어요 — 다시 결제하거나 시간을 다시 골라주세요';
+          after = () => { days.forEach(load); showMsg(t, 'err'); };
+        } else if (noPay && rr === 'net') {
+          // 칸도 못 풂(연결 끊김) — held 에 남아 다음 [결제하기] 전에 다시 풀고, 아니면 관리프로그램이 결제 시간 뒤 푼다. 고른 시간 · 입력은 그대로
+          after = () => showMsg(`결제창을 열지 못했어요 — 신청은 접수되지 않았어요. 잠시 뒤 다시 [결제하기]를 눌러 주세요. 문의 ${SP.phone}`, 'err');
         } else {
           // 꺼져 있으면 지금처럼 신청만 저장 — '신청 접수' 안내 없이 선택 · 입력을 비우고 표를 새로 불러옴 (관리자가 확인 후 연락).
           // 결제 준비가 안 된 이유가 있으면(이미 결제됨 · 승인 중 · 이미 처리 중 · 연결 실패) 그 상황대로 알림
@@ -684,8 +693,9 @@
           Object.keys(booked).forEach(k => delete booked[k]);
           after = () => {
             update(); load(state.date);
-            if (err === 'already_paid') showMsg(paidMsg(r.id, p.test), 'ok');
-            else if (err === 'in_progress') showMsg(esc(PAY_UNKNOWN), 'info');
+            if (err === 'already_paid' || rr === 'paid') showMsg(paidMsg(r.id, p ? p.test : isPayTest()), 'ok');
+            else if (err === 'in_progress' || rr === 'busy') showMsg(esc(PAY_UNKNOWN), 'info');
+            else if (err === 'expired') showMsg('결제 시간이 지났어요 — 시간을 다시 골라 결제해 주세요', 'err');   // 이미 풀린 신청 (release 'done')
             else if (err) showMsg(`신청(${esc(r.id)})은 접수됐어요 — 이미 확인 중인 신청이라 결제는 확인 후 연락드릴 때 안내할게요. 문의 ${SP.phone}`, 'info');
             else if (!p) showMsg(`결제창을 열지 못했어요. 신청(${esc(r.id)})은 접수됐으니 확인 후 연락드릴게요. 문의 ${SP.phone}`, 'err');
           };
