@@ -90,13 +90,20 @@
         if (no !== loadNo || !r || !r.ok || !Array.isArray(r.slots)) return;
         avail = {};
         r.slots.forEach(s => { (avail[s.key] = avail[s.key] || {})[s.time] = s.months || []; });
+        drawNote(r.byGrade !== false);        // 관리자 '급수별 받기'를 끄면 마감은 정원만 (2026-10-20 — 옛 관리앱엔 값이 없어 켬으로)
         drawCards();
         drawSub();
         updateSummary();
       }).catch(() => { /* 못 받으면 마감 표시 없이 — 결제 화면이 정원·급수를 다시 본다 */ });
     }
-    if ($('prefNote')) $('prefNote').innerHTML = '급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. '
-      + `마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
+    function drawNote(byGrade) {
+      if (!$('prefNote')) return;
+      $('prefNote').innerHTML = (byGrade
+        ? '급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. '
+        : '<b>마감</b>은 정원이 찬 시간이에요. ')
+        + `마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
+    }
+    drawNote(true);
     drawCards();
     loadAvail();
     form.addEventListener('change', e => {
