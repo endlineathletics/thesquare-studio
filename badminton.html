@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261018b">
+<link rel="stylesheet" href="assets/style.css?v=20261019d">
 <link rel="stylesheet" href="assets/booking.css?v=20261014h">
 </head>
 <body data-page="badminton">
@@ -31,7 +31,11 @@
 </nav>
 
 <header class="page-hero">
-  <img src="images/hero-badminton-court.jpg?v=3" alt="파란 배드민턴 코트에 앉아 라켓을 든 선수" style="object-position:66% 45%">
+  <picture>
+    <!-- 좁은 화면(사진이 높이에 맞춰지는 폭) = 사람을 크게 자른 사진. 조건은 style.css .bd-hero 와 같게 -->
+    <source media="(max-width:950px), (max-aspect-ratio:129/100)" srcset="images/hero-badminton-court-narrow.jpg?v=1">
+    <img class="bd-hero" src="images/hero-badminton-court.jpg?v=3" alt="파란 배드민턴 코트에 앉아 라켓을 든 선수">
+  </picture>
   <div class="wrap">
     <div class="eyebrow">THE SQUARE BADMINTON</div>
     <h1>Badminton<br>Studio</h1>

@@ -81,6 +81,10 @@ a{color:inherit;text-decoration:none}
 .page-hero h1 span{color:#fff}
 .page-hero p{margin-top:20px;font-size:clamp(18px,2vw,24px);font-weight:600;letter-spacing:-.02em}
 .page-hero.short{height:52vh;min-height:420px}
+/* 배드민턴 메인 사진 위치: 넓은 화면 = 3:2 사진, 좁은 화면 = -narrow 사진(badminton.html <source media> 와 같은 조건) */
+.page-hero img.bd-hero{object-position:66% 45%}
+@media (max-width:950px),(max-aspect-ratio:129/100){.page-hero img.bd-hero{object-position:58% 50%}}
+@media (max-width:640px){.page-hero img.bd-hero{object-position:66% 50%}}
 
 /* ---------- SECTION ---------- */
 section{padding:120px 0}
