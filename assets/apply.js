@@ -95,8 +95,8 @@
         updateSummary();
       }).catch(() => { /* 못 받으면 마감 표시 없이 — 결제 화면이 정원·급수를 다시 본다 */ });
     }
-    if ($('prefNote')) $('prefNote').innerHTML = '급수를 먼저 고르면 들어갈 수 있는 시간만 열려요. <b>마감</b>은 정원이 찼거나 지금 다니는 분들과 급수가 맞지 않는 시간이에요 '
-      + `(한 타임엔 붙은 두 급수까지, 입문은 입문끼리 3명씩). 마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
+    if ($('prefNote')) $('prefNote').innerHTML = '급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. '
+      + `마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
     drawCards();
     loadAvail();
     form.addEventListener('change', e => {
