@@ -1,5 +1,5 @@
 /* ============================================================
-   대관 예약 (배드민턴·요가 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
+   대관 예약 (배드민턴 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
    01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
    한 신청 = 이어진 시간 범위 하나 + 코트 1~3개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
    범위는 보통 날짜 하나 안이고, 배드민턴처럼 24시간 칸이면 자정을 넘겨 다음 날 새벽까지 한 신청으로 이어 담을 수 있음 (다음 날을 눌러 그 날 칸을 누름).
@@ -46,7 +46,7 @@
   const eun = w => (jong(w) ? '은' : '는');
 
   /* ---------- 시간 칸 · 예약 현황 ---------- */
-  /** 그 날짜에 예약 가능한 시간 칸 [{start, end}] — '이어진' 은 이 목록의 인접 순서(index) 기준 (요가 10분 쉬는 시간도 이어진 칸) */
+  /** 그 날짜에 예약 가능한 시간 칸 [{start, end}] — '이어진' 은 이 목록의 인접 순서(index) 기준 (칸 사이 쉬는 시간이 있어도 이어진 칸) */
   const slotsFor = date => (SP.slots[toDate(date).getDay()] || []).map(s => { const [start, end] = s.split('-'); return { start, end }; });
   const todayStr = () => ymd(new Date());
   const isPast = (date, start) => {
@@ -98,7 +98,7 @@
      lost: 그 사이 막혀서 지운 신청 { date, courts, s } — '시간 다시 고르기' 때 그 줄로 표를 보여줌 (새로 담으면 지움)
      sending: 예약 신청을 보내는 중 — 그동안 표 · 선택 해제는 바꾸지 않고 신청 버튼도 다시 켜지지 않음 */
   const state = { date: todayStr(), month: '', sel: null, focus: null, scroll: true, lost: null, sending: false };
-  const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (요가 50분 칸도 1시간 단위)
+  const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (칸 하나 = 1시간 단위)
   const cellsOf = sel => sel.courts.length * hoursOf(sel);
   const priceOf = sel => cellsOf(sel) * SP.price;
   function timeText(sel) { return `${rangeOnly(sel)} (${hoursOf(sel)}시간)`; }
@@ -109,9 +109,9 @@
   }
   /** 날짜 — 자정을 넘기면 "10월 19일(월) ~ 10월 20일(화)" */
   const dateText = sel => datesOf(sel).map(dayLabel).join(' ~ ');
-  /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (요가는 코트 없이) */
+  /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이) */
   const selText = sel => `${NC > 1 ? courtText(sel.courts) + ' ' : ''}${timeText(sel)}`;
-  /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (요가는 코트 없이) */
+  /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이) */
   const head = sel => [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : '', timeText(sel)].filter(Boolean).join(' · ');
   /** 요약 한 줄 "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간) · 844,800원" */
   const summary = sel => `${head(sel)} · ${won(priceOf(sel))}`;
@@ -144,7 +144,7 @@
 
   /* ---------- 날짜 (월 달력) ----------
      예약 가능 범위: 오늘 ~ 오늘 + CFG.days - 1 (약 2달). 범위가 걸친 달 사이만 ‹ › 로 이동.
-     지난 날 · 범위 밖 · 그 공간에 대관 칸이 없는 요일(요가센터 주말)은 disabled. 담은 시간이 있는 날엔 작은 점 */
+     지난 날 · 범위 밖 · 그 공간에 대관 칸이 없는 요일은 disabled. 담은 시간이 있는 날엔 작은 점 */
   const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
   const lastDay = () => { const d = today0(); d.setDate(d.getDate() + CFG.days - 1); return d; };
   const ym = d => ymd(d).slice(0, 7);
@@ -572,7 +572,7 @@
     $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
     return ok && !state.sending;
   }
-  /* 연락처 자동 하이픈 (2026-10-20 "요가 대관할 때 번호 쓰면 - 가 자동으로 안 들어가" — 수강신청서 apply.js 와 같게, 대관은 유선번호도 받아
+  /* 연락처 자동 하이픈 (2026-10-20 "대관할 때 번호 쓰면 - 가 자동으로 안 들어가" — 수강신청서 apply.js 와 같게, 대관은 유선번호도 받아
      서울 02 는 02-123-4567 / 02-1234-5678, 그 밖은 010-1234-5678 · 031-123-4567). '+82' 처럼 숫자·하이픈·공백 말고 다른 글자가 있으면 그대로 둔다.
      고친 자리 앞의 숫자 개수로 커서를 되돌려 가운데를 고쳐도 커서가 끝으로 튀지 않게 */
   const phoneFmt = v => {
@@ -1022,7 +1022,7 @@
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', onScroll);
 
-  // 대관 탭이 처음엔 숨어 있으면(요가 페이지) 표 높이가 0 — 보이게 될 때 상자 안 스크롤을 처음 위치로
+  // 대관 탭이 처음엔 숨어 있으면(#academy 등 레슨 탭으로 들어옴) 표 높이가 0 — 보이게 될 때 상자 안 스크롤을 처음 위치로
   if (window.ResizeObserver) new ResizeObserver(() => { scrollStart(); onScroll(); }).observe($('bkScroll'));
 
   ensureDate();

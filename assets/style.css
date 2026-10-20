@@ -154,14 +154,6 @@ section.tight{padding:90px 0}
 .price.feat .days,.price.feat .amt i{color:rgba(255,255,255,.8)}
 .price.feat .amt{border-color:rgba(255,255,255,.25)}
 .price.feat .ic svg{stroke:#fff}
-/* 수강료 카드 분류 라벨 · 한정가 뱃지 (yoga.html) */
-.price .cat{font:600 11px 'Inter';letter-spacing:.18em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
-.price.feat .cat{color:rgba(255,255,255,.8)}
-.price h3 small{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink-2);margin-left:4px;letter-spacing:0}
-.price.feat h3 small{color:rgba(255,255,255,.8)}
-.price .sale{align-self:flex-start;margin:12px 0 18px;background:var(--blue);color:#fff;font:700 12px var(--sans);letter-spacing:-.01em;padding:6px 10px}
-.price.feat .sale{background:#fff;color:var(--blue)}
-.price .amt s{font-size:20px;font-weight:600;color:var(--ink-3);margin-right:8px;text-decoration-thickness:1.5px}   /* 한정가 옆 정가 취소선 */
 .note{margin-top:14px;font-size:13px;color:var(--ink-2)}
 
 .fitems{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--ink);margin-top:72px}
@@ -271,10 +263,6 @@ section.tight{padding:90px 0}
 .drow .cls{min-height:58px}
 .drow .band{background:repeating-linear-gradient(135deg,#f4f6f9 0 10px,#eef1f5 10px 20px);color:var(--ink-3);font-weight:700;font-size:13px;display:flex;align-items:center;padding:0 14px;letter-spacing:.2em}
 
-.instructors{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.instructors span{border:1px solid var(--line);background:#fff;padding:10px 16px;font-size:14px;font-weight:700}
-.instructors span small{font:600 11px 'Inter';color:var(--ink-3);margin-left:6px}
-
 /* ---------- RENTAL ---------- */
 .rent-hero-box{background:rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);padding:26px 28px;margin-top:28px;align-self:flex-start}
 .rent-hero-box .k{font-size:13px;opacity:.85}
@@ -321,17 +309,17 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .foot-biz .addr{flex-basis:100%}
 .foot-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,.2);font-size:12.5px;opacity:.75}
 
-/* ---------- 대관 / 레슨 탭 (배드민턴·요가) ---------- */
+/* ---------- 대관 / 레슨 탭 (배드민턴) ---------- */
 .sec-tabs{position:sticky;top:86px;z-index:40;background:#fff;border-bottom:1px solid var(--line)}
 .sec-tabs .wrap{display:grid;grid-template-columns:1fr 1fr}
 .sec-tabs a{display:flex;align-items:baseline;justify-content:center;gap:10px;padding:18px 10px;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s}
 .sec-tabs a small{font:700 12px 'Montserrat';letter-spacing:.16em}
 .sec-tabs a.on{color:var(--ink);border-bottom-color:var(--blue)}
 .sec-tabs a.on small{color:var(--blue)}
-#rental,#coaches,#class,#academy,#schedule,#instructors,#price{scroll-margin-top:60px}
+#rental,#coaches,#academy{scroll-margin-top:60px}
 .bk-tabs .bk-tab:only-child{cursor:default}
 .tab-pane[hidden]{display:none}
-@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#class,#academy,#schedule,#instructors,#price{scroll-margin-top:50px}}
+@media (max-width:640px){.sec-tabs{top:74px}.sec-tabs a{padding:14px 8px;font-size:15px}#rental,#coaches,#academy{scroll-margin-top:50px}}
 
 /* ---------- 강사진 (포스터형 3열, 사진 5:7) ---------- */
 .ct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:56px 24px;align-items:start}
@@ -346,25 +334,12 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ct-grid .coach .cv{margin-top:14px;padding-left:12px;border-left:1.5px solid var(--ink);gap:4px;font-size:13px;color:var(--ink)}
 .ct-grid .coach .cv li::before{display:none}
 .ct-grid .coach details .cv{border-left-color:var(--line);color:var(--ink-2)}
-/* 사진 준비 전 플레이스홀더 — 중앙 실루엣 (yoga.html #instructors) · 사진이 들어오면 .empty 를 빼고 <img> 를 넣습니다 */
+/* 사진 준비 전 플레이스홀더 — 중앙 실루엣 (<div class="photo empty">) · 사진이 들어오면 .empty 를 빼고 <img> 를 넣습니다 */
 .ct-grid .coach .photo.empty{display:flex;align-items:center;justify-content:center;position:relative}
 .ct-grid .coach .photo.empty svg{width:36%;height:auto;fill:none;stroke:rgba(255,255,255,.3);stroke-width:1.4;stroke-linecap:round}
 .ct-grid .coach .photo.empty::after{content:"사진 준비 중";position:absolute;left:0;right:0;bottom:16px;text-align:center;font:600 11px var(--sans);letter-spacing:.04em;color:rgba(255,255,255,.35)}
 @media (max-width:1020px){.ct-grid{grid-template-columns:1fr 1fr;gap:44px 18px}.ct-title{grid-column:1 / -1}}
 @media (max-width:640px){.ct-grid{gap:34px 12px}.ct-grid .coach .photo{aspect-ratio:5/7}.ct-grid .coach .kr{font-size:15px}.ct-grid .coach .cv,.ct-grid .coach details{font-size:12px}.ct-grid .coach .sns{flex-direction:column;gap:6px;font-size:11.5px}}
-/* 작은 카드 (yoga.html #instructors .ct-grid.ct-compact — 강사 8명) — 3열·5:7 은 한 명씩 너무 커서 PC 4열(8명 = 2줄) · 사진 4:5 · 글씨 약간 작게.
-   제목은 한 줄 전체로 올려 카드만 4열. ≤1020px 3열, ≤640px 2열. 배드민턴 코치 카드(#coaches)는 그대로 */
-.ct-grid.ct-compact{grid-template-columns:repeat(4,1fr);gap:44px 20px}
-.ct-compact .ct-title{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:flex-end;gap:24px 48px;flex-wrap:wrap}
-.ct-compact .ct-title .lead{margin-top:0;max-width:520px}
-.ct-grid.ct-compact .coach .photo{aspect-ratio:4/5}
-.ct-grid.ct-compact .coach .body{padding-top:16px}
-.ct-grid.ct-compact .coach h3.en{font-size:clamp(22px,2vw,28px)}
-.ct-grid.ct-compact .coach .kr{margin-top:6px;font-size:15px}
-.ct-grid.ct-compact .coach .cv{margin-top:12px;font-size:12.5px}
-.ct-grid.ct-compact .coach details{font-size:12.5px}
-@media (max-width:1020px){.ct-grid.ct-compact{grid-template-columns:repeat(3,1fr);gap:40px 16px}}
-@media (max-width:640px){.ct-grid.ct-compact{grid-template-columns:1fr 1fr;gap:30px 12px}.ct-grid.ct-compact .coach .photo{aspect-ratio:5/6}.ct-grid.ct-compact .coach h3.en{font-size:20px}.ct-grid.ct-compact .coach .kr{font-size:14px}.ct-grid.ct-compact .coach .cv,.ct-grid.ct-compact .coach details{font-size:12px}}
 
 /* ---------- 배드민턴 아카데미 시간표 (깔끔한 표) ---------- */
 .atb{border:1px solid var(--line);background:#fff}
@@ -530,13 +505,13 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk-tab.on em{background:var(--blue);border-color:var(--blue);color:#fff}
 .bk-body{display:grid;grid-template-columns:1fr 340px}
 .bk-main{padding:28px;min-width:0}
-.bk-step{display:flex;align-items:baseline;gap:10px;font-size:16px;font-weight:800;margin:26px 0 12px;letter-spacing:-.02em;white-space:nowrap}   /* 제목("시간 선택")은 안 깨지고 옆 안내만 줄바꿈 — 요가 안내가 길어 휴대폰에서 "시간/선택" 으로 갈라지던 것 */
+.bk-step{display:flex;align-items:baseline;gap:10px;font-size:16px;font-weight:800;margin:26px 0 12px;letter-spacing:-.02em;white-space:nowrap}   /* 제목("시간 선택")은 안 깨지고 옆 안내만 줄바꿈 — 안내가 길면 휴대폰에서 "시간/선택" 으로 갈라지던 것 */
 .bk-step:first-child{margin-top:0}
 .bk-step b{font:700 12px 'Inter';color:var(--blue)}
 .bk-step small{font-size:12.5px;font-weight:500;color:var(--ink-3);white-space:normal}
 .bk-step small.warn{color:#c0392b;font-weight:700}   /* booking.js flashNote — 마지막 코트 끄기·최대 초과 같은 짧은 경고 (3초 뒤 원래 문구) */
 /* 시간 안내 칸 (booking.js fitNote) — 나올 수 있는 문구(기본 안내 · 시작점 안내 · 범위 안내 · 코트 채우기 안내 · 경고)를 .bk-fit 에 투명하게 겹쳐 두어 가장 긴 문구 높이만큼 늘 자리를 잡음.
-   안내가 바뀌어 줄 수가 달라져도(휴대폰 폭에서 요가 기본 안내 2~3줄 ↔ 시작점 안내 1줄, 범위 안내·경고 2줄) 아래 시간 격자가 위아래로 밀리지 않게 */
+   안내가 바뀌어 줄 수가 달라져도(휴대폰 폭에서 기본 안내 2~3줄 ↔ 시작점 안내 1줄, 범위 안내·경고 2줄) 아래 시간 격자가 위아래로 밀리지 않게 */
 .bk-note{display:inline-grid;white-space:normal}
 .bk-note > *,.bk-fit > *{grid-area:1 / 1}
 .bk-fit{display:grid;visibility:hidden}
@@ -739,17 +714,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-days button{padding:11px 0;border:1px solid var(--line);background:#fff;font:700 15px var(--sans);cursor:pointer;color:var(--ink);position:relative}
 .ap-days button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .ap-days button i{position:absolute;top:-7px;right:-5px;font-style:normal;background:var(--blue);color:#fff;font:700 10.5px 'Inter';min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
-.ycls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ycls label{cursor:pointer;position:relative}
-.ycls input{position:absolute;opacity:0;pointer-events:none}
-.ycls .yc{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center;border:1px solid var(--line);border-left:4px solid var(--c);padding:11px 12px;background:#fff;transition:all .15s}
-.ycls .yc .tm{grid-row:1 / span 2;font:700 14px 'Inter'}
-.ycls .yc b{font-size:14.5px;font-weight:800;letter-spacing:-.02em}
-.ycls .yc small{font-size:12px;color:var(--ink-2)}
-.ycls input:checked + .yc{background:var(--bg);box-shadow:inset 0 0 0 1px var(--c)}
-.ycls input:checked + .yc::after{content:"✓";position:absolute;top:50%;right:12px;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
-.ycls input:focus-visible + .yc{outline:2px solid var(--blue);outline-offset:2px}
-.ycls .none{grid-column:1 / -1;color:var(--ink-3);font-size:14px;padding:14px 0}
 .agree-box{border:1px solid var(--line);background:var(--paper-2);padding:16px 18px}
 .agree-box .ck{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;font-weight:700;cursor:pointer;line-height:1.5}
 .agree-box .ck input{width:18px;height:18px;margin-top:2px;accent-color:var(--blue);flex:none}
@@ -764,7 +728,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-sum .ttl{font-size:21px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
 .ap-sum dl{margin-top:18px;display:grid;grid-template-columns:78px 1fr;gap:9px 10px;font-size:13.5px;border-top:1px solid rgba(255,255,255,.15);padding-top:16px}
 .ap-sum dt{color:rgba(255,255,255,.55)}
-.ap-sum dd{font-weight:600;overflow-wrap:anywhere;word-break:normal}   /* 띄어쓰기에서 먼저 줄바꿈 — 320px 요약 카드의 수강권 줄이 글자 중간에서 갈리지 않게 (2026-10-19) */
+.ap-sum dd{font-weight:600;overflow-wrap:anywhere;word-break:normal}   /* 띄어쓰기에서 먼저 줄바꿈 — 320px 요약 카드의 긴 줄이 글자 중간에서 갈리지 않게 (2026-10-19) */
 .ap-sum dd.empty{color:rgba(255,255,255,.3);font-weight:500}
 .ap-note{font-size:12.5px;color:var(--ink-2);line-height:1.65}
 .ap-done{background:#fff;border:1px solid var(--line);padding:48px 40px;text-align:center}
@@ -784,7 +748,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .ap-card{padding:22px 16px}
   .ap-grid{grid-template-columns:1fr}
   .grp{grid-template-columns:1fr}
-  .ycls{grid-template-columns:1fr}
   .ap-done{padding:36px 18px}
 }
 
@@ -802,12 +765,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-opt .tm{color:var(--blue)}
 .ap-opt .p{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
 .ap-opt .p s{display:block;font-size:12.5px;font-weight:500;color:var(--ink-3);line-height:1.3}   /* 할인가 위 정가 취소선 (2026-10-19) */
-.ap-opt.fixed{cursor:default;border-color:var(--blue);background:#f3f7ff}   /* 요가 결제 화면 — 신청서에서 고른 수강권 하나만 (다시 고르지 않음) */
 .ap-opt.off{opacity:.45;cursor:not-allowed}
-.fld.err .ap-opt{border-color:#d0342c}   /* 요가 신청서 03 수강권 선택 — 안 고르고 제출하면 빨간 테두리 (2026-10-19) */
-.fld .ap-opt input:focus{outline:none}   /* 글 입력칸용 네모 outline(.fld input:focus)이 둥근 라디오엔 어색 — 키보드 포커스만 아래 규칙 */
 .ap-opt input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.ap-tickets .ap-pay-msg{margin:0;font-size:13.5px;color:var(--ink-3)}
 .ap-paybtn{width:100%;margin-top:14px;background:var(--blue);color:#fff;border:0;padding:16px;font:800 16px var(--sans);cursor:pointer}
 .ap-paybtn:disabled{opacity:.6;cursor:wait}
 .ap-done .ap-pay-msg,.ap-pay-msg{margin-top:12px;font-size:14px;color:var(--ink-2);line-height:1.6}
@@ -839,7 +798,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
    두 칸을 같은 폭으로 고정하고, 칸보다 긴 낱말만 칸 끝에서 줄바꿈 (body 의 keep-all 은 그대로라 짧은 낱말은 안 갈라짐).
    이미 칸 안에 들어오는 폭(414px 이상 · 닫힌 상태)에선 모습 변화 없음 */
 @media (max-width:640px){
-  .ct-grid,.ct-grid.ct-compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ct-grid .coach .cv li,.ct-grid .coach .sns a,.ct-grid .coach h3.en{overflow-wrap:anywhere}
 }
 
@@ -863,7 +822,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .tile .t{left:12px;right:12px}
   .tile::after{background:linear-gradient(180deg,rgba(5,15,50,0) 10%,rgba(5,15,50,.72))}   /* 글자가 타일 위쪽까지 올라와도 읽히게 어둡게 깔리는 범위만 넓힘 */
   .foot-brand .sub{letter-spacing:.2em}                       /* 로고 옆 'PREMIUM INDOOR SPORTS STUDIO' (줄바꿈 금지) */
-  .price{padding:26px 20px 24px}                              /* 요가 수강료 카드 — '35,000 20,000원' 한 덩어리 */
+  .price{padding:26px 20px 24px}                              /* 수강료 카드 — '350,000원' 한 덩어리 */
   .price .amt{font-size:34px}
   .youth .body{padding:36px 20px}                             /* 유소년 아카데미 '20만원 → 15만원' */
   .yrow{padding:16px 16px}
@@ -874,7 +833,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .bk-sg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}          /* 대관 시간 칸 4열 */
   .bk-slots button{padding:12px 2px}
   .bk-slots button b{font-size:13px}
-  .ycls .yc{padding-right:40px}                               /* 요가 수강신청 수업 카드 — 선택 표시(✓)가 '강사 · 시간' 글자를 가리지 않게 */
 }
 
 /* 결제 전 환불 규정 · 결제 확인창 · 결제 완료 화면 (2026-10-18 — assets/pay-ui.js, 수강신청 · 대관 공용) */
@@ -940,8 +898,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-pay-hint{margin-top:8px;font-size:12.5px;color:var(--ink-3);text-align:center}
 .ap-pay-hint[hidden]{display:none}
 .ap-opt .t .why{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:#c0392b}
-.ap-yoga-note{border:1px solid #cfdcff;background:#f3f7ff;padding:14px 16px;font-size:14px;line-height:1.65;color:var(--ink)}
-.ap-yoga-note b{color:var(--blue)}
 
 /* 2026-10-19 배드민턴 신청서 — 타임별 마감(정원·급수) */
 .pref-note{margin:-2px 0 12px}
@@ -953,3 +909,9 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .chips2 label.off span{opacity:.5;background:var(--paper-2);color:var(--ink-3)}
 .chips2 span small{display:block;font-size:11px;font-weight:700;margin-top:2px}
 .chips2 label.off span small{color:#d0342c}
+
+/* 운영을 마친 프로그램의 예전 주소용 안내 페이지 (2026-10-20 — 예전 링크·즐겨찾기가 404 가 나지 않게, 메뉴·푸터는 다른 페이지와 같음) */
+.end-page{min-height:72vh;display:flex;align-items:center;padding-top:150px}
+.end-page .wrap{width:100%;text-align:center}
+.end-page .lead{margin-top:12px}
+.end-page .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}

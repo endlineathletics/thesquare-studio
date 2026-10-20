@@ -54,7 +54,7 @@
   const DAYS = ['월', '화', '수', '목', '금'];
   const DAYS_EN = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 
-  // 요가 시간표는 관리프로그램에서 받은 글(수업 이름·강사)이 들어오므로 HTML 로 넣기 전에 이스케이프 (2026-10-18)
+  // 칸 글(수업 이름·코치)은 HTML 로 넣기 전에 이스케이프
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   function clsHTML(cell, cats, catFn) {
     const k = cell[2] || catFn(cell[0], cell);
@@ -107,62 +107,13 @@
     el.innerHTML = h || '<p class="note" style="padding:18px 0">수업이 없습니다.</p>';
   }
 
-  /* 요가 시간표 = 관리프로그램의 매주 반복 수업 (2026-10-18 "요가 수업명 관리자에서 바꾸면 홈페이지도 반영되게") —
-     /api/site?action=yoga_schedule 로 받아 schedule.js 의 YOGA_SCHEDULE(예비 — 못 받으면 그대로 보임)을 틀로 칸만 바꿔 다시 그린다:
-     같은 시각 줄은 요일 칸을 관리프로그램 값으로(없으면 빈 칸, 대관 'R' 자리는 그대로), 표에 없는 시각은 시각 순으로 그 구역에 끼우고,
-     수업이 다 없어진 줄은 뺀다. 구역 이름·대관 띠는 schedule.js 그대로. */
-  function yogaFromApi(classes, base) {
-    const byTime = {};
-    classes.forEach(c => {
-      if (!(c.wd >= 0 && c.wd < 5) || !c.start || !c.end || !c.name) return;
-      (byTime[c.start + '~' + c.end] = byTime[c.start + '~' + c.end] || [null, null, null, null, null])[c.wd] = [String(c.name), String(c.coach || '')];
-    });
-    const out = [], used = new Set();
-    base.forEach(s => {
-      if (!s.cells) { out.push(s); return; }
-      const k = s.time + '~' + s.end, live = byTime[k];
-      used.add(k);
-      out.push(Object.assign({}, s, { cells: s.cells.map((cell, i) => (live && live[i]) || (cell === 'R' ? 'R' : null)) }));
-    });
-    Object.keys(byTime).filter(k => !used.has(k)).sort().forEach(k => {
-      const [time, end] = k.split('~');
-      let at = out.findIndex(s => s.time && s.time > time);
-      if (at < 0) at = out.length;
-      else if (at > 1 && out[at - 1].section) at--;          // 다음 구역 머리 앞 = 앞 구역 끝 (맨 앞 구역 머리는 넘지 않음)
-      out.splice(at, 0, { time, end, cells: byTime[k] });
-    });
-    return out.filter(s => !s.cells || s.cells.some(c => c));
-  }
-  function loadYogaLive() {
-    const api = window.BOOKING && window.BOOKING.api;
-    if (!api || !window.fetch || !window.AbortController) return Promise.resolve(null);
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
-    return fetch(api + '?action=yoga_schedule', { signal: ctl.signal, credentials: 'omit' })
-      .then(r => (r.ok ? r.json() : null))
-      .then(j => (j && j.ok && Array.isArray(j.classes) && j.classes.length ? yogaFromApi(j.classes, window.YOGA_SCHEDULE) : null))
-      .catch(() => null)
-      .finally(() => clearTimeout(t));
-  }
-
-  document.querySelectorAll('[data-timetable]').forEach(root => {
-    initTimetable(root);
-    if (root.dataset.timetable === 'yoga') {
-      loadYogaLive().then(data => {
-        if (!data) return;
-        window.YOGA_SCHEDULE = data;                          // 강사 범례(yogaTeacherCats)도 새 표 기준
-        root.querySelectorAll('.daytabs, .chips').forEach(el => el.replaceWith(el.cloneNode(false)));   // 옛 click 처리 떼기
-        initTimetable(root);
-      });
-    }
-  });
+  document.querySelectorAll('[data-timetable]').forEach(initTimetable);
 
   function initTimetable(root) {
-    const kind = root.dataset.timetable;
-    const bd = kind === 'badminton';
-    const data = bd ? window.BD_SCHEDULE : window.YOGA_SCHEDULE;
-    // 요가는 강사별 색 (2026-10-18 — 같은 강사 수업은 같은 색, 칩 = 강사 범례 가나다순 · 누르면 그 강사 수업만 진하게)
-    const cats = bd ? window.BD_CATS : window.yogaTeacherCats();
-    const catFn = bd ? window.bdCat : (name, cell) => cell[1];
+    if (root.dataset.timetable !== 'badminton' || !window.BD_SCHEDULE) return;   // 시간표 데이터는 배드민턴(schedule.js)만
+    const data = window.BD_SCHEDULE;
+    const cats = window.BD_CATS;
+    const catFn = window.bdCat;
     const nd = data.find(s => s.cells).cells.length;
     const table = root.querySelector('table');
     const list = root.querySelector('.daylist');

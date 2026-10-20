@@ -12,13 +12,9 @@ const NOTIFY_EMAIL = '';   // 새 예약 알림을 받을 이메일 (비워두�
 /* 공간별 설정 — assets/booking-config.js 와 똑같이 맞춰야 합니다.
    slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸 "시작-종료" */
 const HOURLY_ = Array.from({ length: 24 }, (_, h) => `${('0' + h).slice(-2)}:00-${('0' + (h + 1)).slice(-2)}:00`);
-const YOGA_DAY_ = ['13:30-14:20', '14:30-15:20', '15:30-16:20', '16:30-17:20'];
-const YOGA_FRI_EVE_ = ['17:30-18:20', '18:30-19:20', '19:30-20:20', '20:30-21:20'];
 const SPACES = {
   badminton: { name: '배드민턴센터', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
                slots: [HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_] },
-  yoga:      { name: '요가센터', price: 100000, courts: ['공간 전체'],
-               slots: [[], YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_, YOGA_DAY_.concat(YOGA_FRI_EVE_), []] },
 };
 const BOOKING_DAYS = 62;   // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (booking-config.js days 와 동일)
 const MAX_ITEMS = 72;      // 한 번에 신청할 수 있는 최대 시간 수 (booking-config.js maxItems 와 동일)
@@ -164,7 +160,7 @@ function applySheet_() {
 
 function apply_(d) {
   const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
-  const type = d.type === 'badminton' ? '배드민턴' : d.type === 'yoga' ? '요가' : '';
+  const type = d.type === 'badminton' ? '배드민턴' : '';
   const name = str(d.name, 30), phone = str(d.phone, 20), region = str(d.region, 40);
   const age = Number(d.age);
   const ag = d.agreements || {};
@@ -173,20 +169,11 @@ function apply_(d) {
   const g = d.guardian || {};
   if (!type || !name || !/^01[016789]-?\d{3,4}-?\d{4}$/.test(phone) || !Number.isInteger(age) || age < 3 || age > 99 ||
       !['남', '여'].includes(d.gender) || !region || !ag.privacy || !p || !str(d.experience, 30) ||
-      (type === '배드민턴' && !str(d.grade, 20)) ||
+      !str(d.grade, 20) ||
       (minor && (!str(g.name, 30) || !str(g.relation, 20) || !ag.guardian))) {
     return out_({ ok: false, error: 'invalid' });
   }
-  let cls, time, coach;
-  if (type === '배드민턴') {
-    cls = `${str(p.class, 20)} ${str(p.days, 10)}`; time = str(p.time, 20); coach = str(p.coach, 20);
-  } else {
-    const list = (Array.isArray(p) ? p : []).slice(0, 40);
-    if (!list.length) return out_({ ok: false, error: 'invalid' });
-    cls = list.map(x => `${str(x.day, 2)} ${str(x.class, 20)}`).join('\n');
-    time = list.map(x => `${str(x.day, 2)} ${str(x.time, 20)}`).join('\n');
-    coach = list.map(x => str(x.teacher, 10)).join('\n');
-  }
+  const cls = `${str(p.class, 20)} ${str(p.days, 10)}`, time = str(p.time, 20), coach = str(p.coach, 20);
   const clientId = str(d.clientId, 64);
   const guardian = minor ? `${str(g.name, 30)} (${str(g.relation, 20)}) 동의` : '';
   const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
@@ -210,6 +197,6 @@ function apply_(d) {
   }
   notify_(`[THE SQUARE] 새 ${type} 수강신청 ${id}`,
     `이름: ${name} (${d.gender}, 만 ${age}세)\n연락처: ${phone}\n급수: ${str(d.grade, 20) || '-'}\n경력: ${str(d.experience, 30)}\n` +
-    `희망 반/수업: ${cls}\n희망 시간: ${time}\n희망 코치/강사: ${coach}\n거주 지역: ${region}` + (guardian ? `\n법정대리인: ${guardian}` : ''));
+    `희망 반: ${cls}\n희망 시간: ${time}\n희망 코치: ${coach}\n거주 지역: ${region}` + (guardian ? `\n법정대리인: ${guardian}` : ''));
   return out_({ ok: true, id });
 }

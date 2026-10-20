@@ -14,6 +14,6 @@ window.APPLY = {
   paySdk: 'https://pay.nicepay.co.kr/v1/js/',   // 운영·샌드박스 같은 주소 (모드는 관리프로그램 키가 정함 — booking-config.js 와 같음)
   payMethod: 'card',
   alimtalk: false,
-  phone: { badminton: '010-7576-1861', yoga: '010-7569-1861' },   // 종목별 문의 번호 (body[data-apply] 로 선택)
+  phone: '010-7576-1861',   // 수강 문의 번호 (오류·대기 신청 안내)
   instagram: 'https://www.instagram.com/the__square_studio/',
 };

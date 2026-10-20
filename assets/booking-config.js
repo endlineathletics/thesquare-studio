@@ -12,9 +12,6 @@
 (function () {
   const p = n => String(n).padStart(2, '0');
   const HOURLY = Array.from({ length: 24 }, (_, h) => `${p(h)}:00-${p(h + 1)}:00`);
-  // 요가실 대관 시간 (운영 계획표 기준): 평일 13:30–17:20, 금요일 저녁 17:30–21:20
-  const YOGA_DAY = ['13:30-14:20', '14:30-15:20', '15:30-16:20', '16:30-17:20'];
-  const YOGA_FRI_EVE = ['17:30-18:20', '18:30-19:20', '19:30-20:20', '20:30-21:20'];
 
   window.BOOKING = {
     api: 'https://thesquare-admin-production.up.railway.app/api/site',
@@ -36,12 +33,6 @@
         courts: ['COURT 1', 'COURT 2', 'COURT 3'], title: 'COURT RESERVATION',
         note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로 따로 신청해주세요 · 새벽까지 쓰려면 다음 날짜를 눌러 같은 코트로 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
-      },
-      yoga: {
-        name: '요가센터', phone: '010-7569-1861', unit: '공간 전체 1시간', price: 100000,
-        courts: ['요가센터'], title: 'STUDIO RESERVATION',
-        note: '평일 13:30–17:20 · 금요일 17:30–21:20 (요가 수업 시간 제외) · 시작·끝 시간을 누르면 그 사이가 한 번에 선택돼요',
-        slots: [[], YOGA_DAY, YOGA_DAY, YOGA_DAY, YOGA_DAY, YOGA_DAY.concat(YOGA_FRI_EVE), []],
       },
     },
   };
