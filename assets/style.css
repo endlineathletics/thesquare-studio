@@ -228,6 +228,8 @@ section.tight{padding:90px 0}
 .coach .sns{padding-top:18px;font-size:12.5px;color:var(--ink)}
 
 /* ---------- TIMETABLE ---------- */
+/* .tt-top·.tt-note 는 badminton.html 이 씀. 표(.tt-wrap·.tt·.cls·.daytabs·.daylist·.drow·.chips)는 지금 쓰는 페이지 없음 — 배드민턴 표를 다시 넣을 때용
+   (data-timetable="badminton" 구역 — assets/main.js initTimetable, 2026-10-20 요가 시간표 삭제 뒤) */
 .tt-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:26px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chipbtn{border:1px solid var(--line);background:#fff;padding:8px 13px;font:600 13px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
@@ -445,13 +447,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .promo-strip p{font-size:17px;font-weight:700;letter-spacing:-.02em}
 .promo-strip p s{opacity:.45;font-weight:500;margin:0 6px}
 .promo-strip p em{font-style:normal;color:var(--blue-2);font-family:'Inter';font-size:22px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);margin-top:64px}
-.stat{padding:24px 20px 0 0}
-.stat b{display:block;font-family:var(--display);font-weight:400;font-size:44px;line-height:1;color:var(--blue)}
-.stat span{display:block;margin-top:8px;font-size:14px;color:var(--ink-2);font-weight:600}
 .gallery2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:56px}
 .gallery2 .photo{aspect-ratio:auto;height:520px}
-@media (max-width:1020px){.stats{grid-template-columns:1fr 1fr}.stat{padding-bottom:18px}}
 @media (max-width:640px){.promo-strip{grid-template-columns:1fr;gap:12px}.gallery2{grid-template-columns:1fr}.gallery2 .photo{height:300px}}
 
 .tt .band{padding:18px 10px}
@@ -761,10 +758,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-opt input{accent-color:var(--blue);width:18px;height:18px;flex:none;margin:0}
 .ap-opt .t{flex:1;min-width:0;font-weight:700;font-size:15px;line-height:1.45}
 .ap-opt .t small{display:block;font-weight:500;font-size:12.5px;color:var(--ink-3);margin-top:3px}
-.ap-opt .t em{font-style:normal;font-size:11.5px;font-weight:700;color:#fff;background:var(--blue);padding:2px 6px;margin-left:4px;white-space:nowrap}
 .ap-opt .tm{color:var(--blue)}
 .ap-opt .p{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
-.ap-opt .p s{display:block;font-size:12.5px;font-weight:500;color:var(--ink-3);line-height:1.3}   /* 할인가 위 정가 취소선 (2026-10-19) */
 .ap-opt.off{opacity:.45;cursor:not-allowed}
 .ap-opt input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .ap-paybtn{width:100%;margin-top:14px;background:var(--blue);color:#fff;border:0;padding:16px;font:800 16px var(--sans);cursor:pointer}
@@ -897,7 +892,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .ap-paybtn.busy{background:var(--blue);opacity:.6;cursor:wait}
 .ap-pay-hint{margin-top:8px;font-size:12.5px;color:var(--ink-3);text-align:center}
 .ap-pay-hint[hidden]{display:none}
-.ap-opt .t .why{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:#c0392b}
 
 /* 2026-10-19 배드민턴 신청서 — 타임별 마감(정원·급수) */
 .pref-note{margin:-2px 0 12px}

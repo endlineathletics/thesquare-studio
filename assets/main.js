@@ -50,7 +50,8 @@
   }), { threshold: .12 });
   document.querySelectorAll('.rv').forEach(el => io.observe(el));
 
-  /* timetable */
+  /* timetable — 지금 쓰는 페이지 없음(data-timetable 구역 0곳, 옛 요가 시간표는 2026-10-20 삭제) — 배드민턴 표를 다시 넣을 때용
+     (페이지에 data-timetable="badminton" 구역 + schedule.js, 모양은 style.css TIMETABLE) */
   const DAYS = ['월', '화', '수', '목', '금'];
   const DAYS_EN = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 

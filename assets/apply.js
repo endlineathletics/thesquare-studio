@@ -2,6 +2,19 @@
 (function () {
   const form = document.getElementById('applyForm');
   if (!form) return;
+  // 아래 초기화가 어디서 죽어도 브라우저 기본 제출(GET — 이름·연락처가 주소·방문 기록에 실림)은 하지 않게 먼저 막아 둔다.
+  // 진짜 제출은 아래 '제출' 구역의 submit 처리기 (2026-10-20 요가 삭제 검토)
+  form.addEventListener('submit', e => e.preventDefault());
+  // 배드민턴 신청서만 — 브라우저·CDN 캐시에 남은 옛 yoga-apply.html(data-apply="yoga", ?v=20261020a 로 이 파일을 부름)이면
+  // 신청서를 통째로 운영 종료 안내로 바꾼다 (요가 2026-10-20 운영 종료 — 입력칸이 없어 다시 제출할 수도 없음)
+  if (document.body.dataset.apply !== 'badminton' || !document.getElementById('prefGroups')) {
+    const yoga = document.body.dataset.apply === 'yoga';
+    (document.getElementById('applyWrap') || form).innerHTML = `<div class="ap-done">
+      <h2>${yoga ? '요가 수강신청은 운영을 마쳤어요' : '신청서를 불러오지 못했어요'}</h2>
+      <p>${yoga ? '그동안 이용해 주셔서 감사합니다.' : '화면을 새로 고쳐 주세요.'}</p>
+      <div class="acts"><a class="pri" href="badminton.html">배드민턴 보기</a><a href="index.html">홈으로</a></div></div>`;
+    return;
+  }
   const TYPE = 'badminton';
   const TYPE_NAME = '배드민턴';
   const CFG = Object.assign({}, window.APPLY);
@@ -10,9 +23,6 @@
   const DAYS = ['월', '화', '수', '목', '금'];
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const wonText = n => Number(n).toLocaleString('ko-KR') + '원';
-  // 가격 칸 — 할인가(10월 한정 등, 관리프로그램이 regular = 정가를 줄 때)면 정가를 취소선으로 위에 (2026-10-19)
-  const priceHtml = x => `${x.regular > x.amount ? `<s>${wonText(x.regular)}</s>` : ''}${wonText(x.amount)}`;
 
   /* ---------- 연락처 자동 하이픈 ---------- */
   form.phone.addEventListener('input', () => {
@@ -339,15 +349,10 @@
     return sdk;
   }
 
-  /** 서버가 준 안내 글(message — 예: 고를 수 없는 이유)이 있으면 그 글, 없으면 오류 코드별 문구 */
-  const errText = (r, dflt) => (r && typeof r.message === 'string' && r.message.trim()) ? r.message.trim().slice(0, 200) : (PAY_ERR[r && r.error] || dflt);
-  /** 고른 것 한 줄 — '8회 회원권 (10월 한정)\n8회 · 결제일부터 30일' / '19:30~20:30 · 11월\n한 달 · 8회' */
-  const optText = x => `${x.time ? x.time + ' · ' : ''}${x.label}${x.badge ? ` (${x.badge})` : ''}${x.sub ? '\n' + x.sub : ''}`;
-  /** 옵션 아래 글 — 서버가 못 고르는 까닭(why — 관리프로그램 apply_pay_options)을 주면 빨간 글로 (sub 에도 같은 글이 와서 한 번만) */
-  const optSub = x => {
-    const why = x.disabled && (x.why || x.reason);
-    return `${!why || x.sub !== why ? `<small>${esc(x.sub)}</small>` : ''}${why ? `<span class="why">${esc(why)}</span>` : ''}`;
-  };
+  /** 오류 코드별 문구 (관리프로그램 수강신청 결제 응답 = ok·error(+test)만 — 옵션 칸은 key·label·sub·amount·disabled·time, 2026-10-20 요가 삭제 뒤) */
+  const errText = (r, dflt) => PAY_ERR[r && r.error] || dflt;
+  /** 고른 것 한 줄 — '19:30~20:30 · 11월\n한 달 · 8회' */
+  const optText = x => `${x.time ? x.time + ' · ' : ''}${x.label}${x.sub ? '\n' + x.sub : ''}`;
   const appLogin = () => { try { return new URL(CFG.api).origin + '/login'; } catch (e) { return ''; } };
 
   /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(반 이름), pick(결제가 안 끝나 다시 그릴 때 — 앞서 고른 옵션 key) }
@@ -379,8 +384,8 @@
     const picked = o.pick ? r.options.find(x => x.key === o.pick) : null;
     const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
     const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
-    const optBody = x => `<span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}${x.badge ? ` <em>${esc(x.badge)}</em>` : ''}${optSub(x)}</span>
-          <span class="p">${priceHtml(x)}</span>`;
+    const optBody = x => `<span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}<small>${esc(x.sub)}</small></span>
+          <span class="p">${won(x.amount)}</span>`;
     box.innerHTML = `<h3>시작할 달을 골라주세요</h3>
       <div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
