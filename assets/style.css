@@ -181,6 +181,7 @@ section.tight{padding:90px 0}
 
 /* ---------- PROGRAM ROW ---------- */
 .programs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.programs.p3{grid-template-columns:repeat(3,1fr)}   /* 칸 3개(공간대여 공간 구성) */
 .prog{padding:30px 24px 30px 0}
 .prog + .prog{padding-left:24px;border-left:1px solid var(--line)}
 .prog b{display:block;font:700 13px 'Inter';letter-spacing:.08em}
@@ -394,7 +395,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .pillars{grid-template-columns:1fr}
   .pillar .photo{aspect-ratio:16/11}
   .coach-grid .coach{flex-basis:calc((100% - 18px) / 2)}
-  .programs,.steps{grid-template-columns:1fr 1fr}
+  .programs,.steps,.programs.p3{grid-template-columns:1fr 1fr}
   .prog:nth-child(3){padding-left:0;border-left:0}
   .prog{border-top:1px solid var(--line)}
   .youth .photo{min-height:340px}
@@ -433,7 +434,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .crow{grid-template-columns:1fr auto}
   .crow .k{grid-column:1 / -1}
   .yrow{flex-direction:column;align-items:flex-start;gap:8px}
-  .programs,.steps{grid-template-columns:1fr}
+  .programs,.steps,.programs.p3{grid-template-columns:1fr}
   .prog,.prog + .prog{padding-left:0;border-left:0}
   .cta-band .nums{gap:22px}
   .map{height:320px}
