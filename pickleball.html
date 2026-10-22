@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피클볼 코트 대관 — THE SQUARE STUDIO</title>
+<meta name="description" content="THE SQUARE 피클볼 코트 대관 · COURT 4 · 24시간 · 1시간 75,000원 · 날짜·시간을 고르고 결제하면 바로 확정 · 가산디지털단지역 도보 5분.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%2306101f%22/%3E%3Cg fill=%22none%22 stroke=%22%230058FC%22 stroke-width=%227%22 transform=%22translate(12 12) scale(.76)%22%3E%3Crect x=%223.3%22 y=%223.3%22 width=%2293.4%22 height=%2293.4%22/%3E%3Cpath d=%22M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="assets/style.css?v=20261022a">
+<link rel="stylesheet" href="assets/booking.css?v=20261020y">
+</head>
+<body data-page="pickleball">
+
+<nav class="nav" id="nav">
+  <a href="index.html" class="brand" aria-label="THE SQUARE STUDIO 홈">
+    <svg class="logo" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg>
+    <div class="wm">THE S<span class="q">Q</span>UARE<small>STUDIO</small></div>
+  </a>
+  <div class="menu" id="menu">
+    <a href="index.html" data-page="home">홈</a>
+    <a href="badminton.html" data-page="badminton">배드민턴</a>
+    <a href="pickleball.html" data-page="pickleball">피클볼</a>
+    <a href="space.html" data-page="space">공간대여</a>
+    <a href="about.html" data-page="about">소개</a>
+  </div>
+  <button class="burger" id="burger" aria-label="메뉴">☰</button>
+</nav>
+
+<header class="page-hero">
+  <picture>
+    <!-- 세로로 긴 휴대폰 화면 = 세로 사진(사람이 가운데). 조건은 style.css .pk-hero 와 같게 -->
+    <source media="(max-width:640px) and (max-aspect-ratio:3/4)" srcset="images/hero-pickleball.jpg">
+    <img class="pk-hero" src="images/hero-pickleball-wide.jpg" alt="피클볼 패들을 들고 준비 자세를 한 선수">
+  </picture>
+  <div class="wrap">
+    <div class="eyebrow">THE SQUARE PICKLEBALL</div>
+    <h1>Pickleball<br>Court</h1>
+    <p>배드민턴 코트와 같은 크기, COURT 4에서 피클볼을.</p>
+  </div>
+</header>
+
+<!-- 대관 (피클볼 레슨은 아직 없음 — 대관만). 결제 결과는 관리프로그램이 pickleball.html?pay=…#rental 로 돌려보냄 -->
+<section class="bg-soft" id="rental">
+  <div class="wrap">
+    <div class="bk2-result" id="bkResult" hidden></div>
+    <div class="shead rv"><span class="c">A</span>대관 · Rental<span class="l"></span></div>
+    <div class="tt-top rv">
+      <h2 class="h-display">Book the<br>court<span class="blue">.</span></h2>
+      <p class="lead">배드민턴 코트와 같은 크기의 COURT 4를 피클볼 네트로 준비해 드려요.<br>날짜·시간을 고르고 결제하시면 바로 예약이 확정돼요.<br>기업 · 단체의 센터 전체 대관은 <a href="space.html"><b>공간대여</b></a>로 문의해 주세요. *문의 <a href="tel:010-7576-1861"><b>010-7576-1861</b></a></p>
+    </div>
+
+    <div class="bk rv" id="bk">
+      <div class="bk-tabs">
+        <div class="bk-tab on" data-space="pickleball">
+          <b>피클볼 코트</b><span>PICKLEBALL COURT · COURT 4 · 24시간</span><em>1시간 75,000원</em>
+        </div>
+      </div>
+
+      <div class="bk2-top">
+        <div class="bk2-body">
+          <div class="bk2-date">
+            <div class="bk-step"><b>01</b>날짜 선택</div>
+            <div class="bk-cal" id="bkCal"></div>
+          </div>
+          <div class="bk2-pick">
+            <div class="bk-step"><b>02</b>시간 선택</div>
+            <p class="bk2-guide" id="bkGuide">배드민턴 코트와 같은 크기의 COURT 4를 피클볼 네트로 준비해 드려요 · 시작 시간과 끝 시간을 차례로 누르세요 · 새벽까지 쓰려면 다음 날짜를 눌러 이어서 고르세요</p>
+            <div class="bk2-card" id="bkCard">
+              <div class="bk2-card-h">
+                <div class="bk2-day"><span id="bkTitle">PICKLEBALL COURT</span><b id="bkDay"></b></div>
+              </div>
+              <div class="bk2-else" id="bkElse" hidden></div>
+              <div class="bk2-scroll" id="bkScroll">
+                <table class="bk2-grid" id="bkGrid"></table>
+                <p class="bk2-empty" id="bkEmpty" hidden>이 날은 대관 가능한 시간이 없습니다.</p>
+              </div>
+              <div class="bk2-foot">
+                <div class="bk2-legend"><span><i class="l-free"></i>선택 가능</span><span><i class="l-off"></i>예약 마감</span><span><i class="l-on"></i>선택한 시간</span></div>
+                <button type="button" class="bk2-clear" id="bkClear" hidden>선택 해제</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bk2-bar" id="bkBar">
+          <p class="bk2-warn" id="bkWarn" aria-hidden="true"></p>
+          <div class="bk2-bar-txt"><b id="bkBarMain">예약 시간을 선택하세요</b><span id="bkBarSub">원하는 시간을 누르면 선택됩니다</span></div>
+          <button type="button" class="bk2-go" id="bkGo" disabled>예약 확인 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div class="bk2-apply" id="bkApply">
+        <div class="bk-step"><b>03</b>예약자 정보 · 결제</div>
+        <div class="bk2-sel" id="bkSel"></div>
+        <form class="bk-form" id="bkForm" novalidate>
+          <label>이름 *<input name="name" required autocomplete="name"></label>
+          <label>연락처 *<input name="phone" type="tel" required inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
+          <label>인원<input name="people" type="number" min="1" inputmode="numeric"></label>
+          <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
+          <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
+          <div id="bkTerms"></div><!-- 대관 환불 규정 (관리프로그램 > 안내문, assets/pay-ui.js) — 체크해야 [결제하기] -->
+          <p class="bk-hold" id="bkHold" hidden aria-live="polite"></p><!-- 결제 대기 경고 · 결제창이 열린 동안 남은 시간 (assets/booking.js holdNote) -->
+          <button type="submit" class="bk-submit" id="bkSubmit" disabled>결제하기</button>
+          <p class="bk-msg" id="bkMsg"></p>
+        </form>
+      </div>
+      <p class="bk-sr" id="bkLive" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="steps rv">
+      <div class="step"><b>01</b><h4>날짜 · 시간 선택</h4><p>달력에서 날짜를 고르고, 표에서 시작 시간과 끝 시간을 차례로 누르세요.</p></div>
+      <div class="step"><b>02</b><h4>결제</h4><p>이름과 연락처를 남기고 환불 규정에 동의한 뒤 카드로 결제하세요. 결제창이 열리면 5분 안에 마쳐 주세요.</p></div>
+      <div class="step"><b>03</b><h4>바로 확정</h4><p>결제가 끝나면 따로 연락을 기다리지 않아도 바로 예약이 확정돼요. 완료 화면에서 신청번호를 확인하세요.</p></div>
+      <div class="step"><b>04</b><h4>이용</h4><p>예약한 시간에 맞춰 피클볼 네트로 준비해 둘게요. 시간에 맞춰 방문해 이용하세요.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <div class="wrap">
+    <div class="foot-brand"><svg class="logo big" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6.6" aria-hidden="true"><rect x="3.3" y="3.3" width="93.4" height="93.4"/><path d="M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7"/></svg><div><div class="wordmark">THE S<span class="q">Q</span>UARE</div><div class="sub"><i></i>PREMIUM INDOOR SPORTS STUDIO<i></i></div></div></div>
+    <div class="nums">
+      <a href="tel:010-7576-1861"><small>대관 문의</small><b>010-7576-1861</b></a>
+      <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener"><small>인스타그램 DM</small><b>@the__square_studio</b></a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-links">
+      <a href="index.html">홈</a><a href="badminton.html">배드민턴</a><a href="pickleball.html">피클볼</a><a href="space.html">공간대여</a><a href="about.html">소개</a>
+      <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
+    </div>
+    <div class="foot-biz">
+      <span>주식회사 온파이브</span><span>대표자 송혜인</span><span>사업자등록번호 305-86-42234</span><span>고객센터 <a href="tel:02-6956-1861">02-6956-1861</a></span>
+      <span class="addr">주소 서울시 금천구 디지털로 178, CA201, CA-202, CA301, CA-401, CA401-1호 일부(가산동, 현대 지식산업센터 퍼블릭가산)</span>
+    </div>
+    <div class="foot-row">
+      <span>THE SQUARE STUDIO — Premium Indoor Sports Studio</span>
+      <span>금천구 디지털로 178 A동 2층 E홀 · 가산디지털단지역 도보 5분</span>
+      <span>© 2026 THE SQUARE STUDIO</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/booking-config.js?v=20261022a"></script>
+<script src="assets/main.js?v=20261020z"></script>
+<script src="assets/pay-ui.js?v=20261018a"></script>
+<script src="assets/booking.js?v=20261022a"></script>
+</body>
+</html>

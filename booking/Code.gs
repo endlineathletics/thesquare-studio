@@ -13,11 +13,14 @@ const NOTIFY_EMAIL = '';   // 새 예약 알림을 받을 이메일 (비워두�
    slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸 "시작-종료" */
 const HOURLY_ = Array.from({ length: 24 }, (_, h) => `${('0' + h).slice(-2)}:00-${('0' + (h + 1)).slice(-2)}:00`);
 const SPACES = {
-  badminton: { name: '배드민턴센터', price: 52800, courts: ['코트 1', '코트 2', '코트 3'],
+  // 코트 4 = 피클볼과 같이 쓰는 코트(2026-10-22) — 혼자 1시간 75,000원 (prices: 코트별 금액, courts 와 같은 순서)
+  badminton: { name: '배드민턴센터', price: 52800, prices: [52800, 52800, 52800, 75000], courts: ['코트 1', '코트 2', '코트 3', '코트 4'],
                slots: [HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_, HOURLY_] },
 };
 const BOOKING_DAYS = 62;   // 오늘부터 약 2달(62일) 뒤까지 예약 가능 (booking-config.js days 와 동일)
-const MAX_ITEMS = 72;      // 한 번에 신청할 수 있는 최대 시간 수 (booking-config.js maxItems 와 동일)
+const MAX_ITEMS = 96;      // 한 번에 신청할 수 있는 최대 시간 수 (booking-config.js maxItems 와 동일 — 4코트 × 24시간)
+const PICKLE_COURTS = [3];  // 피클볼 페이지(sport 'pickleball')로 신청할 수 있는 코트 index — 코트 4
+const priceOf_ = (sp, court) => (sp.prices && sp.prices[court] != null ? sp.prices[court] : sp.price);
 const own_ = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 /** 그 날짜(yyyy-MM-dd, 한국시간)의 {시작: 종료} */
@@ -95,7 +98,8 @@ function doPost(e) {
   const today = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
   const lastDay = Utilities.formatDate(new Date(Date.now() + (BOOKING_DAYS - 1) * 86400000), 'Asia/Seoul', 'yyyy-MM-dd');
   const nowHM = Utilities.formatDate(new Date(), 'Asia/Seoul', 'HH:mm');
-  if (!sp || !name || !/^[0-9\-+ ]{9,}$/.test(phone) || !items.length) return out_({ ok: false, error: 'invalid' });
+  const sport = d.sport == null ? 'badminton' : d.sport;   // 종목 — 'pickleball' 이면 코트 4만 (직원이 네트를 바꿔 놓음)
+  if (!sp || !name || !/^[0-9\-+ ]{9,}$/.test(phone) || !items.length || (sport !== 'badminton' && sport !== 'pickleball')) return out_({ ok: false, error: 'invalid' });
   const seen = {};
   for (const it of items) {
     if (!it || typeof it !== 'object') return out_({ ok: false, error: 'invalid_item' });
@@ -103,7 +107,8 @@ function doPost(e) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(it.date) || it.date < today || it.date > lastDay ||
         typeof it.start !== 'string' || !/^\d{2}:\d{2}$/.test(it.start) || !own_(map, it.start) ||
         (it.date === today && it.start <= nowHM) ||
-        !Number.isInteger(it.court) || it.court < 0 || it.court >= sp.courts.length) {
+        !Number.isInteger(it.court) || it.court < 0 || it.court >= sp.courts.length ||
+        (sport === 'pickleball' && PICKLE_COURTS.indexOf(it.court) < 0)) {
       return out_({ ok: false, error: 'invalid_item' });
     }
     it.end = map[it.start];                       // 종료 시각은 서버 설정으로 결정
@@ -127,8 +132,8 @@ function doPost(e) {
     id = nextId_('TS');
     const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
     const rows = items.map(it => [
-      now, id, sp.name, "'" + it.date, sp.courts[it.court], "'" + it.start, "'" + it.end,
-      name, "'" + phone, String(d.people || '').slice(0, 10), String(d.memo || '').slice(0, 500), sp.price, '신청',
+      now, id, sp.name + (sport === 'pickleball' ? ' · 피클볼' : ''), "'" + it.date, sp.courts[it.court], "'" + it.start, "'" + it.end,
+      name, "'" + phone, String(d.people || '').slice(0, 10), String(d.memo || '').slice(0, 500), priceOf_(sp, it.court), '신청',
     ].map(safe_));
     const sh = sheet_();
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, HEADER.length).setValues(rows);
@@ -136,8 +141,8 @@ function doPost(e) {
     lock.releaseLock();
   }
   notify_(`[THE SQUARE] 새 대관 예약 신청 ${id}`,
-    `${sp.name}\n` + items.map(it => `- ${it.date} ${sp.courts[it.court]} ${it.start}~${it.end}`).join('\n') +
-    `\n합계: ${(items.length * sp.price).toLocaleString()}원\n이름: ${name}\n연락처: ${phone}\n인원: ${d.people || '-'}\n요청사항: ${d.memo || '-'}`);
+    `${sp.name}${sport === 'pickleball' ? ' · 피클볼' : ''}\n` + items.map(it => `- ${it.date} ${sp.courts[it.court]} ${it.start}~${it.end}`).join('\n') +
+    `\n합계: ${items.reduce((t, it) => t + priceOf_(sp, it.court), 0).toLocaleString()}원\n이름: ${name}\n연락처: ${phone}\n인원: ${d.people || '-'}\n요청사항: ${d.memo || '-'}`);
   return out_({ ok: true, id });
 }
 
