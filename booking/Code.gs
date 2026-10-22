@@ -69,12 +69,13 @@ function notify_(subject, body) {
   }
 }
 
-/** space+date 에 이미 잡힌 [{court, start}] */
+/** space+date 에 이미 잡힌 [{court, start}]
+    공간 열은 '배드민턴센터' 또는 종목이 붙은 '배드민턴센터 · 피클볼' — 종목과 상관없이 같은 공간의 칸으로 셈(같은 코트 4 칸이 두 번 잡히지 않게) */
 function taken_(spaceKey, date) {
   const sp = SPACES[spaceKey];
   const rows = sheet_().getDataRange().getDisplayValues().slice(1);
   return rows
-    .filter(r => r[2] === sp.name && r[3] === date && r[12] !== '취소')
+    .filter(r => (r[2] === sp.name || r[2].indexOf(sp.name + ' · ') === 0) && r[3] === date && r[12] !== '취소')
     .map(r => ({ court: sp.courts.indexOf(r[4]), start: r[5] }));
 }
 
@@ -132,6 +133,7 @@ function doPost(e) {
     id = nextId_('TS');
     const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
     const rows = items.map(it => [
+      // 피클볼 신청은 공간 열에 ' · 피클볼'(직원이 네트를 바꿔 놓음) — taken_ 이 같은 공간으로 셈
       now, id, sp.name + (sport === 'pickleball' ? ' · 피클볼' : ''), "'" + it.date, sp.courts[it.court], "'" + it.start, "'" + it.end,
       name, "'" + phone, String(d.people || '').slice(0, 10), String(d.memo || '').slice(0, 500), priceOf_(sp, it.court), '신청',
     ].map(safe_));

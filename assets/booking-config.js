@@ -46,7 +46,7 @@
         name: '피클볼 코트', phone: '010-7576-1861', unit: '1시간', price: 75000,
         apiSpace: 'badminton', courtIdx: [3], sport: 'pickleball',
         courts: ['COURT 4'], title: 'PICKLEBALL COURT',
-        note: '배드민턴 코트와 같은 크기의 COURT 4를 피클볼 네트로 준비해 드려요 · 시작 시간과 끝 시간을 차례로 누르세요 · 새벽까지 쓰려면 다음 날짜를 눌러 이어서 고르세요',
+        note: '시작 시간과 끝 시간을 차례로 누르세요 · 새벽까지 쓰려면 다음 날짜를 눌러 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
     },
