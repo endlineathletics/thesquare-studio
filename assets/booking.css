@@ -18,11 +18,13 @@
 .bk2-date .bk-cal-g button{min-width:0;min-height:0}
 
 /* 달력 밑 코트 배치도 (booking.js renderMap) — '라운드 타일': 연회색 바닥 위 둥근 흰 칸, 담은 신청의 코트는 연한 파랑. 표가 달력 밑으로 내려가는 1020px 이하 · 높이 640 이하 창에선 숨김.
-   달력 밑 남은 높이만 씀(그림은 absolute) — 배치도가 왼쪽 칸을 늘려 오른쪽 표 밑에 빈 줄이 생기지 않게, 낮은 창에선 그만큼 작아짐 */
-.bk2-date{display:flex;flex-direction:column}
-.bk-map{position:relative;flex:1 1 auto;min-height:120px;margin-top:24px}
+   크기는 창 높이로만 정함(정사각형) — 예전엔 달력 밑 남은 높이를 채워서, 칸을 누르면 오른쪽에 [선택 해제] · '담아 둔 시간' 줄이 생기며 배치도가 갑자기 커졌음(2026-10-24 사용자).
+   오른쪽 칸 기본 높이 = 표 상자(.bk2-scroll: clamp(150px, 100svh − 236px, 520px)) + 나머지(배드민턴 251 · 피클볼 230, 안내 글 줄 수 차이) · 왼쪽 = 달력 479 + 위 여백 24
+   → 배치도 ≤ 표 상자 − 252(배드민턴) · − 273(피클볼). 아래 값은 그보다 10px 안팎 작게 잡아 표 밑에 빈 줄이 안 생기게 함 — 안내 글 · 달력 높이를 바꾸면 다시 잴 것 */
+.bk-map{margin-top:24px}
 .bk-map:empty{display:none}
-.bk-map svg{position:absolute;top:0;left:0;right:0;width:100%;max-width:320px;height:100%;margin:0 auto;overflow:visible}
+.bk-map svg{display:block;width:min(100%,260px,calc(100vh - 498px));width:min(100%,260px,calc(100svh - 498px));height:auto;aspect-ratio:1;margin:0 auto;overflow:visible}
+body[data-page="pickleball"] .bk-map svg{width:min(100%,238px,calc(100vh - 519px));width:min(100%,238px,calc(100svh - 519px))}
 .bk-map .bg{fill:#F4F6F9}   /* 바닥 */
 .bk-map g rect{fill:#fff;stroke:var(--line);stroke-width:1.2;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s}   /* 코트 칸 */
 .bk-map g line{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke;transition:stroke .2s}   /* 네트 */
