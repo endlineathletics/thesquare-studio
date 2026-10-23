@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261022d">
+<link rel="stylesheet" href="assets/style.css?v=20261023a">
 <link rel="stylesheet" href="assets/booking.css?v=20261020y">
 </head>
 <body data-page="badminton">
@@ -30,11 +30,17 @@
   <button class="burger" id="burger" aria-label="메뉴">☰</button>
 </nav>
 
-<header class="page-hero">
-  <picture>
+<!-- 머리 사진은 탭 따라 바뀜 (2026-10-23): [대관] = 코트에 앉은 선수, [레슨] = 의자에 앉은 코치 — main.js 탭 show() 가 data-hero 를 바꾸고
+     style.css .bd-pic 이 그 사진만 보이게. 레슨 사진은 loading="lazy" 라 레슨 탭을 열 때 받음 -->
+<header class="page-hero" data-hero="rental">
+  <picture class="bd-pic bd-pic-rental">
     <!-- 좁은 화면(사진이 높이에 맞춰지는 폭) = 사람을 크게 자른 사진. 조건은 style.css .bd-hero 와 같게 -->
     <source media="(max-width:950px), (max-aspect-ratio:129/100)" srcset="images/hero-badminton-court-narrow.jpg?v=1">
     <img class="bd-hero" src="images/hero-badminton-court.jpg?v=3" alt="파란 배드민턴 코트에 앉아 라켓을 든 선수">
+  </picture>
+  <picture class="bd-pic bd-pic-lesson">
+    <source media="(max-width:950px), (max-aspect-ratio:129/100)" srcset="images/hero-badminton-lesson-narrow.jpg?v=1">
+    <img class="bd-hero bd-hero-lesson" src="images/hero-badminton-lesson.jpg?v=1" alt="파란 배드민턴 코트에서 의자에 앉아 라켓을 든 코치" loading="lazy">
   </picture>
   <div class="wrap">
     <div class="eyebrow">THE SQUARE BADMINTON</div>
@@ -389,7 +395,7 @@
 
 <script src="assets/schedule.js?v=20261020y"></script>
 <script src="assets/booking-config.js?v=20261022b"></script>
-<script src="assets/main.js?v=20261020z"></script>
+<script src="assets/main.js?v=20261023a"></script>
 <script src="assets/pay-ui.js?v=20261018a"></script>
 <script src="assets/booking.js?v=20261022a"></script>
 </body>

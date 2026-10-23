@@ -87,6 +87,12 @@ a{color:inherit;text-decoration:none}
 .page-hero img.bd-hero{object-position:66% 45%}
 @media (max-width:950px),(max-aspect-ratio:129/100){.page-hero img.bd-hero{object-position:58% 50%}}
 @media (max-width:640px){.page-hero img.bd-hero{object-position:66% 50%}}
+/* 배드민턴 머리 사진 — 탭 따라 [대관] / [레슨] 사진 하나만 (badminton.html data-hero, main.js 탭 show) */
+.page-hero .bd-pic-lesson,.page-hero[data-hero="lesson"] .bd-pic-rental{display:none}
+.page-hero[data-hero="lesson"] .bd-pic-lesson{display:inline}
+.page-hero img.bd-hero.bd-hero-lesson{object-position:66% 45%}
+@media (max-width:950px),(max-aspect-ratio:129/100){.page-hero img.bd-hero.bd-hero-lesson{object-position:70% 50%}}
+@media (max-width:640px){.page-hero img.bd-hero.bd-hero-lesson{object-position:70% 50%}}
 
 /* ---------- SECTION ---------- */
 section{padding:120px 0}

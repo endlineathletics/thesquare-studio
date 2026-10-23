@@ -20,9 +20,11 @@
   if (tabs) {
     const links = [...tabs.querySelectorAll('a[data-tab]')];
     const panes = [...document.querySelectorAll('.tab-pane')];
+    const hero = document.querySelector('.page-hero[data-hero]');   // 배드민턴 머리 사진 — 탭마다 다른 사진 (style.css .bd-pic)
     const show = (name, scroll) => {
       panes.forEach(p => { p.hidden = p.dataset.pane !== name; });
       links.forEach(a => a.classList.toggle('on', a.dataset.tab === name));
+      if (hero) hero.dataset.hero = name;
       if (fab) fab.classList.toggle('hide', name === 'rental');   // 대관 화면에서는 수강신청 버튼 숨김
       if (scroll) {   // 탭이 화면 위에 붙어 있을 때만 구역 처음으로 올림
         const y = (top ? top.offsetTop + top.offsetHeight : 0) - (parseFloat(getComputedStyle(tabs).top) || 0);   // 탭이 원래 있던 자리
