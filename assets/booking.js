@@ -196,19 +196,23 @@
   }
 
   /* ---------- 코트 배치도 (01 달력 밑 #bkMap, 2026-10-23) ----------
-     배드민턴센터 개략도(축척 없음, 선만 — 사용자 손그림) — 방 하나가 코트 하나: 왼쪽 위 방 COURT 4, 오른쪽 아래 COURT 1·2·3(위에서부터, 칸막이는 왼쪽 통로 쪽이 트임),
-     벽이 끊긴 곳 = 출입문. 담은 신청(state.sel)의 코트 방을 연한 파랑으로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 COURT 4 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서, 칠할 방 [x, y, 가로, 세로] (viewBox 340 × 280) */
-  const MAP_NAMES = (CFG.spaces[API_SPACE] || SP).courts;
-  const MAP_WALLS = 'M120 0V72M120 108V144H0M340 100H195V168M195 214V280M220 160H340M220 220H340';
-  const MAP_COURT = [[195, 100, 145, 60], [195, 160, 145, 60], [195, 220, 145, 60], [0, 0, 120, 144]];
+     배드민턴센터 개략도(선만 — 사용자 손그림) — 방 하나가 코트 하나: 왼쪽 위 방 PRIVATE(COURT 4, 세로), 오른쪽 아래 COURT 1·2·3(위에서부터, 칸막이는 왼쪽 통로 쪽이 트임),
+     벽이 끊긴 곳 = 출입문. 1m = 10 — 코트(칠하는 칸)는 실제 크기 13.4 × 6.1m 그대로, 벽 · 통로(2.4m) · 홀은 손그림 비율대로 대략.
+     담은 신청(state.sel)의 코트를 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 PRIVATE 만 칠해짐.
+     MAP_COURT 는 관리프로그램 코트 index 순서, 칠할 칸 [x, y, 가로, 세로] (viewBox 300 × 275). 세로로 긴 칸은 이름도 세로로 */
+  const MAP_SP = CFG.spaces[API_SPACE] || SP;
+  const MAP_NAMES = MAP_SP.courts, MAP_PV = MAP_SP.gold || [];
+  const MAP_WALLS = 'M61 0V70M61 95V134H0M300 92H142V162M142 192V275M166 153H300M166 214H300';
+  const MAP_COURT = [[166, 92, 134, 61], [166, 153, 134, 61], [166, 214, 134, 61], [0, 0, 61, 134]];
   function renderMap() {
     const box = $('bkMap');
     if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
-      box.innerHTML = `<svg viewBox="-2 -2 344 284" preserveAspectRatio="xMidYMin meet" role="img">${MAP_COURT.map(([x, y, w, h], k) =>
-        `<g data-k="${k}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/><text x="${x + w / 2}" y="${y + h / 2}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`).join('')}`
-        + `<path class="w" d="${MAP_WALLS}"/><rect class="o" width="340" height="280"/></svg>`;
+      box.innerHTML = `<svg viewBox="-2 -2 304 279" preserveAspectRatio="xMidYMin meet" role="img">${MAP_COURT.map(([x, y, w, h], k) => {
+        const cx = x + w / 2, cy = y + h / 2;
+        return `<g data-k="${k}"${MAP_PV.includes(k) ? ' class="pv"' : ''}><rect x="${x}" y="${y}" width="${w}" height="${h}"/>`
+          + `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"${h > w ? ` transform="rotate(-90 ${cx} ${cy})"` : ''}>${esc(MAP_NAMES[k])}</text></g>`;
+      }).join('')}<path class="w" d="${MAP_WALLS}"/><rect class="o" width="300" height="275"/></svg>`;
     }
     const on = state.sel ? state.sel.courts.map(apiCourt) : [];
     box.querySelectorAll('g[data-k]').forEach(g => g.classList.toggle('on', on.includes(+g.dataset.k)));

@@ -29,6 +29,8 @@
 .bk-map text{font:700 12px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-3);transition:fill .2s}
 .bk-map .on rect{fill:rgba(0,88,252,.14)}
 .bk-map .on text{fill:var(--blue)}
+.bk-map .pv.on rect{fill:rgba(150,105,55,.18)}   /* PRIVATE — 연한 갈색(반투명) + 금색 글자 */
+.bk-map .pv.on text{fill:#A8801F}
 @media (max-width:1020px){.bk-map{display:none}}
 
 /* 달력: 담은 시간이 있는 날 — 오른쪽 위 작은 점 */
