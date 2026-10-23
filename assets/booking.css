@@ -17,7 +17,7 @@
 .bk2-date .bk-cal-wd,.bk2-date .bk-cal-g{grid-template-columns:repeat(7,minmax(0,1fr))}
 .bk2-date .bk-cal-g button{min-width:0;min-height:0}
 
-/* 달력 밑 코트 배치도 (booking.js renderMap) — '라운드 타일': 연회색 바닥 위 둥근 흰 칸, 담은 신청의 코트는 연한 파랑. 표가 달력 밑으로 내려가는 1020px 이하에선 숨김.
+/* 달력 밑 코트 배치도 (booking.js renderMap) — '라운드 타일': 연회색 바닥 위 둥근 흰 칸, 담은 신청의 코트는 연한 파랑. 표가 달력 밑으로 내려가는 1020px 이하 · 높이 640 이하 창에선 숨김.
    달력 밑 남은 높이만 씀(그림은 absolute) — 배치도가 왼쪽 칸을 늘려 오른쪽 표 밑에 빈 줄이 생기지 않게, 낮은 창에선 그만큼 작아짐 */
 .bk2-date{display:flex;flex-direction:column}
 .bk-map{position:relative;flex:1 1 auto;min-height:120px;margin-top:24px}
@@ -32,7 +32,7 @@
 .bk-map .on text{fill:var(--blue)}
 .bk-map .pv.on rect{fill:rgba(150,105,55,.16);stroke:#B08A2E}   /* PRIVATE — 연한 갈색(반투명) + 금색 */
 .bk-map .pv.on text{fill:#A8801F}
-@media (max-width:1020px){.bk-map{display:none}}
+@media (max-width:1020px),(max-height:640px){.bk-map{display:none}}   /* 낮은 창(높이 640 이하)도 숨김 — 최소 높이 때문에 표 밑에 빈 줄이 생기고 이름 글자가 6px 안팎으로 작아짐 */
 
 /* 달력: 담은 시간이 있는 날 — 오른쪽 위 작은 점 */
 .bk-cal-g button.bk2-has::after{content:'';position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
