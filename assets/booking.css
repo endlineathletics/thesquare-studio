@@ -26,6 +26,8 @@
 .bk-map svg{display:block;width:min(100%,260px,calc(100vh - 498px));width:min(100%,260px,calc(100svh - 498px));height:auto;aspect-ratio:1;margin:0 auto;overflow:visible}
 body[data-page="pickleball"] .bk-map svg{width:min(100%,238px,calc(100vh - 519px));width:min(100%,238px,calc(100svh - 519px))}
 .bk-map .bg{fill:#F4F6F9}   /* 바닥 */
+.bk-map .room{fill:#E6EAF0}   /* COURT 1·2·3 이 있는 한 방 */
+.bk-map .cafe text{fill:#B4B8C2}   /* CAFE — 고를 수 없는 칸이라 글자를 더 연하게 */
 .bk-map g rect{fill:#fff;stroke:var(--line);stroke-width:1.2;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s}   /* 코트 칸 */
 .bk-map g line{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke;transition:stroke .2s}   /* 네트 */
 .bk-map text{font:700 13px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-3);transition:fill .2s}
