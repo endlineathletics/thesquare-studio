@@ -196,27 +196,28 @@
   }
 
   /* ---------- 코트 배치도 (01 달력 밑 #bkMap, 2026-10-23) ----------
-     '라운드 타일' 모양(사용자가 시안 3개 중 1번 고름) — 벽 선 없이 연회색 바닥 위에 둥근 칸: 왼쪽 맨 위 CAFE(코트 절반 6.7 × 6.1m, 고를 수 없음), 그 밑 PRIVATE(COURT 4),
-     오른쪽 아래 COURT 1·2·3(위에서부터, 코트 칸 가운데 점선 = 네트) — 세 코트가 한 방이라는 걸 보이게 조금 진한 판(MAP_ROOM) 위에 올림(2026-10-24 사용자).
+     '라인 플랜' 모양(2026-10-24 사용자가 흑백 시안 3개 중 1번 고름 + "선은 연한 회색, 바닥은 다시 깔기") — 연회색 바닥 위 흰 칸에 연한 회색 선:
+     왼쪽 위 PRIVATE(COURT 4), 오른쪽 아래 COURT 1·2·3(위에서부터, 코트 칸 가운데 선 = 네트)을 한 방 테두리(MAP_ROOM) 안에,
+     그 위 CAFE(점선, 고를 수 없음 — 코트 절반 넓이, 윗선을 PRIVATE 윗선에 맞추고 세로로 길게).
      1m = 8.5 — COURT 1·2·3 칸은 실제 코트 13.4 × 6.1m 비율, PRIVATE 칸은 코트보다 사방 1.5m씩 큰 방(9.1 × 16.4m, 사용자 "조금만 사방으로 키워"). 칸 사이 · 바깥 여백은 손그림 배치대로 대략.
      담은 신청(state.sel)의 코트 칸을 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4칸을 다 그리고 PRIVATE 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE 는 칠하지 않는 칸 */
+     MAP_COURT 는 관리프로그램 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE 는 칠하지 않는 칸 (CAFE 50 × 59 ≈ 코트 114 × 52 의 절반) */
   const MAP_SP = CFG.spaces[API_SPACE] || SP;
   const MAP_NAMES = MAP_SP.courts, MAP_PV = MAP_SP.gold || [];
   const MAP_W = 263, MAP_H = 263;
-  const MAP_COURT = [[135, 81, 114, 52], [135, 139, 114, 52], [135, 197, 114, 52], [8, 68, 77, 139]];
-  const MAP_ROOM = [129, 75, 126, 180], MAP_CAFE = [8, 8, 57, 52];
+  const MAP_COURT = [[135, 81, 114, 52], [135, 139, 114, 52], [135, 197, 114, 52], [8, 8, 77, 139]];
+  const MAP_ROOM = [129, 75, 126, 180], MAP_CAFE = [129, 8, 50, 59];
   function renderMap() {
     const box = $('bkMap');
     if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
       box.innerHTML = `<svg viewBox="-2 -2 ${MAP_W + 4} ${MAP_H + 4}" preserveAspectRatio="xMidYMin meet" role="img"><rect class="bg" width="${MAP_W}" height="${MAP_H}" rx="16"/>`
-        + `<rect class="room" x="${MAP_ROOM[0]}" y="${MAP_ROOM[1]}" width="${MAP_ROOM[2]}" height="${MAP_ROOM[3]}" rx="13"/>`
-        + `<g class="cafe"><rect x="${MAP_CAFE[0]}" y="${MAP_CAFE[1]}" width="${MAP_CAFE[2]}" height="${MAP_CAFE[3]}" rx="9"/><text x="${MAP_CAFE[0] + MAP_CAFE[2] / 2}" y="${MAP_CAFE[1] + MAP_CAFE[3] / 2}" text-anchor="middle" dominant-baseline="central">CAFE</text></g>`
+        + `<rect class="room" x="${MAP_ROOM[0]}" y="${MAP_ROOM[1]}" width="${MAP_ROOM[2]}" height="${MAP_ROOM[3]}" rx="10"/>`
+        + `<g class="cafe"><rect x="${MAP_CAFE[0]}" y="${MAP_CAFE[1]}" width="${MAP_CAFE[2]}" height="${MAP_CAFE[3]}" rx="6"/><text x="${MAP_CAFE[0] + MAP_CAFE[2] / 2}" y="${MAP_CAFE[1] + MAP_CAFE[3] / 2}" text-anchor="middle" dominant-baseline="central">CAFE</text></g>`
         + `${MAP_COURT.map(([x, y, w, h], k) => {
         const cx = x + w / 2, cy = y + h / 2, pv = MAP_PV.includes(k);
-        return `<g data-k="${k}"${pv ? ' class="pv"' : ''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"/>`
-          + (pv ? '' : `<line x1="${cx}" y1="${y + 6}" x2="${cx}" y2="${cy - 10}"/><line x1="${cx}" y1="${cy + 10}" x2="${cx}" y2="${y + h - 6}"/>`)   // 네트 — 이름 자리는 비움
+        return `<g data-k="${k}"${pv ? ' class="pv"' : ''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>`
+          + (pv ? '' : `<line x1="${cx}" y1="${y + 5}" x2="${cx}" y2="${cy - 10}"/><line x1="${cx}" y1="${cy + 10}" x2="${cx}" y2="${y + h - 5}"/>`)   // 네트 — 이름 자리는 비움
           + `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`;
       }).join('')}</svg>`;
     }
