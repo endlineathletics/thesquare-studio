@@ -38,13 +38,11 @@
 .bk2-grid thead th{position:sticky;top:0;z-index:2;background:#fff;padding:12px 3px 10px;border-bottom:1px solid var(--line);text-align:center;font:700 12.5px 'Montserrat',sans-serif;letter-spacing:.08em;color:var(--ink);white-space:nowrap}
 .bk2-grid thead th small{display:block;margin-top:3px;font:500 11px var(--sans);letter-spacing:0;color:var(--ink-3)}
 .bk2-grid thead th.on{color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
-/* PRIVATE 코트 열 금색 테두리 (2026-10-23 센터 — booking-config gold) */
-.bk2-grid{--gold:#C9A44C}
-.bk2-grid td.gold{box-shadow:inset 2px 0 0 var(--gold),inset -2px 0 0 var(--gold)}
-.bk2-grid tbody tr:last-child td.gold{box-shadow:inset 2px 0 0 var(--gold),inset -2px 0 0 var(--gold),inset 0 -2px 0 var(--gold)}
-.bk2-grid thead th.gold{color:#9A7A2C;box-shadow:inset 2px 0 0 var(--gold),inset -2px 0 0 var(--gold),inset 0 2px 0 var(--gold)}
-.bk2-grid thead th.gold small{color:#9A7A2C}
-.bk2-grid thead th.gold.on{color:var(--blue);box-shadow:inset 2px 0 0 var(--gold),inset -2px 0 0 var(--gold),inset 0 2px 0 var(--gold),inset 0 -3px 0 var(--blue)}
+/* PRIVATE 코트 머리 칸 — 진한 갈색 바탕 + 이름·가격 금색 (2026-10-23 센터 "금테두리 없애고 프라이빗 이름 칸 진한 갈색, 이름이랑 가격은 금색" — booking-config gold) */
+.bk2-grid{--pv-bg:#3B2618;--pv-gold:#D9B65A}
+.bk2-grid thead th.gold{background:var(--pv-bg);color:var(--pv-gold)}
+.bk2-grid thead th.gold small{color:var(--pv-gold)}
+.bk2-grid thead th.gold.on{color:var(--pv-gold);box-shadow:inset 0 -3px 0 var(--pv-gold)}
 .bk2-grid .bk2-t{position:sticky;left:0;z-index:1;width:78px;background:#fff;text-align:left;padding:0 6px 0 16px}
 .bk2-grid thead .bk2-t{z-index:3}
 .bk2-grid tbody th{font-weight:400;white-space:nowrap}
