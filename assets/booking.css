@@ -39,7 +39,7 @@
 .bk2-grid thead th small{display:block;margin-top:3px;font:500 11px var(--sans);letter-spacing:0;color:var(--ink-3)}
 .bk2-grid thead th.on{color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
 /* PRIVATE 코트 머리 칸 — 진한 갈색 바탕 + 이름·가격 금색 (2026-10-23 센터 "금테두리 없애고 프라이빗 이름 칸 진한 갈색, 이름이랑 가격은 금색" — booking-config gold) */
-.bk2-grid{--pv-bg:#3B2618;--pv-gold:#D9B65A}
+.bk2-grid{--pv-bg:#5A3D28;--pv-gold:#D9B65A}
 .bk2-grid thead th.gold{background:var(--pv-bg);color:var(--pv-gold)}
 .bk2-grid thead th.gold small{color:var(--pv-gold)}
 .bk2-grid thead th.gold.on{color:var(--pv-gold);box-shadow:inset 0 -3px 0 var(--pv-gold)}
