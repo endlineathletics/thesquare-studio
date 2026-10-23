@@ -196,18 +196,19 @@
   }
 
   /* ---------- 코트 배치도 (01 달력 밑 #bkMap, 2026-10-23) ----------
-     배드민턴센터 개략도(축척 없음, 선만) — 왼쪽 방 COURT 4, 오른쪽 방 COURT 1·2·3, 벽이 끊긴 곳 = 출입문.
-     담은 신청(state.sel)의 코트를 연한 파랑으로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 COURT 4 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서 [x, y, 가로, 세로] (viewBox 340 × 360) */
+     배드민턴센터 개략도(축척 없음, 선만 — 사용자 손그림) — 방 하나가 코트 하나: 왼쪽 위 방 COURT 4, 오른쪽 아래 COURT 1·2·3(위에서부터, 칸막이는 왼쪽 통로 쪽이 트임),
+     벽이 끊긴 곳 = 출입문. 담은 신청(state.sel)의 코트 방을 연한 파랑으로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 COURT 4 만 칠해짐.
+     MAP_COURT 는 관리프로그램 코트 index 순서, 칠할 방 [x, y, 가로, 세로] (viewBox 340 × 280) */
   const MAP_NAMES = (CFG.spaces[API_SPACE] || SP).courts;
-  const MAP_WALLS = 'M150 360H0V0H340V360H195M0 50H130V125M130 160V250H0M340 110H200V220M200 255V360';
-  const MAP_COURT = [[210, 140, 120, 55], [210, 215, 120, 55], [210, 290, 120, 55], [25, 65, 80, 170]];
+  const MAP_WALLS = 'M120 0V72M120 108V144H0M340 100H195V168M195 214V280M220 160H340M220 220H340';
+  const MAP_COURT = [[195, 100, 145, 60], [195, 160, 145, 60], [195, 220, 145, 60], [0, 0, 120, 144]];
   function renderMap() {
     const box = $('bkMap');
     if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
-      box.innerHTML = `<svg viewBox="-2 -2 344 364" preserveAspectRatio="xMidYMin meet" role="img"><path class="w" d="${MAP_WALLS}"/>${MAP_COURT.map(([x, y, w, h], k) =>
-        `<g data-k="${k}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/><text x="${x + w / 2}" y="${y + h / 2}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`).join('')}</svg>`;
+      box.innerHTML = `<svg viewBox="-2 -2 344 284" preserveAspectRatio="xMidYMin meet" role="img">${MAP_COURT.map(([x, y, w, h], k) =>
+        `<g data-k="${k}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/><text x="${x + w / 2}" y="${y + h / 2}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`).join('')}`
+        + `<path class="w" d="${MAP_WALLS}"/><rect class="o" width="340" height="280"/></svg>`;
     }
     const on = state.sel ? state.sel.courts.map(apiCourt) : [];
     box.querySelectorAll('g[data-k]').forEach(g => g.classList.toggle('on', on.includes(+g.dataset.k)));

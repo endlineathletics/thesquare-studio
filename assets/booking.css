@@ -22,11 +22,12 @@
 .bk2-date{display:flex;flex-direction:column}
 .bk-map{position:relative;flex:1 1 auto;min-height:120px;margin-top:24px}
 .bk-map:empty{display:none}
-.bk-map svg{position:absolute;top:0;left:0;right:0;width:100%;max-width:300px;height:100%;margin:0 auto;overflow:visible}
-.bk-map .w{fill:none;stroke:var(--ink-2);stroke-width:1.5;vector-effect:non-scaling-stroke}
-.bk-map rect{fill:transparent;stroke:var(--ink-3);stroke-width:1;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s}
-.bk-map text{font:700 12px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-2);transition:fill .2s}
-.bk-map .on rect{fill:rgba(0,88,252,.14);stroke:var(--blue)}
+.bk-map svg{position:absolute;top:0;left:0;right:0;width:100%;max-width:320px;height:100%;margin:0 auto;overflow:visible}
+.bk-map .o{fill:none;stroke:var(--ink);stroke-width:2.5;vector-effect:non-scaling-stroke}   /* 바깥 벽 */
+.bk-map .w{fill:none;stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}   /* 안쪽 벽 · 칸막이 */
+.bk-map g rect{fill:transparent;transition:fill .2s}   /* 코트 방 — 담으면 칠함 */
+.bk-map text{font:700 12px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-3);transition:fill .2s}
+.bk-map .on rect{fill:rgba(0,88,252,.14)}
 .bk-map .on text{fill:var(--blue)}
 @media (max-width:1020px){.bk-map{display:none}}
 
