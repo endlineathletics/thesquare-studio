@@ -196,23 +196,24 @@
   }
 
   /* ---------- 코트 배치도 (01 달력 밑 #bkMap, 2026-10-23) ----------
-     배드민턴센터 개략도(선만 — 사용자 손그림) — 방 하나가 코트 하나: 왼쪽 위 방 PRIVATE(COURT 4, 세로), 오른쪽 아래 COURT 1·2·3(위에서부터, 칸막이는 왼쪽 통로 쪽이 트임),
-     벽이 끊긴 곳 = 출입문. 1m = 10 — 코트(칠하는 칸)는 실제 크기 13.4 × 6.1m 그대로, 벽 · 통로(2.4m) · 홀은 손그림 비율대로 대략.
+     배드민턴센터 개략도(선만 — 사용자 손그림) — 왼쪽 위 방 PRIVATE(COURT 4), 오른쪽 아래 COURT 1·2·3(위에서부터, 칸막이는 왼쪽 통로 쪽이 트임), 벽이 끊긴 곳 = 출입문.
+     1m = 10 — COURT 1·2·3(칠하는 칸)은 실제 코트 13.4 × 6.1m 그대로, 그 공간(통로 2.4m 포함 15.8 × 18.3m)과 PRIVATE 방은 같은 크기(2026-10-23 사용자 "프라이빗은 코트123 공간만큼")
+     — PRIVATE 는 방 전체를 칠함. 그 사이 홀(7m) · 바깥 벽은 손그림 비율대로 대략.
      담은 신청(state.sel)의 코트를 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 PRIVATE 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서, 칠할 칸 [x, y, 가로, 세로] (viewBox 300 × 275). 세로로 긴 칸은 이름도 세로로 */
+     MAP_COURT 는 관리프로그램 코트 index 순서, 칠할 칸 [x, y, 가로, 세로] (viewBox 386 × 316). 이름이 안 들어가게 좁은 칸은 이름을 세로로 */
   const MAP_SP = CFG.spaces[API_SPACE] || SP;
   const MAP_NAMES = MAP_SP.courts, MAP_PV = MAP_SP.gold || [];
-  const MAP_WALLS = 'M61 0V70M61 95V134H0M300 92H142V162M142 192V275M166 153H300M166 214H300';
-  const MAP_COURT = [[166, 92, 134, 61], [166, 153, 134, 61], [166, 214, 134, 61], [0, 0, 61, 134]];
+  const MAP_WALLS = 'M158 0V95M158 125V183H0M386 133H228V203M228 233V316M252 194H386M252 255H386';
+  const MAP_COURT = [[252, 133, 134, 61], [252, 194, 134, 61], [252, 255, 134, 61], [0, 0, 158, 183]];
   function renderMap() {
     const box = $('bkMap');
     if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
-      box.innerHTML = `<svg viewBox="-2 -2 304 279" preserveAspectRatio="xMidYMin meet" role="img">${MAP_COURT.map(([x, y, w, h], k) => {
+      box.innerHTML = `<svg viewBox="-2 -2 390 320" preserveAspectRatio="xMidYMin meet" role="img">${MAP_COURT.map(([x, y, w, h], k) => {
         const cx = x + w / 2, cy = y + h / 2;
         return `<g data-k="${k}"${MAP_PV.includes(k) ? ' class="pv"' : ''}><rect x="${x}" y="${y}" width="${w}" height="${h}"/>`
-          + `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"${h > w ? ` transform="rotate(-90 ${cx} ${cy})"` : ''}>${esc(MAP_NAMES[k])}</text></g>`;
-      }).join('')}<path class="w" d="${MAP_WALLS}"/><rect class="o" width="300" height="275"/></svg>`;
+          + `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"${w < 90 ? ` transform="rotate(-90 ${cx} ${cy})"` : ''}>${esc(MAP_NAMES[k])}</text></g>`;
+      }).join('')}<path class="w" d="${MAP_WALLS}"/><rect class="o" width="386" height="316"/></svg>`;
     }
     const on = state.sel ? state.sel.courts.map(apiCourt) : [];
     box.querySelectorAll('g[data-k]').forEach(g => g.classList.toggle('on', on.includes(+g.dataset.k)));

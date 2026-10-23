@@ -26,7 +26,7 @@
 .bk-map .o{fill:none;stroke:var(--ink);stroke-width:2.5;vector-effect:non-scaling-stroke}   /* 바깥 벽 */
 .bk-map .w{fill:none;stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}   /* 안쪽 벽 · 칸막이 */
 .bk-map g rect{fill:transparent;transition:fill .2s}   /* 코트 방 — 담으면 칠함 */
-.bk-map text{font:700 12px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-3);transition:fill .2s}
+.bk-map text{font:700 14px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-3);transition:fill .2s}
 .bk-map .on rect{fill:rgba(0,88,252,.14)}
 .bk-map .on text{fill:var(--blue)}
 .bk-map .pv.on rect{fill:rgba(150,105,55,.18)}   /* PRIVATE — 연한 갈색(반투명) + 금색 글자 */
