@@ -17,6 +17,19 @@
 .bk2-date .bk-cal-wd,.bk2-date .bk-cal-g{grid-template-columns:repeat(7,minmax(0,1fr))}
 .bk2-date .bk-cal-g button{min-width:0;min-height:0}
 
+/* 달력 밑 코트 배치도 (booking.js renderMap) — 선만 · 배경 투명, 담은 신청의 코트는 연한 파랑. 표가 달력 밑으로 내려가는 1020px 이하에선 숨김.
+   달력 밑 남은 높이만 씀(그림은 absolute) — 배치도가 왼쪽 칸을 늘려 오른쪽 표 밑에 빈 줄이 생기지 않게, 낮은 창에선 그만큼 작아짐 */
+.bk2-date{display:flex;flex-direction:column}
+.bk-map{position:relative;flex:1 1 auto;min-height:120px;margin-top:24px}
+.bk-map:empty{display:none}
+.bk-map svg{position:absolute;top:0;left:0;right:0;width:100%;max-width:300px;height:100%;margin:0 auto;overflow:visible}
+.bk-map .w{fill:none;stroke:var(--ink-2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.bk-map rect{fill:transparent;stroke:var(--ink-3);stroke-width:1;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s}
+.bk-map text{font:700 12px 'Montserrat',sans-serif;letter-spacing:.06em;fill:var(--ink-2);transition:fill .2s}
+.bk-map .on rect{fill:rgba(0,88,252,.14);stroke:var(--blue)}
+.bk-map .on text{fill:var(--blue)}
+@media (max-width:1020px){.bk-map{display:none}}
+
 /* 달력: 담은 시간이 있는 날 — 오른쪽 위 작은 점 */
 .bk-cal-g button.bk2-has::after{content:'';position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
 .bk-cal-g button.bk2-has.on::after{background:#fff}

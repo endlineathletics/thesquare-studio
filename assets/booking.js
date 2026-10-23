@@ -194,6 +194,25 @@
       <div class="bk-cal-g">${cells}</div>
       <div class="bk-cal-sel"><span>선택한 날짜</span>${selLabel(state.date)}</div>`;
   }
+
+  /* ---------- 코트 배치도 (01 달력 밑 #bkMap, 2026-10-23) ----------
+     배드민턴센터 개략도(축척 없음, 선만) — 왼쪽 방 COURT 4, 오른쪽 방 COURT 1·2·3, 벽이 끊긴 곳 = 출입문.
+     담은 신청(state.sel)의 코트를 연한 파랑으로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4면을 다 그리고 COURT 4 만 칠해짐.
+     MAP_COURT 는 관리프로그램 코트 index 순서 [x, y, 가로, 세로] (viewBox 340 × 360) */
+  const MAP_NAMES = (CFG.spaces[API_SPACE] || SP).courts;
+  const MAP_WALLS = 'M150 360H0V0H340V360H195M0 50H130V125M130 160V250H0M340 110H200V220M200 255V360';
+  const MAP_COURT = [[210, 140, 120, 55], [210, 215, 120, 55], [210, 290, 120, 55], [25, 65, 80, 170]];
+  function renderMap() {
+    const box = $('bkMap');
+    if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
+    if (!box.firstChild) {
+      box.innerHTML = `<svg viewBox="-2 -2 344 364" preserveAspectRatio="xMidYMin meet" role="img"><path class="w" d="${MAP_WALLS}"/>${MAP_COURT.map(([x, y, w, h], k) =>
+        `<g data-k="${k}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/><text x="${x + w / 2}" y="${y + h / 2}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`).join('')}</svg>`;
+    }
+    const on = state.sel ? state.sel.courts.map(apiCourt) : [];
+    box.querySelectorAll('g[data-k]').forEach(g => g.classList.toggle('on', on.includes(+g.dataset.k)));
+    box.firstChild.setAttribute('aria-label', `코트 배치도${on.length ? ` — 선택한 코트 ${on.map(k => MAP_NAMES[k]).join(', ')}` : ''}`);
+  }
   /** 선택된 날짜가 예약 불가(칸 없음 · 범위 밖)면 가장 가까운 가능한 날짜로 옮기고, 달력 월을 선택 날짜에 맞춤 */
   function ensureDate() {
     if (!inRange(state.date) || !slotsFor(state.date).length) {
@@ -525,7 +544,7 @@
       : `<p class="bk2-sel-empty">아직 고른 시간이 없어요. 위 표에서 ${NC > 1 ? '코트와 ' : ''}시간을 골라주세요.</p>
         <button type="button" class="bk2-edit" data-edit>시간 고르기 ↑</button>`;
   }
-  function update() { renderCal(); renderGrid(); renderBar(); renderSel(); validate(); }
+  function update() { renderCal(); renderMap(); renderGrid(); renderBar(); renderSel(); validate(); }
 
   /** 표로 돌아가기 — 담은(또는 막혀서 지운) 날짜로 바꿔 보여주고 그 시작 칸에 포커스 */
   function backToGrid() {
