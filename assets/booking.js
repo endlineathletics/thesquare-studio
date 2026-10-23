@@ -30,17 +30,21 @@
   const SPORT = SP.sport || 'badminton';                                  // 신청 종목 — 같은 COURT 4 를 어느 페이지에서 잡았는지 (직원이 네트를 바꿔 놓음)
   const apiCourt = c => (SP.courtIdx ? SP.courtIdx[c] : c);               // 표의 열 → 관리프로그램 코트 index (0부터)
   const colOf = k => (SP.courtIdx ? SP.courtIdx.indexOf(k) : k);          // 관리프로그램 코트 index → 표의 열 (이 화면에 없는 코트면 -1)
-  /** 코트(표의 열) 1시간 금액 — 코트별 가격(prices)이 있으면 그것, 없으면 공간 price (2026-10-22 COURT 4 75,000원 · 금액은 관리프로그램이 다시 계산) */
+  /** 코트(표의 열) 1시간 금액 — 코트별 가격(prices)이 있으면 그것, 없으면 공간 price (2026-10-22 COURT 4 — 2026-10-23 이름 'PRIVATE' · 77,000원 · 금액은 관리프로그램이 다시 계산) */
   const priceAt = c => (SP.prices && SP.prices[c] != null ? SP.prices[c] : SP.price);
   const SHOW_C = NC > 1 || !!SP.courtIdx;                                 // 안내 · 요약에 코트 이름 — 코트가 하나뿐이어도 다른 공간의 코트를 빌려 쓰면(피클볼 'COURT 4') 보여 줌
   const MAX = CFG.maxItems || 96;                                         // 한 번에 신청할 수 있는 최대 칸 (코트 × 시간)
   const COURT_MAX = Math.max(1, Math.min(CFG.maxCourts || NC, NC));      // 같이 고를 수 있는 코트 수
   const WHOLE = CFG.wholeLabel || '전체대관';
 
-  /** 코트 이름 묶음 — [0, 2] → "COURT 1·3" (이름이 "앞부분 + 숫자" 꼴이 아니면 쉼표로 나열) */
+  /** 코트 이름 묶음 — [0, 2] → "COURT 1·3", 숫자 없는 이름(2026-10-23 COURT 4 → 'PRIVATE')은 뒤에 붙임 [0, 1, 3] → "COURT 1·2 · PRIVATE" */
   function courtLabel(cs) {
-    const m = cs.map(c => /^(.*?)\s*(\d+)$/.exec(SP.courts[c]));
-    return m.every(x => x && x[1] === m[0][1]) ? `${m[0][1]} ${m.map(x => x[2]).join('·')}`.trim() : cs.map(c => SP.courts[c]).join(', ');
+    const num = [], other = [];
+    cs.forEach(c => {
+      const m = /^(.*?)\s*(\d+)$/.exec(SP.courts[c]);
+      if (m && (!num.length || num[0][1] === m[1])) num.push(m); else other.push(SP.courts[c]);
+    });
+    return [num.length ? `${num[0][1]} ${num.map(x => x[2]).join('·')}`.trim() : '', ...other].filter(Boolean).join(' · ');
   }
   /** 신청의 코트 표시 — 코트를 모두 고르면 '전체대관' */
   const courtText = cs => (NC > 1 && cs.length === NC ? WHOLE : courtLabel(cs));
@@ -228,8 +232,9 @@
   });
 
   /* ---------- 표 (세로 = 시간 칸, 가로 = 코트) ---------- */
-  /** 표의 열 — 코트마다 한 열 (코트를 모두 고르면 '전체대관'). 가격이 공간 기본값과 다른 코트는 머리줄에 작게 그 금액 (배드민턴 COURT 4 '75,000원') */
-  const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c], sub: priceAt(c) !== SP.price ? won(priceAt(c)) : '' }));
+  /** 표의 열 — 코트마다 한 열 (코트를 모두 고르면 '전체대관'). 머리줄에 작게 코트마다 1시간 금액 (2026-10-23 센터 "가격이 4코트만 나와 있는데 전체 다 보여주고"),
+      gold = 금색 테두리 열 (SP.gold — 관리프로그램 코트 index, PRIVATE 코트) */
+  const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c], sub: won(priceAt(c)), gold: !!(SP.gold && SP.gold.includes(apiCourt(c))) }));
   /** 보고 있는 날짜에서 본 담은 신청 — { ...sel, s, e, off } (s~e 는 이 날 칸 index: 앞날에서 자정 넘어 이어 온 신청이면 s 가 음수,
       다음 날로 넘어가면 e 가 이 날 칸 수 이상, off = 시간 줄 index − 이 날 index). 이 날에 걸친 칸이 없으면 null */
   function selHere() {
@@ -320,11 +325,12 @@
     if (!f || f.c >= cs.length || f.i >= list.length) f = state.focus = defaultFocus(list, cs);
     const ths = cs.map(col => {
       const on = sel && col.courts.every(c => sel.courts.includes(c));
-      return `<th scope="col"${on ? ' class="on"' : ''}>${esc(col.name)}${col.sub ? `<small>${esc(col.sub)}</small>` : ''}</th>`;
+      const cl = [on ? 'on' : '', col.gold ? 'gold' : ''].filter(Boolean).join(' ');
+      return `<th scope="col"${cl ? ` class="${cl}"` : ''}>${esc(col.name)}${col.sub ? `<small>${esc(col.sub)}</small>` : ''}</th>`;
     }).join('');
     const rows = list.map((x, i) => `<tr><th scope="row" class="bk2-t"><b>${x.start}</b><small>~${x.end}</small></th>${cs.map((col, c) => {
       const v = cellView(col, i, list);
-      return `<td><button type="button" class="bk2-c ${v.cls}" data-c="${c}" data-i="${i}" tabindex="${f.c === c && f.i === i ? 0 : -1}"`
+      return `<td${col.gold ? ' class="gold"' : ''}><button type="button" class="bk2-c ${v.cls}" data-c="${c}" data-i="${i}" tabindex="${f.c === c && f.i === i ? 0 : -1}"`
         + `${v.off ? ' aria-disabled="true"' : ` aria-pressed="${v.pressed || 'false'}"`} aria-label="${esc(v.label)}">${v.text}</button></td>`;
     }).join('')}</tr>`).join('');
     grid.innerHTML = `<caption class="bk-sr">${esc(dayLabel(D))} ${esc(SP.name)} 대관 시간표 — 칸을 눌러 선택</caption>`

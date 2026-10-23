@@ -34,18 +34,19 @@
     spaces: {
       badminton: {
         name: '배드민턴센터', phone: '010-7576-1861', unit: '1코트 1시간', price: 52800,
-        // COURT 4 = 옛 요가 대관 공간(피클볼과 같이 씀, 2026-10-22) — 혼자 1시간 75,000원 (관리프로그램 RENTAL_CONFIG court_prices 와 같게)
-        prices: [52800, 52800, 52800, 75000],
-        courts: ['COURT 1', 'COURT 2', 'COURT 3', 'COURT 4'], title: 'COURT RESERVATION',
+        // COURT 4 = 옛 요가 대관 공간(피클볼과 같이 씀, 2026-10-22) — 혼자 1시간 77,000원(2026-10-23 75,000 → 77,000) (관리프로그램 RENTAL_CONFIG court_prices 와 같게)
+        prices: [52800, 52800, 52800, 77000],
+        // 2026-10-23 센터: COURT 4 이름을 'PRIVATE' 로, 금색 테두리(gold — 관리프로그램 코트 index), 1시간 77,000원 (관리프로그램은 그대로 court 4)
+        courts: ['COURT 1', 'COURT 2', 'COURT 3', 'PRIVATE'], gold: [3], title: 'COURT RESERVATION',
         note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로 따로 신청해주세요 · 새벽까지 쓰려면 다음 날짜를 눌러 같은 코트로 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
       // 피클볼 페이지 — 배드민턴센터 COURT 4(관리프로그램 court index 3) 한 열만. 배드민턴 페이지와 같은 칸이라 한쪽에서 잡히면 다른 쪽도 막힘,
       // 신청엔 sport 'pickleball' 이 붙어 직원이 피클볼 네트로 바꿔 놓음. 피클볼 레슨은 아직 없음(대관만)
       pickleball: {
-        name: '피클볼 코트', phone: '010-7576-1861', unit: '1시간', price: 75000,
+        name: '피클볼 코트', phone: '010-7576-1861', unit: '1시간', price: 77000,
         apiSpace: 'badminton', courtIdx: [3], sport: 'pickleball',
-        courts: ['COURT 4'], title: 'PICKLEBALL COURT',
+        courts: ['PRIVATE'], gold: [3], title: 'PICKLEBALL COURT',
         note: '시작 시간과 끝 시간을 차례로 누르세요 · 새벽까지 쓰려면 다음 날짜를 눌러 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
