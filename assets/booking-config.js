@@ -2,12 +2,12 @@
    대관 예약 설정
    - api: 대관 신청을 받는 주소. 지금은 THE SQUARE 관리프로그램(thesquare-admin)의 /api/site
           (관리자 > 대관 화면으로 바로 들어감). 비워두면 "문자로 예약 신청" 방식으로 동작합니다.
-   - spaces 의 키 = 페이지 예약 위젯의 data-space (badminton.html 'badminton' · pickleball.html 'pickleball').
+   - spaces 의 키 = 페이지 예약 위젯의 data-space (badminton.html 'badminton' — 피클볼은 2026-10-27 뺌, pickleball.html 은 배드민턴 대관으로 이동 페이지).
    - phone: 공간별 대관 문의 번호(문자 접수 · 오류 안내에 사용).
    - courts: 표의 열 이름(왼쪽부터 0, 1, 2 …). 신청할 때는 이름이 아니라 관리프로그램 코트 index(0부터)로 보냅니다.
    - price: 1코트 1시간 기본 금액. prices: 코트별 금액(courts 와 같은 순서 — 없으면 모두 price). 화면 표시용이고 실제 금액은 관리프로그램이 계산.
-   - apiSpace · courtIdx · sport (2026-10-22 피클볼): 관리프로그램 공간(없으면 키 그대로) · 표의 열 → 관리프로그램 코트 index(없으면 열 index 그대로)
-     · 신청 종목(없으면 'badminton' — 같은 코트를 어느 페이지에서 잡았는지 남겨 직원이 네트를 바꿔 놓음).
+   - apiSpace · courtIdx · sport (2026-10-22 피클볼 때 만듦 — 2026-10-27 피클볼을 빼서 지금 쓰는 공간은 없음, booking.js 는 그대로 받음):
+     관리프로그램 공간(없으면 키 그대로) · 표의 열 → 관리프로그램 코트 index(없으면 열 index 그대로) · 신청 종목(없으면 'badminton').
    - title: 시간표 카드 머리 영문 제목. note: 표 위 짧은 안내.
    - slots: 요일별(0=일 … 6=토) 예약 가능한 시간 칸. "시작-종료" 형식.
             booking/Code.gs 의 SPACES 와 똑같이 맞춰야 합니다.
@@ -34,22 +34,14 @@
     spaces: {
       badminton: {
         name: '배드민턴센터', phone: '010-7576-1861', unit: '1코트 1시간', price: 52800,
-        // COURT 4 = 옛 요가 대관 공간(피클볼과 같이 씀, 2026-10-22) — 혼자 1시간 77,000원(2026-10-23 75,000 → 77,000) (관리프로그램 RENTAL_CONFIG court_prices 와 같게)
+        // COURT 4 = 옛 요가 대관 공간(2026-10-22, 피클볼과 같이 쓰려던 것은 2026-10-27 뺌) — 혼자 1시간 77,000원(2026-10-23 75,000 → 77,000) (관리프로그램 RENTAL_CONFIG court_prices 와 같게)
         prices: [52800, 52800, 52800, 77000],
         // 2026-10-23 센터: COURT 4 이름을 'PRIVATE' 로, 금색 테두리(gold — 관리프로그램 코트 index), 1시간 77,000원 (관리프로그램은 그대로 court 4)
         courts: ['COURT 1', 'COURT 2', 'COURT 3', 'PRIVATE'], gold: [3], title: 'COURT RESERVATION',
         note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로 따로 신청해주세요 · 새벽까지 쓰려면 다음 날짜를 눌러 같은 코트로 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },
-      // 피클볼 페이지 — 배드민턴센터 COURT 4(관리프로그램 court index 3) 한 열만. 배드민턴 페이지와 같은 칸이라 한쪽에서 잡히면 다른 쪽도 막힘,
-      // 신청엔 sport 'pickleball' 이 붙어 직원이 피클볼 네트로 바꿔 놓음. 피클볼 레슨은 아직 없음(대관만)
-      pickleball: {
-        name: '피클볼 코트', phone: '010-7576-1861', unit: '1시간', price: 77000,
-        apiSpace: 'badminton', courtIdx: [3], sport: 'pickleball',
-        courts: ['PRIVATE'], gold: [3], title: 'PICKLEBALL COURT',
-        note: '시작 시간과 끝 시간을 차례로 누르세요 · 새벽까지 쓰려면 다음 날짜를 눌러 이어서 고르세요',
-        slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
-      },
+      // 피클볼 공간(pickleball — COURT 4 한 열)은 2026-10-27 뺌 (센터가 피클볼을 안 함)
     },
   };
 })();

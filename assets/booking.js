@@ -1,8 +1,9 @@
 /* ============================================================
-   대관 예약 (배드민턴 페이지 · 피클볼 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
+   대관 예약 (배드민턴 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
    01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
    한 신청 = 이어진 시간 범위 하나 + 코트 1~maxCourts개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
    화면 공간(data-space)과 관리프로그램 공간이 다를 수 있음 (2026-10-22 피클볼 — 피클볼 페이지는 배드민턴센터 COURT 4 한 열만: apiSpace · courtIdx · sport).
+   피클볼은 2026-10-27 뺌 — 피클볼 전용 분기(apiSpace · courtIdx · sport · SHOW_C)는 지금 쓰는 공간이 없지만 동작에 지장 없어 그대로 둠.
    표 · 상태의 코트는 늘 '표의 열' index — 관리프로그램과 주고받을 때만 apiCourt / colOf 로 바꿈. 금액은 칸마다 그 코트 가격(prices)의 합.
    범위는 보통 날짜 하나 안이고, 배드민턴처럼 24시간 칸이면 자정을 넘겨 다음 날 새벽까지 한 신청으로 이어 담을 수 있음 (다음 날을 눌러 그 날 칸을 누름).
    신청은 1코트 1시간 칸(items = 선택 코트 × 범위 칸, court 는 0부터) 단위로 관리프로그램 /api/site 에 보냄 — api 가 비면 문자 접수.
@@ -821,8 +822,11 @@
   const PAY_KEY = 'bkPay';   // sessionStorage — 결제창으로 넘어간 신청 { id, phone, orderId, space(화면 공간 키), at } (휴대폰 결제 화면에서 뒤로 와 새로 열려도 칸을 풀려고)
   /** bkPay 기록을 이 화면에서 처리해도 되는지 — 같은 화면 공간이거나 같은 관리프로그램 공간(배드민턴 · 피클볼 페이지는 같은 배드민턴센터 칸)이면.
       결제 결과가 다른 페이지로 돌아와도(관리프로그램이 신청 종목으로 돌아갈 페이지를 고르기 전 등) 칸 풀기 · 완료 화면 예약 내용이 그대로 되게 */
+  // 피클볼은 2026-10-27 뺌 — 그 전에 피클볼 페이지에서 결제창으로 넘어간 기록(space 'pickleball')은 배드민턴센터 칸 (pickleball.html 이 쿼리를 지닌 채 이리로 옮김)
+  const OLD_SPACE = { pickleball: 'badminton' };
   const sameSpace = s => !!s && (s.space === space
-    || (typeof s.space === 'string' && Object.prototype.hasOwnProperty.call(CFG.spaces, s.space) && (CFG.spaces[s.space].apiSpace || s.space) === API_SPACE));
+    || (typeof s.space === 'string' && Object.prototype.hasOwnProperty.call(CFG.spaces, s.space) && (CFG.spaces[s.space].apiSpace || s.space) === API_SPACE)
+    || (typeof s.space === 'string' && Object.prototype.hasOwnProperty.call(OLD_SPACE, s.space) && OLD_SPACE[s.space] === API_SPACE));
   // ?msg= 는 누구나 주소에 적을 수 있어서 관리프로그램 PAY_MSG 와 같은 문구만 보여준다 (그 밖의 글은 버림)
   const PAY_MSGS = ['결제가 취소됐거나 인증되지 않았어요.', '이미 끝났거나 취소된 결제예요.', '신청 내용이 바뀌어 결제하지 않았어요.',
     '카드 승인이 되지 않았어요.', '결제 승인 중 연결이 끊겨 결제를 취소했어요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.'];
