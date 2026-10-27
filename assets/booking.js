@@ -2,9 +2,7 @@
    대관 예약 (배드민턴 페이지 #rental) — 설정은 booking-config.js(window.BOOKING), 모양은 booking.css
    01 월 달력(날짜) → 02 시간 × 코트 표(칸 = '선택' / '—') → 아래 고정 요약 바 [예약 확인 →] → 03 신청 폼
    한 신청 = 이어진 시간 범위 하나 + 코트 1~maxCourts개(여러 코트는 반드시 같은 시간). 코트를 모두 고르면 '전체대관'.
-   화면 공간(data-space)과 관리프로그램 공간이 다를 수 있음 (2026-10-22 피클볼 — 피클볼 페이지는 배드민턴센터 COURT 4 한 열만: apiSpace · courtIdx · sport).
-   피클볼은 2026-10-27 뺌 — 피클볼 전용 분기(apiSpace · courtIdx · sport · SHOW_C)는 지금 쓰는 공간이 없지만 동작에 지장 없어 그대로 둠.
-   표 · 상태의 코트는 늘 '표의 열' index — 관리프로그램과 주고받을 때만 apiCourt / colOf 로 바꿈. 금액은 칸마다 그 코트 가격(prices)의 합.
+   표의 열 index = 관리프로그램 코트 index(0부터). 금액은 칸마다 그 코트 가격(prices)의 합.
    범위는 보통 날짜 하나 안이고, 배드민턴처럼 24시간 칸이면 자정을 넘겨 다음 날 새벽까지 한 신청으로 이어 담을 수 있음 (다음 날을 눌러 그 날 칸을 누름).
    신청은 1코트 1시간 칸(items = 선택 코트 × 범위 칸, court 는 0부터) 단위로 관리프로그램 /api/site 에 보냄 — api 가 비면 문자 접수.
    [결제하기] 뒤 결제 흐름이 켜져 있으면 나이스페이 결제창 → 결과는 관리프로그램이 받아 ?pay=ok|fail 로 돌려보냄 (아래 '온라인 결제').
@@ -23,17 +21,12 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const dayLabel = s => { const d = toDate(s); return `${d.getMonth() + 1}월 ${d.getDate()}일(${WD[d.getDay()]})`; };
 
-  const space = root.querySelector('[data-space]').dataset.space;        // 화면 공간 키 (bkPay 기록에도 이 값)
+  const space = root.querySelector('[data-space]').dataset.space;        // 공간 키 (관리프로그램에 보내는 공간 · bkPay 기록에도 이 값)
   const SP = CFG.spaces[space];
   const NC = SP.courts.length;
   const ALL = SP.courts.map((_, i) => i);
-  const API_SPACE = SP.apiSpace || space;                                 // 관리프로그램에 보내는 공간 (피클볼 페이지 = 'badminton')
-  const SPORT = SP.sport || 'badminton';                                  // 신청 종목 — 같은 COURT 4 를 어느 페이지에서 잡았는지 (직원이 네트를 바꿔 놓음)
-  const apiCourt = c => (SP.courtIdx ? SP.courtIdx[c] : c);               // 표의 열 → 관리프로그램 코트 index (0부터)
-  const colOf = k => (SP.courtIdx ? SP.courtIdx.indexOf(k) : k);          // 관리프로그램 코트 index → 표의 열 (이 화면에 없는 코트면 -1)
   /** 코트(표의 열) 1시간 금액 — 코트별 가격(prices)이 있으면 그것, 없으면 공간 price (2026-10-22 COURT 4 — 2026-10-23 이름 'PRIVATE' · 77,000원 · 금액은 관리프로그램이 다시 계산) */
   const priceAt = c => (SP.prices && SP.prices[c] != null ? SP.prices[c] : SP.price);
-  const SHOW_C = NC > 1 || !!SP.courtIdx;                                 // 안내 · 요약에 코트 이름 — 코트가 하나뿐이어도 다른 공간의 코트를 빌려 쓰면(피클볼 'COURT 4') 보여 줌
   const MAX = CFG.maxItems || 96;                                         // 한 번에 신청할 수 있는 최대 칸 (코트 × 시간)
   const COURT_MAX = Math.max(1, Math.min(CFG.maxCourts || NC, NC));      // 같이 고를 수 있는 코트 수
   const WHOLE = CFG.wholeLabel || '전체대관';
@@ -129,10 +122,10 @@
   }
   /** 날짜 — 자정을 넘기면 "10월 19일(월) ~ 10월 20일(화)" */
   const dateText = sel => datesOf(sel).map(dayLabel).join(' ~ ');
-  /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이 — 피클볼 COURT 4 처럼 다른 공간 코트를 빌려 쓰면 코트 이름도) */
-  const selText = sel => `${SHOW_C ? courtText(sel.courts) + ' ' : ''}${timeText(sel)}`;
-  /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이 — SHOW_C) */
-  const head = sel => [dayLabel(sel.date), SHOW_C ? courtText(sel.courts) : '', timeText(sel)].filter(Boolean).join(' · ');
+  /** 안내용 "COURT 1·2 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이) */
+  const selText = sel => `${NC > 1 ? courtText(sel.courts) + ' ' : ''}${timeText(sel)}`;
+  /** "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간)" (코트가 하나뿐인 공간은 코트 없이) */
+  const head = sel => [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : '', timeText(sel)].filter(Boolean).join(' · ');
   /** 요약 한 줄 "10월 16일(금) · COURT 1·2 · 10:00~18:00 (8시간) · 844,800원" */
   const summary = sel => `${head(sel)} · ${won(priceOf(sel))}`;
   /** 담은 신청이 아직 그대로 신청 가능한지 (그 사이 지난 시간 · 새로 들어온 예약) */
@@ -201,12 +194,11 @@
      왼쪽 위 PRIVATE(COURT 4), 오른쪽 아래 COURT 1·2·3(위에서부터, 코트 칸 가운데 선 = 네트)을 한 방 테두리(MAP_ROOM) 안에,
      그 위 왼쪽 CAFE · 오른쪽 탈의실(둘 다 점선, 고를 수 없음 — 방 넓이를 반씩 나눈 같은 크기로 맞붙임, 윗선을 PRIVATE 윗선에 맞추고 세로로 길게; 탈의실은 2026-10-29 사용자 "오른쪽에 똑같은 사이즈로").
      1m = 8.5 — COURT 1·2·3 칸은 실제 코트 13.4 × 6.1m 비율, PRIVATE 칸은 코트보다 사방 1.5m씩 큰 방(9.1 × 16.4m, 사용자 "조금만 사방으로 키워"). 칸 사이 · 바깥 여백은 손그림 배치대로 대략.
-     담은 신청(state.sel)의 코트 칸을 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4칸을 다 그리고 PRIVATE 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE · MAP_LOCKER 는 칠하지 않는 칸 (CAFE·탈의실 각 63 × 59 — COURT 1·2·3 방 넓이 126 을 반씩, 둘이 맞붙음)
+     담은 신청(state.sel)의 코트 칸을 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 공간 courts 그대로.
+     MAP_COURT 는 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE · MAP_LOCKER 는 칠하지 않는 칸 (CAFE·탈의실 각 63 × 59 — COURT 1·2·3 방 넓이 126 을 반씩, 둘이 맞붙음)
      입구(2026-10-31 센터 "평면도에 입구 표시, 하단 중앙에 조금 뚫어줘" → 사용자가 시안 3개 중 3안): 바닥 바깥에 연회색 벽선을 두르고
      PRIVATE 와 코트 방 사이 통로 아래(MAP_ENT)만 MAP_ENT_W 만큼 끊음 — 그 밑 ▲ 입구 글자 자리(MAP_ENT_H)만큼 viewBox 를 아래로 늘림 (booking.css aspect-ratio 도 같게) */
-  const MAP_SP = CFG.spaces[API_SPACE] || SP;
-  const MAP_NAMES = MAP_SP.courts, MAP_PV = MAP_SP.gold || [];
+  const MAP_NAMES = SP.courts, MAP_PV = SP.gold || [];
   const MAP_W = 263, MAP_H = 263;
   const MAP_COURT = [[135, 81, 114, 52], [135, 139, 114, 52], [135, 197, 114, 52], [8, 8, 77, 139]];
   const MAP_ROOM = [129, 75, 126, 180], MAP_CAFE = [129, 8, 63, 59], MAP_LOCKER = [MAP_CAFE[0] + MAP_CAFE[2], 8, MAP_CAFE[2], MAP_CAFE[3]];   // CAFE · 탈의실 = 방 넓이를 반씩 나눠 붙임 (2026-10-29 사용자 "사이 안 벌어지게 안쪽으로 키워")
@@ -219,7 +211,7 @@
   }
   function renderMap() {
     const box = $('bkMap');
-    if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
+    if (!box || space !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
       box.innerHTML = `<svg viewBox="-2 -2 ${MAP_W + 4} ${MAP_H + 4 + MAP_ENT_H}" preserveAspectRatio="xMidYMin meet" role="img"><rect class="bg" width="${MAP_W}" height="${MAP_H}" rx="16"/>${mapWall(16)}`
         + `<rect class="room" x="${MAP_ROOM[0]}" y="${MAP_ROOM[1]}" width="${MAP_ROOM[2]}" height="${MAP_ROOM[3]}" rx="10"/>`
@@ -232,7 +224,7 @@
           + `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${esc(MAP_NAMES[k])}</text></g>`;
       }).join('')}</svg>`;
     }
-    const on = state.sel ? state.sel.courts.map(apiCourt) : [];
+    const on = state.sel ? state.sel.courts : [];
     box.querySelectorAll('g[data-k]').forEach(g => g.classList.toggle('on', on.includes(+g.dataset.k)));
     box.firstChild.setAttribute('aria-label', `코트 배치도${on.length ? ` — 선택한 코트 ${on.map(k => MAP_NAMES[k]).join(', ')}` : ''}`);
   }
@@ -275,8 +267,8 @@
 
   /* ---------- 표 (세로 = 시간 칸, 가로 = 코트) ---------- */
   /** 표의 열 — 코트마다 한 열 (코트를 모두 고르면 '전체대관'). 머리줄에 작게 코트마다 1시간 금액 (2026-10-23 센터 "가격이 4코트만 나와 있는데 전체 다 보여주고"),
-      gold = 금색 테두리 열 (SP.gold — 관리프로그램 코트 index, PRIVATE 코트) */
-  const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c], sub: won(priceAt(c)), gold: !!(SP.gold && SP.gold.includes(apiCourt(c))) }));
+      gold = 금색 테두리 열 (SP.gold — 코트 index, PRIVATE 코트) */
+  const cols = () => ALL.map(c => ({ courts: [c], name: SP.courts[c], sub: won(priceAt(c)), gold: !!(SP.gold && SP.gold.includes(c)) }));
   /** 보고 있는 날짜에서 본 담은 신청 — { ...sel, s, e, off } (s~e 는 이 날 칸 index: 앞날에서 자정 넘어 이어 온 신청이면 s 가 음수,
       다음 날로 넘어가면 e 가 이 날 칸 수 이상, off = 시간 줄 index − 이 날 index). 이 날에 걸친 칸이 없으면 null */
   function selHere() {
@@ -549,7 +541,7 @@
   function renderBar() {
     const sel = state.sel;
     $('bkBar').classList.toggle('has', !!sel);
-    $('bkBarMain').textContent = sel ? [dayLabel(sel.date), SHOW_C ? courtText(sel.courts) : ''].filter(Boolean).join(' · ') : '예약 시간을 선택하세요';
+    $('bkBarMain').textContent = sel ? [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : ''].filter(Boolean).join(' · ') : '예약 시간을 선택하세요';
     $('bkBarSub').textContent = sel ? `${timeText(sel)} · ${won(priceOf(sel))}` : `원하는 ${NC > 1 ? '코트를' : '시간을'} 누르면 선택됩니다`;
     $('bkGo').disabled = !sel;
   }
@@ -559,7 +551,7 @@
       ? `<div class="bk2-sel-h">선택한 예약</div>
         <dl>
           <div><dt>날짜</dt><dd>${esc(dateText(sel))}</dd></div>
-          ${SHOW_C ? `<div><dt>코트</dt><dd>${esc(courtText(sel.courts))}${NC > 1 && sel.courts.length === NC ? ` <small>(${esc(courtLabel(ALL))})</small>` : ''}</dd></div>` : ''}
+          ${NC > 1 ? `<div><dt>코트</dt><dd>${esc(courtText(sel.courts))}${sel.courts.length === NC ? ` <small>(${esc(courtLabel(ALL))})</small>` : ''}</dd></div>` : ''}
           <div><dt>시간</dt><dd>${esc(timeText(sel))}</dd></div>
           <div><dt>금액</dt><dd><b class="bk2-won">${won(priceOf(sel))}</b><small>${esc(priceNote(sel))}</small></dd></div>
         </dl>
@@ -706,7 +698,7 @@
     e.preventDefault();
     if (!validate() || !keepSel()) return;
     const sel = state.sel;
-    const items = sel.courts.flatMap(c => cellsIn(sel).map(x => ({ date: x.date, court: apiCourt(c), start: x.start })));   // 자정을 넘기면 다음 날 칸도 · court = 관리프로그램 코트 index
+    const items = sel.courts.flatMap(c => cellsIn(sel).map(x => ({ date: x.date, court: c, start: x.start })));   // 자정을 넘기면 다음 날 칸도
 
     if (!CFG.api) {
       const text = message(sel);
@@ -726,7 +718,7 @@
     if (window.PAYUI) {
       const yes = await window.PAYUI.confirm({
         title: '예약·결제 전에 확인해 주세요',
-        rows: [['공간', SP.name], ['날짜', dateText(sel)], SHOW_C ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
+        rows: [['공간', SP.name], ['날짜', dateText(sel)], NC > 1 ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
           ['이름', name], ['연락처', phone]],
         amount: priceOf(sel),
         note: isPayTest() ? '시험 주소예요 — 테스트 결제창이 열려요.' : '카드 결제가 끝나면 바로 확정되고, 입력하신 번호로 확정 문자가 가요.',
@@ -742,15 +734,14 @@
     try {
       if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
       // test = 시험 주소(?paytest=1) — 관리프로그램이 운영 결제처럼 '결제 전'으로 받아 결제가 끝나야 신청으로 드러냄 (2026-10-19)
-      // sport = 종목 (2026-10-22 — 'pickleball' 은 COURT 4(index 3)만, 관리프로그램이 남겨 직원이 네트를 바꿔 놓음 · 결제 결과도 그 페이지로 돌려보냄)
-      const r = await post({ action: 'book', space: API_SPACE, sport: SPORT, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest() });
+      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest() });
       if (r.ok) {
         // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
         const p = await prepare(r.id, phone);
         if (p && p.enabled) {
           openPay(p, { id: r.id, name, phone, dates: datesOf(sel),
-            sum: { where: SP.name + (SHOW_C ? ` · ${courtText(sel.courts)}` : ''), when: dateText(sel), time: timeText(sel), amount: p.amount } });
+            sum: { where: SP.name + (NC > 1 ? ` · ${courtText(sel.courts)}` : ''), when: dateText(sel), time: timeText(sel), amount: p.amount } });
           return;
         }
         const err = p && p.error;
@@ -829,14 +820,7 @@
      화면을 새로 연 경우(휴대폰 결제 화면에서 뒤로 와 새로 열림 · ?pay=fail 결과)는 sessionStorage 기록으로 칸을 풀고 대관 맨 위 안내 (resumePay).
      샌드박스(테스트) 결제는 관리프로그램이 신청을 확정하지 않는다 — '테스트 결제 완료(확정 안 됨)'로 안내.
      꺼져 있으면(키 없음 · 샌드박스인데 ?paytest=1 없음) 지금처럼 신청만 저장. 시크릿 키 · 금액 계산은 이 파일에 없음 */
-  const PAY_KEY = 'bkPay';   // sessionStorage — 결제창으로 넘어간 신청 { id, phone, orderId, space(화면 공간 키), at } (휴대폰 결제 화면에서 뒤로 와 새로 열려도 칸을 풀려고)
-  /** bkPay 기록을 이 화면에서 처리해도 되는지 — 같은 화면 공간이거나 같은 관리프로그램 공간(배드민턴 · 피클볼 페이지는 같은 배드민턴센터 칸)이면.
-      결제 결과가 다른 페이지로 돌아와도(관리프로그램이 신청 종목으로 돌아갈 페이지를 고르기 전 등) 칸 풀기 · 완료 화면 예약 내용이 그대로 되게 */
-  // 피클볼은 2026-10-27 뺌 — 그 전에 피클볼 페이지에서 결제창으로 넘어간 기록(space 'pickleball')은 배드민턴센터 칸 (pickleball.html 이 쿼리를 지닌 채 이리로 옮김)
-  const OLD_SPACE = { pickleball: 'badminton' };
-  const sameSpace = s => !!s && (s.space === space
-    || (typeof s.space === 'string' && Object.prototype.hasOwnProperty.call(CFG.spaces, s.space) && (CFG.spaces[s.space].apiSpace || s.space) === API_SPACE)
-    || (typeof s.space === 'string' && Object.prototype.hasOwnProperty.call(OLD_SPACE, s.space) && OLD_SPACE[s.space] === API_SPACE));
+  const PAY_KEY = 'bkPay';   // sessionStorage — 결제창으로 넘어간 신청 { id, phone, orderId, space, at } (휴대폰 결제 화면에서 뒤로 와 새로 열려도 칸을 풀려고)
   // ?msg= 는 누구나 주소에 적을 수 있어서 관리프로그램 PAY_MSG 와 같은 문구만 보여준다 (그 밖의 글은 버림)
   const PAY_MSGS = ['결제가 취소됐거나 인증되지 않았어요.', '이미 끝났거나 취소된 결제예요.', '신청 내용이 바뀌어 결제하지 않았어요.',
     '카드 승인이 되지 않았어요.', '결제 승인 중 연결이 끊겨 결제를 취소했어요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.'];
@@ -1041,7 +1025,7 @@
     history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
     const res = { kind: kind === 'ok' ? 'ok' : msg === PAY_UNKNOWN ? 'wait' : 'fail', no };
     const s = stashed();                          // resumePay 가 지우기 전에 — 같은 신청이면 완료 화면에 예약 내용
-    if (res.kind === 'ok') payBanner('ok', no, '', isPayTest(), s && s.id === no && sameSpace(s) ? s : null);
+    if (res.kind === 'ok') payBanner('ok', no, '', isPayTest(), s && s.id === no && s.space === space ? s : null);
     else if (res.kind === 'wait') payBanner('wait', no);
     else payBanner('fail', no, payMsgOk(msg) ? msg : '');
     return res;
@@ -1055,7 +1039,7 @@
     if (!s) return;
     stash(null);
     if (res && res.kind !== 'fail') return;   // 결제 완료 · 결과 확인 중 — 서버가 처리
-    if (!sameSpace(s) || typeof s.id !== 'string' || !(Date.now() - s.at < 20 * 60e3)) return;   // 다른 공간 · 오래된 기록 — 서버가 5분 뒤 풂
+    if (s.space !== space || typeof s.id !== 'string' || !(Date.now() - s.at < 20 * 60e3)) return;   // 다른 공간 · 오래된 기록 — 서버가 5분 뒤 풂
     if (res && res.no && res.no !== s.id) return;   // 다른 신청의 결과
     const r = await release(s);
     if (r === 'paid') payBanner('ok', s.id, '', s.test === true, s);
@@ -1069,9 +1053,8 @@
     if (!CFG.api || booked[date] || loading[date]) return loading[date];
     loading[date] = (async () => {
       try {
-        const r = await (await fetch(`${CFG.api}?action=slots&space=${encodeURIComponent(API_SPACE)}&date=${date}`)).json();
-        // 관리프로그램 코트 index → 표의 열 (피클볼 화면은 COURT 4 칸만 — 다른 코트 칸은 버림)
-        booked[date] = new Set((r.slots || []).map(x => [colOf(x.court), x.start]).filter(([c]) => c >= 0).map(([c, t]) => `${c}|${t}`));
+        const r = await (await fetch(`${CFG.api}?action=slots&space=${encodeURIComponent(space)}&date=${date}`)).json();
+        booked[date] = new Set((r.slots || []).map(x => `${x.court}|${x.start}`));
       } catch (e) {
         booked[date] = new Set();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
       }
