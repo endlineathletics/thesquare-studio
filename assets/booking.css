@@ -29,10 +29,11 @@
 .bk-map .room{fill:none;stroke:#CBD0D8;stroke-width:1.3;vector-effect:non-scaling-stroke}   /* COURT 1·2·3 이 있는 한 방 — 테두리만 */
 .bk-map g rect{fill:#fff;stroke:#CBD0D8;stroke-width:1;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s}   /* 코트 칸 */
 .bk-map .pv rect{stroke-width:1.3}
-.bk-map .cafe rect{stroke-dasharray:3 3}   /* CAFE — 고를 수 없는 칸이라 점선 + 연한 글자 */
+.bk-map .cafe rect,.bk-map .locker rect{stroke-dasharray:3 3}   /* CAFE · 탈의실 — 고를 수 없는 칸이라 점선 + 연한 글자 */
 .bk-map g line{stroke:#D5D9E0;stroke-width:1;vector-effect:non-scaling-stroke;transition:stroke .2s}   /* 네트 */
-.bk-map text{font:600 12px 'Montserrat',sans-serif;letter-spacing:.08em;fill:var(--ink);transition:fill .2s}
-.bk-map .cafe text{font-size:11px;fill:var(--ink-3)}
+.bk-map text{font:600 12px 'Montserrat','Pretendard',sans-serif;letter-spacing:.08em;fill:var(--ink);transition:fill .2s}   /* 한글(탈의실)은 Pretendard 로 */
+.bk-map .cafe text,.bk-map .locker text{font-size:11px;fill:var(--ink-3)}
+.bk-map .locker text{letter-spacing:.04em}   /* 한글은 자간 좁게 */
 .bk-map .on rect{fill:rgba(0,88,252,.10);stroke:var(--blue);stroke-width:1.6}
 .bk-map .on line{stroke:#7FA8FF}
 .bk-map .on text{fill:var(--blue)}
