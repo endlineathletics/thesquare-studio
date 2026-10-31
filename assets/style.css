@@ -714,7 +714,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .seg span{display:block;text-align:center;padding:12px 0;border:1px solid var(--line);font-size:15px;font-weight:700;transition:all .15s}
 .seg input:checked + span{background:var(--navy);border-color:var(--navy);color:#fff}
 .seg input:focus-visible + span,.chips2 input:focus-visible + span,.grp input:focus-visible + .grp-card{outline:2px solid var(--blue);outline-offset:2px}
-.grp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}   /* 4칸 = 성인 넷 / 유소년 요일반 넷 (2026-11, apply.js ORDER) */
+@media (max-width:1180px){.grp{grid-template-columns:1fr 1fr}}   /* 4칸이면 카드가 150px 아래로 좁아져 시간·코치가 줄바꿈 — 그보다 좁은 화면은 2칸 */
 .grp label{cursor:pointer;position:relative}
 .grp-card{display:block;height:100%;border:1px solid var(--line);border-top:4px solid var(--c);padding:14px 14px 13px;transition:all .15s;background:#fff}
 .grp-card b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.02em}

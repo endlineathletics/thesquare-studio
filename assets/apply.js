@@ -47,12 +47,13 @@
         c[1].split(' · ').forEach(x => { if (!g.coaches.includes(x)) g.coaches.push(x); });
       });
     });
-    // 카드 순서 (2026-10-31 센터 요청): 넓은 화면 3칸 = 월수 오전 · 화목 오전 · 유소년 월수 / 월수 저녁 · 화목 저녁 · 유소년 화목
-    // — 1·2칸 화면은 style.css 가 유소년을 맨 뒤로 보냄(오전 둘 → 저녁 둘 → 유소년 둘)
-    const ORDER = ['am_mw', 'am_tt', 'jr_mw', 'pm_mw', 'pm_tt', 'jr_tt'];
+    // 카드 순서: 넓은 화면 4칸 = 월수 오전 · 화목 오전 · 월수 저녁 · 화목 저녁 / 유소년 월 · 화 · 수 · 목 (2026-11 유소년이 요일반 넷이 되며 —
+    // 옛 2026-10-31 센터 요청 '오전 · 오전 · 유소년 / 저녁 · 저녁 · 유소년' 3칸을 바꿈). 2칸 화면도 style.css 가 유소년을 맨 뒤로
+    const ORDER = ['am_mw', 'am_tt', 'pm_mw', 'pm_tt', 'jr_mo', 'jr_tu', 'jr_we', 'jr_th'];
     const rank = k => (ORDER.indexOf(k) + 1) || ORDER.length + 1;
     const list = Object.values(groups).sort((a, b) => rank(a.key) - rank(b.key));
-    list.forEach(g => { g.days.sort(); g.dayLabel = g.days.map(i => DAYS[i]).join('·'); });
+    // 요일 하나인 반(유소년 요일반 — 주 1회)은 '월요일', 두 요일 반은 '월·수'
+    list.forEach(g => { g.days.sort(); g.dayLabel = g.days.length === 1 ? DAYS[g.days[0]] + '요일' : g.days.map(i => DAYS[i]).join('·'); });
 
     // 타임별 마감 (2026-10-19 사용자 "꽉 찬 반도 마감이라고 안 떠" · "있는 사람이랑 급수가 안 맞으면 마감") — 관리프로그램
     // GET api?action=bd_slots&grade= 가 정원·'붙은 두 급수까지'·입문 3명 조·타임별 받을 급수로 달마다 들어갈 수 있는지 준다.
@@ -73,7 +74,7 @@
         const cat = window.BD_CATS[g.key], full = classFull(g);
         const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
         return `<label data-k="${g.key}" style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
-          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}</span>
+          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}${g.days.length === 1 ? ' · 주 1회' : ''}</span>
           <span class="t">${first} – ${last} · ${g.times.length}타임</span>
           <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
       }).join('');
