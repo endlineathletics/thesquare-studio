@@ -748,6 +748,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .apply{grid-template-columns:1fr}
   .ap-side{position:static}
   .grp{grid-template-columns:1fr 1fr}
+  .grp label[data-k^="jr_"]{order:1}
 }
 @media (max-width:640px){
   .ap-card{padding:22px 16px}

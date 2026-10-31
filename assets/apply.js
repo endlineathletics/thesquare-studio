@@ -47,7 +47,11 @@
         c[1].split(' · ').forEach(x => { if (!g.coaches.includes(x)) g.coaches.push(x); });
       });
     });
-    const list = Object.values(groups);
+    // 카드 순서 (2026-10-31 센터 요청): 넓은 화면 3칸 = 월수 오전 · 화목 오전 · 유소년 월수 / 월수 저녁 · 화목 저녁 · 유소년 화목
+    // — 1·2칸 화면은 style.css 가 유소년을 맨 뒤로 보냄(오전 둘 → 저녁 둘 → 유소년 둘)
+    const ORDER = ['am_mw', 'am_tt', 'jr_mw', 'pm_mw', 'pm_tt', 'jr_tt'];
+    const rank = k => (ORDER.indexOf(k) + 1) || ORDER.length + 1;
+    const list = Object.values(groups).sort((a, b) => rank(a.key) - rank(b.key));
     list.forEach(g => { g.days.sort(); g.dayLabel = g.days.map(i => DAYS[i]).join('·'); });
 
     // 타임별 마감 (2026-10-19 사용자 "꽉 찬 반도 마감이라고 안 떠" · "있는 사람이랑 급수가 안 맞으면 마감") — 관리프로그램
@@ -68,7 +72,7 @@
       $('prefGroups').innerHTML = list.map(g => {
         const cat = window.BD_CATS[g.key], full = classFull(g);
         const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
-        return `<label style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
+        return `<label data-k="${g.key}" style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
           <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}</span>
           <span class="t">${first} – ${last} · ${g.times.length}타임</span>
           <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;

@@ -202,17 +202,26 @@
      그 위 왼쪽 CAFE · 오른쪽 탈의실(둘 다 점선, 고를 수 없음 — 방 넓이를 반씩 나눈 같은 크기로 맞붙임, 윗선을 PRIVATE 윗선에 맞추고 세로로 길게; 탈의실은 2026-10-29 사용자 "오른쪽에 똑같은 사이즈로").
      1m = 8.5 — COURT 1·2·3 칸은 실제 코트 13.4 × 6.1m 비율, PRIVATE 칸은 코트보다 사방 1.5m씩 큰 방(9.1 × 16.4m, 사용자 "조금만 사방으로 키워"). 칸 사이 · 바깥 여백은 손그림 배치대로 대략.
      담은 신청(state.sel)의 코트 칸을 연한 파랑으로, PRIVATE(config gold)는 연한 갈색 + 금색 글자로 칠함. 코트 이름은 관리프로그램 공간(API_SPACE)의 courts 그대로 — 피클볼 페이지도 4칸을 다 그리고 PRIVATE 만 칠해짐.
-     MAP_COURT 는 관리프로그램 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE · MAP_LOCKER 는 칠하지 않는 칸 (CAFE·탈의실 각 63 × 59 — COURT 1·2·3 방 넓이 126 을 반씩, 둘이 맞붙음) */
+     MAP_COURT 는 관리프로그램 코트 index 순서, 칸 [x, y, 가로, 세로] (viewBox 263 × 263). MAP_ROOM · MAP_CAFE · MAP_LOCKER 는 칠하지 않는 칸 (CAFE·탈의실 각 63 × 59 — COURT 1·2·3 방 넓이 126 을 반씩, 둘이 맞붙음)
+     입구(2026-10-31 센터 "평면도에 입구 표시, 하단 중앙에 조금 뚫어줘" → 사용자가 시안 3개 중 3안): 바닥 바깥에 연회색 벽선을 두르고
+     PRIVATE 와 코트 방 사이 통로 아래(MAP_ENT)만 MAP_ENT_W 만큼 끊음 — 그 밑 ▲ 입구 글자 자리(MAP_ENT_H)만큼 viewBox 를 아래로 늘림 (booking.css aspect-ratio 도 같게) */
   const MAP_SP = CFG.spaces[API_SPACE] || SP;
   const MAP_NAMES = MAP_SP.courts, MAP_PV = MAP_SP.gold || [];
   const MAP_W = 263, MAP_H = 263;
   const MAP_COURT = [[135, 81, 114, 52], [135, 139, 114, 52], [135, 197, 114, 52], [8, 8, 77, 139]];
   const MAP_ROOM = [129, 75, 126, 180], MAP_CAFE = [129, 8, 63, 59], MAP_LOCKER = [MAP_CAFE[0] + MAP_CAFE[2], 8, MAP_CAFE[2], MAP_CAFE[3]];   // CAFE · 탈의실 = 방 넓이를 반씩 나눠 붙임 (2026-10-29 사용자 "사이 안 벌어지게 안쪽으로 키워")
+  const MAP_ENT = (MAP_COURT[3][0] + MAP_COURT[3][2] + MAP_ROOM[0]) / 2, MAP_ENT_W = 30, MAP_ENT_H = 30;   // 입구 가운데 x = PRIVATE 오른쪽 선과 코트 방 왼쪽 선 사이
+  /** 바닥 바깥 벽선 (모서리 r = 바닥 rx) — 아래 입구 자리만 비우고 오른쪽으로 한 바퀴 */
+  function mapWall(r) {
+    const a = MAP_ENT - MAP_ENT_W / 2, b = MAP_ENT + MAP_ENT_W / 2, W = MAP_W, H = MAP_H;
+    return `<path class="wall" d="M${b} ${H}H${W - r}A${r} ${r} 0 0 0 ${W} ${H - r}V${r}A${r} ${r} 0 0 0 ${W - r} 0H${r}A${r} ${r} 0 0 0 0 ${r}V${H - r}A${r} ${r} 0 0 0 ${r} ${H}H${a}"/>`
+      + `<g class="ent"><path d="M${MAP_ENT} ${H + 5}l5 7h-10z"/><text x="${MAP_ENT}" y="${H + 22}" text-anchor="middle" dominant-baseline="central">입구</text></g>`;
+  }
   function renderMap() {
     const box = $('bkMap');
     if (!box || API_SPACE !== 'badminton' || MAP_NAMES.length !== MAP_COURT.length) return;
     if (!box.firstChild) {
-      box.innerHTML = `<svg viewBox="-2 -2 ${MAP_W + 4} ${MAP_H + 4}" preserveAspectRatio="xMidYMin meet" role="img"><rect class="bg" width="${MAP_W}" height="${MAP_H}" rx="16"/>`
+      box.innerHTML = `<svg viewBox="-2 -2 ${MAP_W + 4} ${MAP_H + 4 + MAP_ENT_H}" preserveAspectRatio="xMidYMin meet" role="img"><rect class="bg" width="${MAP_W}" height="${MAP_H}" rx="16"/>${mapWall(16)}`
         + `<rect class="room" x="${MAP_ROOM[0]}" y="${MAP_ROOM[1]}" width="${MAP_ROOM[2]}" height="${MAP_ROOM[3]}" rx="10"/>`
         + `<g class="cafe"><rect x="${MAP_CAFE[0]}" y="${MAP_CAFE[1]}" width="${MAP_CAFE[2]}" height="${MAP_CAFE[3]}" rx="6"/><text x="${MAP_CAFE[0] + MAP_CAFE[2] / 2}" y="${MAP_CAFE[1] + MAP_CAFE[3] / 2}" text-anchor="middle" dominant-baseline="central">CAFE</text></g>`
         + `<g class="locker"><rect x="${MAP_LOCKER[0]}" y="${MAP_LOCKER[1]}" width="${MAP_LOCKER[2]}" height="${MAP_LOCKER[3]}" rx="6"/><text x="${MAP_LOCKER[0] + MAP_LOCKER[2] / 2}" y="${MAP_LOCKER[1] + MAP_LOCKER[3] / 2}" text-anchor="middle" dominant-baseline="central">탈의실</text></g>`
