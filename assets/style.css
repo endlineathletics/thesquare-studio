@@ -53,7 +53,8 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- HOME HERO (split) ---------- */
 .hero{position:relative;height:100vh;min-height:640px;display:flex;background:var(--sky)}
-.panel{position:relative;flex:1;overflow:hidden;cursor:pointer;container-type:inline-size;transition:flex .7s cubic-bezier(.2,.8,.2,1)}
+.panel{position:relative;flex:1;overflow:hidden;cursor:pointer;container-type:inline-size;transition:flex .7s cubic-bezier(.2,.8,.2,1);
+  max-width:calc(2 * max(100vh,640px))}   /* 칸이 높이의 2배(= 홈 사진 2:1)보다 넓어지지 않게 — 넓어지면 사진이 가로에 맞춰 커져 머리가 큰 글자 뒤로 올라감(32:9 모니터에서 마우스를 올릴 때) */
 .panel + .panel{border-left:1px solid rgba(255,255,255,.35)}
 .hero:hover .panel{flex:.8}
 .hero .panel:hover{flex:1.35}
@@ -61,7 +62,7 @@ a{color:inherit;text-decoration:none}
 .panel:hover img{transform:scale(1)}
 .panel::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,90,.25) 0%,rgba(10,30,90,0) 35%,rgba(5,15,50,.55) 100%)}
 .panel .word{position:absolute;left:0;right:0;top:max(96px,12vh);z-index:2;text-align:center;font-family:var(--display);color:#fff;
-  font-size:20cqw;white-space:nowrap;line-height:.86;letter-spacing:-.01em;text-transform:uppercase;pointer-events:none;
+  font-size:20cqw;font-size:min(20cqw,17vh);white-space:nowrap;line-height:.86;letter-spacing:-.01em;text-transform:uppercase;pointer-events:none;   /* 17vh — 넓고 낮은 화면(노트북 · 울트라와이드)에서 글자가 사람 머리를 덮지 않게 */
   text-shadow:0 4px 40px rgba(0,20,80,.18)}
 .panel .word span{color:#fff}
 .panel .meta{position:absolute;left:32px;right:32px;bottom:44px;z-index:2;color:#fff;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
@@ -437,7 +438,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .hero{flex-direction:column;height:100svh}
   .hero:hover .panel,.hero .panel:hover{flex:1}
   .panel + .panel{border-left:0;border-top:1px solid rgba(255,255,255,.35)}
-  .panel .word{top:auto;bottom:74px;font-size:19cqw}
+  .panel{container-type:size}   /* 칸 높이(cqh)도 쓰려고 — 위아래로 쌓인 칸은 높이가 정해져 있음 */
+  .panel .word{top:auto;bottom:74px;font-size:16cqw;font-size:min(16cqw,calc(46cqh - 95px))}   /* 19 → 16cqw: 'BADMINTON' 이 잘리던 것. 칸이 낮으면(가로 폰 · 화면 분할 · 주소창 보이는 사파리) 높이로도 줄여 오른쪽 칸 여자(런지라 얼굴이 낮음) 얼굴을 안 덮게 */
   .panel .meta{left:16px;right:16px;bottom:18px}
   .glass{padding:10px 12px}
   .glass .v{font-size:15px}
