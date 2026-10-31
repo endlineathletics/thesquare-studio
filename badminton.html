@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261031a">
+<link rel="stylesheet" href="assets/style.css?v=20261031b">
 <link rel="stylesheet" href="assets/booking.css?v=20261031a">
 </head>
 <body data-page="badminton">
@@ -61,6 +61,19 @@
   <div class="wrap">
     <div class="bk2-result" id="bkResult" hidden></div>
     <div class="shead rv"><span class="c">A</span>대관 · Rental<span class="l"></span></div>
+    <!-- 코트 사진 (2026-10-31 센터 '더스퀘어 최종본' 6장 — 세로 5 · 가로 1, 원본 EXIF 회전대로 세워서 높이 1000 으로 줄임) — 옆으로 넘겨 보기, main.js [data-gallery] -->
+    <div class="rgal rv" data-gallery>
+      <div class="rgal-track" role="region" aria-label="대관 코트 사진 — 옆으로 넘겨 보기" tabindex="0">
+        <img src="images/rental/rental-1.jpg" width="1499" height="1000" alt="큰 창으로 햇빛이 드는 파란 배드민턴 코트 전경" loading="lazy" decoding="async">
+        <img src="images/rental/rental-2.jpg" width="667" height="1000" alt="높은 창 아래 햇빛이 비치는 코트" loading="lazy" decoding="async">
+        <img src="images/rental/rental-3.jpg" width="667" height="1000" alt="층고가 높은 코트와 네트" loading="lazy" decoding="async">
+        <img src="images/rental/rental-4.jpg" width="667" height="1000" alt="흰 벽과 나무 벽 아래 네트가 걸린 코트" loading="lazy" decoding="async">
+        <img src="images/rental/rental-5.jpg" width="667" height="1000" alt="창으로 빛이 들어오는 코트 끝" loading="lazy" decoding="async">
+        <img src="images/rental/rental-6.jpg" width="667" height="1000" alt="나무 벽 앞 코트 라인" loading="lazy" decoding="async">
+      </div>
+      <button type="button" class="rgal-btn prev" aria-label="이전 사진" disabled>‹</button>
+      <button type="button" class="rgal-btn next" aria-label="다음 사진">›</button>
+    </div>
     <div class="tt-top rv">
       <h2 class="h-display">Book the<br>court<span class="blue">.</span></h2>
       <p class="lead">층고 15m, 전용 바닥재의 코트 3면에 PRIVATE 코트까지 — 코트 4면을 24시간 대관할 수 있어요.<br>코트와 날짜·시간을 고르고 결제하시면 바로 예약이 확정돼요.<br><b>대관 예약은 이용일 2달 전부터 열려요.</b><br>기업 · 비영리단체 대관은 별도 문의 부탁드립니다(센터 전체 대관은 <a href="space.html"><b>공간대여</b></a>). *문의 <a href="tel:010-7576-1861"><b>010-7576-1861</b></a></p>
@@ -395,7 +408,7 @@
 
 <script src="assets/schedule.js?v=20261020y"></script>
 <script src="assets/booking-config.js?v=20261027p"></script>
-<script src="assets/main.js?v=20261023a"></script>
+<script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261018a"></script>
 <script src="assets/booking.js?v=20261031a"></script>
 </body>

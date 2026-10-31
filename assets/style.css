@@ -242,6 +242,18 @@ section.tight{padding:90px 0}
 /* .tt-top·.tt-note 는 badminton.html 이 씀. 표(.tt-wrap·.tt·.cls·.daytabs·.daylist·.drow·.chips)는 지금 쓰는 페이지 없음 — 배드민턴 표를 다시 넣을 때용
    (data-timetable="badminton" 구역 — assets/main.js initTimetable, 2026-10-20 요가 시간표 삭제 뒤) */
 .tt-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:26px}
+/* 대관 코트 사진 줄 (badminton.html #rental 맨 위, main.js [data-gallery]) — 높이를 맞추고 폭은 사진 비율대로(세로 · 가로 섞임), 옆으로 넘김.
+   좁은 화면에서 화면보다 넓은 가로 사진은 잘라 보임(object-fit) — 휴대폰은 다음 사진이 40px 쯤 보이게(옆에 더 있다는 표시) */
+.rgal{position:relative;margin:-14px 0 56px}
+.rgal-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none}
+.rgal-track::-webkit-scrollbar{display:none}
+.rgal-track:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.rgal-track img{display:block;flex:none;height:440px;width:auto;max-width:calc(100vw - 40px);object-fit:cover;scroll-snap-align:start;background:#dfe5ee}
+.rgal-track img:last-child{scroll-snap-align:end}   /* 끝 자리도 맞춤 자리로 — 없으면 마지막 사진이 조금 잘린 채 멈추고 [›] 가 안 사라짐 */
+.rgal-btn{position:absolute;top:50%;width:46px;height:46px;margin-top:-23px;border:0;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 12px rgba(6,16,31,.18);color:var(--ink);font:400 30px/1 var(--sans);padding:0 0 4px;cursor:pointer;display:grid;place-items:center;transition:opacity .2s}
+.rgal-btn.prev{left:14px}.rgal-btn.next{right:14px}
+.rgal-btn:disabled{opacity:0;pointer-events:none}
+@media (max-width:640px){.rgal{margin:-24px 0 40px}.rgal-track{gap:8px}.rgal-track img{height:300px;max-width:calc(100vw - 80px)}.rgal-btn{width:38px;height:38px;margin-top:-19px;font-size:26px}.rgal-btn.prev{left:8px}.rgal-btn.next{right:8px}}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chipbtn{border:1px solid var(--line);background:#fff;padding:8px 13px;font:600 13px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
 .chipbtn i{width:10px;height:10px;display:inline-block}

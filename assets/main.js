@@ -46,6 +46,22 @@
     fromHash();
   }
 
+  /* 사진 줄 옆으로 넘기기 — [data-gallery] 안 .rgal-track + .rgal-btn prev/next (배드민턴 대관 코트 사진, 2026-10-31).
+     버튼은 보이는 폭의 80% 만큼 넘기고 scroll-snap 이 사진 앞에 맞춤 · 처음/끝이면 그쪽 버튼 숨김 */
+  document.querySelectorAll('[data-gallery]').forEach(g => {
+    const track = g.querySelector('.rgal-track'), prev = g.querySelector('.prev'), next = g.querySelector('.next');
+    const sync = () => {
+      prev.disabled = track.scrollLeft <= 4;
+      next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    };
+    prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth * .8 }));
+    next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth * .8 }));
+    track.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    track.querySelectorAll('img').forEach(i => i.addEventListener('load', sync));
+    sync();
+  });
+
   /* reveal */
   const io = new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
