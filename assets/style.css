@@ -329,6 +329,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .foot-biz{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:28px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.62)}
 .foot-biz a{color:inherit}
 .foot-biz .addr{flex-basis:100%}
+.foot-biz .cs{flex-basis:100%;display:flex;gap:10px}  /* 고객센터 — 대관 · 레슨 번호 두 줄 (2026-11-01) */
 .foot-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,.2);font-size:12.5px;opacity:.75}
 
 /* ---------- 대관 / 레슨 탭 (배드민턴) ---------- */
