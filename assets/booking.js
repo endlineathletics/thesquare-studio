@@ -1008,7 +1008,8 @@
     });
     if (document.readyState === 'complete') show(); else addEventListener('load', show, { once: true });
   }
-  /** 대관 결제 완료 화면 — s: 결제창으로 넘어갈 때 남긴 기록(bkPay — 같은 신청이면 공간 · 날짜 · 시간 · 금액), 없으면 신청번호만 */
+  /** 대관 결제 완료 화면 — s: 결제창으로 넘어갈 때 남긴 기록(bkPay — 같은 신청이면 공간 · 날짜 · 시간 · 금액), 없으면 신청번호만.
+      밑에 [예약 조회](reservation.html — 2026-10-31 사용자: 번호로 받은 링크에서 예약 내용 · 취소 요청) — PAYUI.done 은 글을 모두 이스케이프해 링크는 뒤에 붙임 */
   function paidView(no, s) {
     const sum = s && s.sum;
     const rows = sum ? [['예약', `${sum.where}\n${sum.when} · ${sum.time}`], ['결제 금액', won(sum.amount)]] : [];
@@ -1017,8 +1018,8 @@
     return window.PAYUI.done({ title: '결제 완료 · 예약 확정', rows, steps: [
       `${to}로 예약 확정 문자를 보내드려요.`,
       '예약한 시간에 맞춰 오시면 돼요. 이용 시간이 지나면 다음 예약을 위해 정리해 주세요.',
-      `취소·변경은 ${SP.phone}로 연락 주세요 — 결제 전에 확인한 대관 환불 규정대로 처리해 드려요.`,
-    ] });
+      `예약 내용 확인 · 취소 요청은 아래 [예약 조회]에서 할 수 있어요 — 환불은 결제 전에 확인한 대관 환불 규정대로 해 드려요. 변경은 ${SP.phone}로 연락 주세요.`,
+    ] }) + '<div class="acts"><a class="pri" href="reservation.html">예약 조회</a></div>';
   }
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=&msg=) → 안내 후 주소에서 pay · no · msg 를 뗌 (paytest · #rental 은 그대로).
       → { kind: ok | wait | fail, no } 또는 null(결과 주소 아님). 관리프로그램은 테스트(샌드박스) 주문에만 paytest=1 을 붙여 돌려보낸다 */
