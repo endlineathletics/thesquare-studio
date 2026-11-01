@@ -961,3 +961,12 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .space-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:36px}
 .space-hourly{margin-top:56px}
 .promo-strip .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 대기 신청 (2026-11-02) — 마감된 반·시간도 고를 수 있음 */
+.grp label.wl .grp-card{background:var(--paper-2)}
+.chips2 label.wl span small{color:#d0342c}
+.chips2 label.wl input:checked + span small{color:#fff}
+.ap-wait{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 12px}
+.ap-wait dt{font-weight:600;color:var(--ink-3)}
+.ap-wait dd{margin:0;overflow-wrap:anywhere}
+.ap-wait-note{margin:0 0 14px;padding-left:18px;font-size:14px;line-height:1.6}
