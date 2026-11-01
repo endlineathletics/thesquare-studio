@@ -190,3 +190,9 @@
   .bk2-bar{padding-left:12px}
   .bk2-go{padding:0 10px}
 }
+
+/* 인원 — 코트당 최대 8명 안내 (2026-11-01, booking.js peopleCheck) */
+.bk-people-note{margin:-4px 0 0;font-size:13px;color:#64748b;min-height:0}
+.bk-people-note:empty{display:none}
+.bk-people-note.err{color:#dc2626;font-weight:600}
+.bk-form input.bk-bad{border-color:#dc2626}

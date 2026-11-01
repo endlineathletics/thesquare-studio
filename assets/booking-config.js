@@ -37,6 +37,8 @@
         prices: [52800, 52800, 52800, 77000],
         // 2026-10-23 센터: COURT 4 이름을 'PRIVATE' 로, 금색 테두리(gold — 관리프로그램 코트 index), 1시간 77,000원 (관리프로그램은 그대로 court 4)
         courts: ['COURT 1', 'COURT 2', 'COURT 3', 'PRIVATE'], gold: [3], title: 'COURT RESERVATION',
+        // 2026-11-01 사용자 "대관 신청받을 때 코트당 최대 인원 8명" — 인원 칸 최대 = 고른 코트 수 × 8 (관리프로그램 RENTAL_PEOPLE_PER_COURT 와 같게)
+        peoplePerCourt: 8,
         note: '코트별로 대관 가능하며, 여러 코트는 같은 시간으로 함께 신청할 수 있어요 · 다른 시간은 코트별로 따로 신청해주세요 · 새벽까지 쓰려면 다음 날짜를 눌러 같은 코트로 이어서 고르세요',
         slots: [HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY, HOURLY],
       },

@@ -621,9 +621,29 @@
   }
   function holdReset() { clearInterval(holdTimer); holdTimer = 0; holdNote(CFG.api ? esc(HOLD_NOTE) : ''); }
   holdReset();
+  /* 인원 — 코트당 최대 SP.peoplePerCourt 명 (2026-11-01 사용자 "코트당 최대 인원 8명"): 최대 = 고른 코트 수 × 8, 칸 안내·max 를 맞추고
+     넘으면 아래 빨간 안내 + [결제하기] 꺼짐 (비워 두면 그대로 — 인원은 선택 칸). 관리프로그램 book 도 같은 기준으로 거절(too_many_people) */
+  const PPC = SP.peoplePerCourt || 0;
+  function peopleMax() { return PPC * (state.sel ? state.sel.courts.length : 1); }
+  function peopleCheck() {
+    if (!PPC) return true;
+    const max = peopleMax(), el = form.people, note = $('bkPeopleNote');
+    el.max = String(max);
+    el.placeholder = state.sel && state.sel.courts.length > 1 ? `최대 ${max}명 (코트당 ${PPC}명)` : `코트당 최대 ${PPC}명`;
+    const v = el.value.trim(), n = Number(v);
+    const bad = v !== '' && (!Number.isInteger(n) || n < 1 || n > max);
+    if (note) {
+      note.textContent = !bad ? '' : (n > max ? `인원은 코트당 최대 ${PPC}명이에요 — 고른 코트 ${state.sel ? state.sel.courts.length : 1}면이면 ${max}명까지예요.`
+        : '인원을 1명 이상 숫자로 적어 주세요.');
+      note.classList.toggle('err', bad);
+    }
+    el.classList.toggle('bk-bad', bad);
+    return !bad;
+  }
   function validate() {
+    const pplOk = peopleCheck();   // 다른 칸이 비어 있어도 인원 안내는 늘 맞춤 (&& 뒤에 두면 앞이 false 일 때 안 불림)
     const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked
-      && (!terms || terms.ok());
+      && (!terms || terms.ok()) && pplOk;
     $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
     return ok && !state.sending;
   }
@@ -782,6 +802,8 @@
           lose(t, sel);   // 보낸 신청을 지우고 그 날 예약 현황을 다시 불러옴 (낭독은 아래 결과 안내 한 번)
           showMsg(`${esc(t)} <button type="button" class="bk2-edit" data-edit>시간 다시 고르기 ↑</button>`, 'err');
         };
+      } else if (r.error === 'too_many_people') {
+        showMsg(`인원은 코트당 최대 ${PPC || 8}명이에요 — 고른 코트로는 ${esc(r.max || peopleMax())}명까지 신청할 수 있어요.`, 'err');
       } else if (r.error === 'too_many') {
         showMsg(`한 번에 최대 ${esc(r.max || MAX)}칸(코트 × 시간)까지 신청할 수 있습니다. 나눠서 신청해주세요.`, 'err');
       } else if (r.error === 'pending_limit') {

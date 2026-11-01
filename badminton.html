@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="assets/style.css?v=20261101q">
-<link rel="stylesheet" href="assets/booking.css?v=20261101p">
+<link rel="stylesheet" href="assets/booking.css?v=20261101r">
 </head>
 <body data-page="badminton">
 
@@ -125,7 +125,8 @@
         <form class="bk-form" id="bkForm" novalidate>
           <label>이름 *<input name="name" required autocomplete="name"></label>
           <label>연락처 *<input name="phone" type="tel" required inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
-          <label>인원<input name="people" type="number" min="1" inputmode="numeric" placeholder="최대 12명"></label><!-- 2026-10-19 센터 피드백 "배드민턴 인원수 최대 12명이라고 쓰게" — 입력 샘플만 (막지는 않음) -->
+          <label>인원<input name="people" type="number" min="1" max="8" inputmode="numeric" placeholder="코트당 최대 8명" aria-describedby="bkPeopleNote"></label><!-- 2026-11-01 사용자 "코트당 최대 인원 8명" — 고른 코트 수 × 8 넘으면 [결제하기]가 꺼지고 아래 안내 (booking.js peopleCheck, 관리프로그램도 거절) -->
+          <p class="bk-people-note" id="bkPeopleNote" aria-live="polite"></p>
           <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
           <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
           <div id="bkTerms"></div><!-- 대관 환불 규정 (관리프로그램 > 안내문, assets/pay-ui.js) — 체크해야 [결제하기] -->
@@ -407,9 +408,9 @@
 </footer>
 
 <script src="assets/schedule.js?v=20261101q"></script>
-<script src="assets/booking-config.js?v=20261101p"></script>
+<script src="assets/booking-config.js?v=20261101r"></script>
 <script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261018a"></script>
-<script src="assets/booking.js?v=20261101p"></script>
+<script src="assets/booking.js?v=20261101r"></script>
 </body>
 </html>
