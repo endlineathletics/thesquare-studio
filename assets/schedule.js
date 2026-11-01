@@ -30,9 +30,9 @@ window.bdCat = function (name) { return name.includes('유소년') ? 'jr_mo' : n
   const jrRow = (time, end) => ({ time, end, cells: JR });      // 유소년 = 요일마다 다른 반 (월·화·수·목 요일반)
   window.BD_SCHEDULE = [
     { section: 'MORNING · 성인 오전반' },
-    row('09:00', '10:00', AM_MW, AM_TT),
     row('10:00', '11:00', AM_MW, AM_TT),
     row('11:00', '12:00', AM_MW, AM_TT),
+    row('12:00', '13:00', AM_MW, AM_TT),
     { section: 'AFTERNOON · 유소년반' },
     jrRow('15:00', '16:00'),
     jrRow('16:00', '17:00'),
