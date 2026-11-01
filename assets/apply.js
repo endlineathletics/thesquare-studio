@@ -232,6 +232,12 @@
     }
     // test = 시험 주소(?paytest=1) — 결제가 켜져 있으면 관리프로그램이 신청서를 '결제 전'으로 받아 결제가 끝나야 신청으로 보여 준다 (2026-10-19)
     const payload = { action: 'apply', ...v, test: isPayTest(), clientId: CLIENT_ID, submittedAt: new Date().toISOString(), source: 'homepage' };
+    // 이용 안내를 확인한 버전 (2026-11-01 센터 요청 10번 — 관리프로그램이 신청 내역에 버전·일시를 남김). 안내를 안 거친 화면(뒤로 가기 등)이면 지금 확인
+    if (CFG.api && window.PAYUI) {
+      const g = await askGuide();
+      if (!g) return;
+      payload.guide = { version: g.version };
+    }
 
     if (!CFG.api) { done(v, null, 'fallback'); return; }
 
@@ -408,7 +414,7 @@
           ${optBody(x)}</label>`).join('')}</div>
       ${picked && picked.disabled ? `<p class="ap-pay-msg err" role="alert">앞서 고른 ${esc(picked.label)}은 지금 고를 수 없어요 — 다른 것을 골라 주세요.</p>` : ''}
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
-      ${first ? '<div id="payTerms"></div>' : ''}
+      ${first && !window.PAYUI.guideSeen('refund_class') ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
         <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 대기 신청은 ${esc(CFG.phone)}로 연락 주세요.</p>`}
       <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
@@ -424,8 +430,15 @@
       go.disabled = st.busy || !st.agreed;
       box.querySelector('#payHint').hidden = st.agreed;
     };
-    st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
-      onChange: ok => { st.agreed = ok; sync(); } });
+    // 이용 안내(환불 규정 포함)를 신청 전에 확인했으면 다시 묻지 않음 (2026-11-01) — 다른 탭에서 결제만 이어 가는 경우 등은 옛 체크칸
+    if (window.PAYUI.guideSeen('refund_class')) {
+      st.terms = { ok: () => true };
+      st.agreed = true;
+      sync();
+    } else {
+      st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
+        onChange: ok => { st.agreed = ok; sync(); } });
+    }
     box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
       const x = r.options.find(y => y.key === i.value);
       if (x && !st.busy) go.textContent = `${won(x.amount)} 결제하기`;
@@ -485,6 +498,16 @@
       foot: `문자가 오지 않으면 ${CFG.phone}로 연락 주세요.` })
       + `<div class="acts">${login ? `<a href="${esc(login)}" target="_blank" rel="noopener">이미 앱을 쓰고 있다면 · 앱 열기</a>` : ''}
         <a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+  }
+
+  /** 레슨 이용 안내 (센터 요청 10번) — 이 탭에서 이미 확인한 버전이면 바로 통과 */
+  function askGuide() {
+    return window.PAYUI.guide({ api: CFG.api, key: 'refund_class', phone: CFG.phone,
+      check: '레슨 이용수칙과 결석·시간 변경·환불 규정을 확인했습니다.', okText: '확인하고 수강신청 계속하기' });
+  }
+  /* 신청 화면을 열면(수강신청 버튼) 안내 먼저 — 결제를 마치고 돌아온 주소는 결과 화면이라 빼고, 취소하면 배드민턴 페이지로 */
+  if (CFG.api && window.PAYUI && !/[?&]pay=/.test(location.search)) {
+    askGuide().then(g => { if (!g) location.href = `${TYPE}.html`; });
   }
 
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=신청번호&msg=) → 결과 화면 + 주소에서 pay·no·msg 를 뗌 (paytest 는 그대로) */

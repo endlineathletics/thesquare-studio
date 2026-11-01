@@ -43,12 +43,14 @@ text/plain으로 보내는 건 **사전요청(OPTIONS)만 생략**하는 것이�
   "region": "서울 금천구 가산동",
   "guardian": null,
   "agreements": { "privacy": true, "notification": true, "guardian": false },
+  "guide": { "version": 2 },
   "clientId": "3f1c2a9e-7b1d-4c55-9a0e-2d6f1e4b8c10",
   "submittedAt": "2026-10-01T09:30:00.000Z",
   "source": "homepage"
 }
 ```
 - `age`는 **만 나이**입니다.
+- `guide.version`: 손님이 체크한 이용 안내 버전(`GET ?action=policy&key=refund_class` 의 `version`). 없어도 신청은 받고 기록만 안 합니다.
 - **만 14세 미만**이면 `guardian: { "name": "홍부모", "relation": "모" }`(relation: 부/모/기타 법정대리인)와 `agreements.guardian: true`가 함께 옵니다.
   개인정보 보호법 제22조의2에 따라 법정대리인 동의 기록이므로 반드시 저장해주세요. 14세 이상이면 `guardian: null`.
 - `preference.time` / `preference.coach`는 고객이 고르지 않으면 `"상관없음"`입니다.

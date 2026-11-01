@@ -570,8 +570,9 @@
     const f = state.focus;
     if (f) focusCell(f.c, f.i, true);
   }
-  $('bkGo').addEventListener('click', () => {
+  $('bkGo').addEventListener('click', async () => {
     if (!state.sel || !keepSel()) return;
+    if (!await askGuide()) return;             // 대관 이용 안내 (센터 요청 10번) — 취소하면 표에 그대로
     $('bkApply').scrollIntoView({ block: 'start' });
     const f = form.name.value.trim() ? (form.phone.value.trim() ? form.name : form.phone) : form.name;
     f.focus({ preventScroll: true });
@@ -593,9 +594,13 @@
 
   /* ---------- 신청 폼 ---------- */
   const form = $('bkForm');
-  // 대관 환불 규정 (2026-10-18 — 관리프로그램 > 안내문 '대관 환불 규정', assets/pay-ui.js). 체크해야 [결제하기]가 켜짐 · 문자 접수(api 없음)엔 없음
-  const terms = CFG.api && $('bkTerms') && window.PAYUI
-    ? window.PAYUI.terms($('bkTerms'), { api: CFG.api, key: 'refund_rental', phone: SP.phone, onChange: () => validate() }) : null;
+  /* 대관 이용 안내 (2026-11-01 센터 요청 10번 — 관리프로그램 > 안내문, assets/pay-ui.js guide): [예약 확인 →]을 누르면 전체 글 + 직접 체크 + [확인하고 대관신청 계속하기].
+     표를 건너뛰고 아래 폼으로 스크롤해 [결제하기]를 눌러도 여기를 거침. 확인한 버전은 book 본문 guide 로(관리프로그램이 버전·일시를 남김). 문자 접수(api 없음)는 안내 없음 */
+  async function askGuide() {
+    if (!CFG.api || !window.PAYUI) return { version: 0 };
+    return window.PAYUI.guide({ api: CFG.api, key: 'refund_rental', phone: SP.phone,
+      check: '대관 이용수칙과 예약 변경·취소·환불 규정을 확인했습니다.', okText: '확인하고 대관신청 계속하기' });
+  }
   /* 결제 대기 5분 경고 — [결제하기] 버튼 위 #bkHold (2026-10-18 센터 "빨간 글자로 경고문구, 시간 줄어들게").
      관리프로그램은 신청(book)을 받는 순간 그 시간을 잡아 두고 PAY_HOLD_MIN(5)분 안에 결제가 안 끝나면 자동 취소 + 칸 해제(pay_expire_due).
      결제창을 열기 전엔 고정 경고, 결제창이 열려 있는 동안(PC — 휴대폰은 결제 화면으로 넘어감)은 서버 expiresAt 기준 남은 시간을 1초마다 */
@@ -643,7 +648,7 @@
   function validate() {
     const pplOk = peopleCheck();   // 다른 칸이 비어 있어도 인원 안내는 늘 맞춤 (&& 뒤에 두면 앞이 false 일 때 안 불림)
     const ok = !!state.sel && cellsOf(state.sel) <= MAX && form.name.value.trim() && /^[0-9\-+ ]{9,}$/.test(form.phone.value.trim()) && form.agree.checked
-      && (!terms || terms.ok()) && pplOk;
+      && pplOk;
     $('bkSubmit').disabled = !ok || state.sending;   // 보내는 중엔 입력 · 표 변화로 다시 켜지지 않게 (두 번 신청 방지)
     return ok && !state.sending;
   }
@@ -734,6 +739,9 @@
     }
 
     const name = form.name.value.trim(), phone = form.phone.value.trim();
+    const guide = await askGuide();             // 이용 안내를 아직 안 거쳤으면 여기서 (센터 요청 10번)
+    if (!guide) return;
+    if (state.sending || state.sel !== sel || !validate() || !keepSel()) return;   // 안내를 보는 사이 바뀐 것
     // 결제 전 확인창 (2026-10-18) — 공간 · 날짜 · 코트 · 시간 · 금액 · 이름 · 연락처. 취소하면 아무것도 안 보냄(칸도 안 잡음)
     if (window.PAYUI) {
       const yes = await window.PAYUI.confirm({
@@ -754,7 +762,8 @@
     try {
       if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
       // test = 시험 주소(?paytest=1) — 관리프로그램이 운영 결제처럼 '결제 전'으로 받아 결제가 끝나야 신청으로 드러냄 (2026-10-19)
-      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest() });
+      const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest(),
+        guide: guide.version ? { version: guide.version } : undefined });
       if (r.ok) {
         // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
@@ -889,7 +898,7 @@
   const PREP_ERRORS = ['already_paid', 'in_progress', 'expired', 'not_payable'];
   async function prepare(id, phone) {
     try {
-      const p = await post({ action: 'pay_prepare', kind: 'rental', id, phone, test: isPayTest(), agreeRefund: !!(terms && terms.ok()) });
+      const p = await post({ action: 'pay_prepare', kind: 'rental', id, phone, test: isPayTest(), agreeRefund: !!(window.PAYUI && window.PAYUI.guideSeen('refund_rental')) });
       if (p && p.ok) return p;
       if (p && p.error === 'bad_request') return { enabled: false };
       return p && PREP_ERRORS.includes(p.error) ? { error: p.error, test: p.test === true } : null;
