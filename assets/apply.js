@@ -90,7 +90,9 @@
     function drawSub() {
       const k = form.cls && form.cls.value, g = k && groups[k];
       if (!g) { $('prefSub').hidden = true; return; }
-      const curT = (form.time && form.time.value) || '상관없음', curC = (form.coach && form.coach.value) || '상관없음';
+      // 반을 바꿔 앞서 고른 타임·코치가 새 반에 없으면 '상관없음'으로 (안 그러면 아무 칩도 안 켜진 채로 보임)
+      const orAny = (opts, v) => opts.includes(v) ? v : '상관없음';
+      const curT = orAny(g.times, form.time && form.time.value), curC = orAny(g.coaches, form.coach && form.coach.value);
       const tState = t => t === '상관없음' ? (classFull(g) ? 'full' : '') : slotState(k, t);
       const okT = curT === '상관없음' && classFull(g) ? '' : curT;   // 반 전체가 마감이면 대기할 시간을 직접 고르게
       $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => chip('time', v, tState(v), v === okT)).join('');
@@ -575,9 +577,9 @@
     return window.PAYUI.guide({ api: CFG.api, key: 'refund_class', phone: CFG.phone,
       check: '레슨 이용수칙과 결석·시간 변경·환불 규정을 확인했습니다.', okText: '확인하고 수강신청 계속하기' });
   }
-  /* 신청 화면을 열면(수강신청 버튼) 안내 먼저 — 결제를 마치고 돌아온 주소는 결과 화면이라 빼고, 취소하면 배드민턴 페이지로 */
+  /* 신청 화면을 열면(수강신청 막대) 안내 먼저 — 결제를 마치고 돌아온 주소는 결과 화면이라 빼고, 취소하면 들어온 곳인 레슨 탭으로 */
   if (CFG.api && window.PAYUI && !/[?&]pay=/.test(location.search)) {
-    askGuide().then(g => { if (!g) location.href = `${TYPE}.html`; });
+    askGuide().then(g => { if (!g) location.href = `${TYPE}.html#academy`; });
   }
 
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=신청번호&msg=) → 결과 화면 + 주소에서 pay·no·msg 를 뗌 (paytest 는 그대로) */
