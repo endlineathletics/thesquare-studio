@@ -14,7 +14,7 @@
   --display:'Anton','Pretendard',sans-serif;
   --sans:'Pretendard','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --max:1240px;
-  --fab-gap:32px;   /* 수강신청 버튼과 화면 오른쪽(아래) 끝 사이 여백 — 모든 화면 크기 동일 */
+  --apply-bar-h:64px;   /* 아래 전체 폭 수강신청 막대 높이 (아이폰 홈 막대 자리는 따로 더함) */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -667,27 +667,20 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 }
 .bk-tab:only-child{cursor:default}
 
-/* ---------- FLOATING APPLY BUTTON ---------- */
-.apply-fab{position:fixed;right:var(--fab-gap);bottom:var(--fab-gap);z-index:60;
-  display:inline-flex;align-items:center;justify-content:space-between;gap:18px;min-width:230px;
-  padding:13px 13px 13px 30px;border-radius:999px;color:var(--ink);font:800 17px var(--sans);letter-spacing:-.01em;
-  background:linear-gradient(180deg,#ffffff 0%,#f3f5f9 55%,#e7ebf2 100%);
-  border:1px solid rgba(255,255,255,.95);
-  box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 rgba(6,16,31,.07),0 2px 4px rgba(6,16,31,.12),0 10px 18px rgba(6,16,31,.16),0 22px 40px rgba(6,16,31,.18);
-  transition:transform .18s ease,box-shadow .18s ease,opacity .25s ease,visibility .25s}
-.apply-fab .arr{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#fff;font-size:16px;
-  background:linear-gradient(180deg,#2a2f3a 0%,var(--ink) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 6px rgba(6,16,31,.3)}
-.apply-fab:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 rgba(6,16,31,.07),0 4px 8px rgba(6,16,31,.12),0 16px 26px rgba(6,16,31,.18),0 30px 52px rgba(6,16,31,.2)}
-.apply-fab:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(6,16,31,.1),0 1px 2px rgba(6,16,31,.14),0 6px 12px rgba(6,16,31,.14)}
-
-/* 천천히 위아래로 떠다니기. transform 대신 translate 를 써서 hover·숨김 효과와 안 겹침 */
-/* 2.8초 동안 한 번 오르내리고 0.5초 쉼 (전체 3.3초) */
-@keyframes fab-float{0%{translate:0 0}42%{translate:0 -10px}85%,100%{translate:0 0}}
-.apply-fab{animation:fab-float 3.3s ease-in-out infinite}
-.apply-fab:hover,.apply-fab:focus-visible,.apply-fab.hide{animation:none}
-@media (prefers-reduced-motion:reduce){.apply-fab{animation:none}}
-.apply-fab.hide{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(16px)}
-@media (max-width:640px){.apply-fab{min-width:200px;font-size:16px;padding:11px 11px 11px 26px}.apply-fab .arr{width:32px;height:32px}}
+/* ---------- 수강신청 막대 (2026-11-02 — 떠 있던 버튼 대신 화면 아래 전체 폭 고정 · 파란 바탕 흰 글씨) ----------
+   배드민턴 레슨 탭에서만: main.js 가 body.has-apply-bar 를 켜고 끔. 페이지 맨 아래(푸터)가 막대에 가리지 않게 그만큼 띄움 */
+.apply-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;align-items:center;justify-content:center;gap:10px;
+  height:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px));padding:0 16px env(safe-area-inset-bottom,0px);
+  background:var(--blue);color:#fff;font:800 18px var(--sans);letter-spacing:-.01em;transition:background .15s}
+.apply-bar .arr{font-size:20px;line-height:1;transition:transform .15s}
+.apply-bar:hover{background:#0047cc}
+.apply-bar:hover .arr{transform:translateX(4px)}
+.apply-bar:active{background:#003bab}
+.apply-bar:focus-visible{outline:3px solid #fff;outline-offset:-6px}
+body.has-apply-bar{padding-bottom:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px))}
+body.has-apply-bar .apply-bar{display:flex}
+:root:has(body.has-apply-bar){scroll-padding-bottom:calc(var(--apply-bar-h) + 12px)}   /* 키보드로 옮겨 다닐 때 고른 칸이 막대 뒤로 숨지 않게 */
+@media (max-width:640px){:root{--apply-bar-h:58px}.apply-bar{font-size:17px}}
 
 /* ---------- APPLY FORM ---------- */
 .apply{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start}

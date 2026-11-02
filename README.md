@@ -20,4 +20,6 @@
 - 배드민턴 페이지 머리 사진은 탭 따라 바뀜(2026-10-23): [대관] = `images/hero-badminton-court.jpg`(좁은 화면 `-narrow`), [레슨] = `images/hero-badminton-lesson.jpg`(의자에 앉은 코치 — 원본 ~/Downloads/Untitled-1.png 편집본에서 **대관 사진과 같은 얼굴 크기·위치로 잘라** 다리 아래는 잘림, 같은 2954×1969) · 좁은 화면 `hero-badminton-lesson-narrow.jpg`(대관 `-narrow` 와 같은 3300×1508·구도). 두 사진 구도가 같아 위치(object-position)도 같은 규칙. `badminton.html` `.page-hero[data-hero]` 를 `main.js` 탭 `show()` 가 바꾸고 `style.css` `.bd-pic` 이 그 사진만 보임, 레슨 사진은 `loading="lazy"`.
 - **PRIVATE 코트 (2026-10-23 센터)**: COURT 4 를 홈페이지에선 'PRIVATE' 로(booking-config `courts`), 표 머리에 코트마다 1시간 금액, PRIVATE 머리 칸은 진한 갈색 바탕 + 이름·가격 금색(2026-10-23 금색 테두리는 없앰 — `gold: [3]` 관리프로그램 코트 index, booking.css `.bk2-grid thead th.gold`), 1시간 77,000원(관리프로그램 `court_prices` 와 같게 — 관리프로그램 먼저 배포). 코트 이름 묶음은 숫자 코트 뒤에 붙임('COURT 1·2 · PRIVATE'). 레슨 머리 사진은 MENT0260(의자에 앉아 라켓 든 코치) **전신** — 원본 전체 + 양옆 AI 확장(21:9, 사람은 원본 그대로 합성, 왼쪽 위 AI 기둥은 어둡게), 넓은 2.1:1·좁은 1.2:1, 위치는 style.css `.bd-hero-lesson`(2026-10-23 "사이즈 줄이고 전체 다 나오게").
 
+- **수강신청 막대**(2026-11-02): 배드민턴 레슨 탭 아래에 전체 폭 파란 막대(`.apply-bar` — `main.js` 탭 `show()` 가 `body.has-apply-bar` 를 켜고 끔, 대관 탭은 자기 예약 막대가 있어 숨김). 떠 있던 수강신청 버튼을 대신함.
+
 - **대기 신청**(2026-11-02, `apply.js` '대기 보증금' 구역 · 규격은 관리프로그램 `docs/site-api.md` 3-4절): 마감된 시간을 고르면 버튼이 '보증금 내고 대기 신청'으로 바뀌고, 신청서 저장 뒤 보증금 결제 → '대기 n번' 화면 + 번호로 대기 현황 링크. 관리앱을 먼저 배포.

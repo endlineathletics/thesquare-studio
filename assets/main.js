@@ -7,8 +7,6 @@
   onScroll();
   document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
 
-  const fab = document.querySelector('.apply-fab');   // 수강신청 버튼: 화면 크기와 상관없이 오른쪽 아래 고정 (CSS)
-
   /* active menu */
   const page = document.body.dataset.page;
   document.querySelectorAll('#menu a').forEach(a => {
@@ -25,7 +23,7 @@
       panes.forEach(p => { p.hidden = p.dataset.pane !== name; });
       links.forEach(a => a.classList.toggle('on', a.dataset.tab === name));
       if (hero) hero.dataset.hero = name;
-      if (fab) fab.classList.toggle('hide', name === 'rental');   // 대관 화면에서는 수강신청 버튼 숨김
+      document.body.classList.toggle('has-apply-bar', name !== 'rental');   // 아래 전체 폭 수강신청 막대는 레슨 탭만 — 대관 탭은 자기 예약 막대(.bk2-bar)가 있음
       if (scroll) {   // 탭이 화면 위에 붙어 있을 때만 구역 처음으로 올림
         const y = (top ? top.offsetTop + top.offsetHeight : 0) - (parseFloat(getComputedStyle(tabs).top) || 0);   // 탭이 원래 있던 자리
         if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'instant' });
