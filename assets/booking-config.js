@@ -28,7 +28,7 @@
       sandbox: 'https://pay.nicepay.co.kr/v1/js/',   //   샌드박스 결제창이 안 뜨면 'https://sandbox-pay.nicepay.co.kr/v1/js/' 로 바꿔 시험
       live: 'https://pay.nicepay.co.kr/v1/js/',
     },
-    payMethod: 'card',        // 결제수단 — card(신용카드). 'cardAndEasyPay' = 카드 + 간편결제(가맹점 계약 확인 후). 가상계좌(vbank)는 관리프로그램이 받지 않음
+    payMethod: 'cardAndEasyPay',   // 결제수단 — 카드 + 간편결제. 상점에 켜진 간편결제가 있을 때만 결제창에 '간편결제' 탭이 생기고, 없으면 카드 결제창과 똑같음(2026-11-02 운영 상점 PC·휴대폰 확인). 토스페이만 부르는 'tosspay' 는 상점에 안 켜져 있으면 창이 바로 닫혀서 안 씀. 가상계좌(vbank)는 관리프로그램이 받지 않음
     wholeLabel: '전체대관',   // 코트를 모두 고른 신청의 표시 이름
     spaces: {
       badminton: {
