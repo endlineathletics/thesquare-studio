@@ -387,7 +387,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .atb-l{grid-column:1 / -1;flex-direction:row;align-items:baseline;gap:10px;padding:16px 16px 4px}
   .atb-c{border-left:0;padding:12px 16px 18px}
   .atb-c + .atb-c{border-left:1px solid var(--line)}
-  .atb-d{display:block;font-size:12px;font-weight:800;color:var(--blue)}
+  .atb-d{display:block;font-size:12px;font-weight:800;color:var(--ink)}
   .atb-t{font-size:18px}.atb-t i{margin:0 3px}
   .atb-co{font-size:13px;flex-direction:column;align-items:flex-start;gap:4px}
 }
