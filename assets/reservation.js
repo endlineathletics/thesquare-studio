@@ -149,7 +149,7 @@
         <button type="button" class="rsv-cancel-btn" data-cancel="${esc(c.no)}">예약 취소</button>
         <p class="rsv-note">취소하면 그 시간은 바로 다른 분이 예약할 수 있어 되돌릴 수 없어요.${c.estimate ? ' 환불은 담당자가 확인한 뒤 진행돼요.' : ''}</p></div>`;
     } else if (c.busy) {
-      foot = '<p class="rsv-note">결제를 확인하는 중이라 지금은 취소할 수 없어요. 잠시 뒤 다시 열어 주세요.</p>';
+      foot = `<p class="rsv-note">결제를 확인하는 중이라 지금은 취소할 수 없어요. 잠시 뒤 다시 열어 주시거나 대관 문의 ${TEL}로 연락해 주세요.</p>`;
     } else if (c.started) {
       foot = `<p class="rsv-note">이용 시작 시각이 지나 여기서는 취소할 수 없어요. 대관 문의 ${TEL}로 연락해 주세요.</p>`;
     }
