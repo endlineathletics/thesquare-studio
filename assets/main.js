@@ -7,8 +7,6 @@
   onScroll();
   document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
 
-  const fab = document.querySelector('.apply-fab');   // 수강신청 버튼: 화면 크기와 상관없이 오른쪽 아래 고정 (CSS)
-
   /* active menu */
   const page = document.body.dataset.page;
   document.querySelectorAll('#menu a').forEach(a => {
@@ -25,7 +23,7 @@
       panes.forEach(p => { p.hidden = p.dataset.pane !== name; });
       links.forEach(a => a.classList.toggle('on', a.dataset.tab === name));
       if (hero) hero.dataset.hero = name;
-      if (fab) fab.classList.toggle('hide', name === 'rental');   // 대관 화면에서는 수강신청 버튼 숨김
+      document.body.classList.toggle('has-apply-bar', name !== 'rental');   // 아래 전체 폭 수강신청 막대는 레슨 탭만 — 대관 탭은 자기 예약 막대(.bk2-bar)가 있음
       if (scroll) {   // 탭이 화면 위에 붙어 있을 때만 구역 처음으로 올림
         const y = (top ? top.offsetTop + top.offsetHeight : 0) - (parseFloat(getComputedStyle(tabs).top) || 0);   // 탭이 원래 있던 자리
         if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'instant' });
@@ -45,6 +43,22 @@
     window.addEventListener('hashchange', fromHash);
     fromHash();
   }
+
+  /* 사진 줄 옆으로 넘기기 — [data-gallery] 안 .rgal-track + .rgal-btn prev/next (배드민턴 대관 코트 사진, 2026-10-31).
+     버튼은 보이는 폭의 80% 만큼 넘기고 scroll-snap 이 사진 앞에 맞춤 · 처음/끝이면 그쪽 버튼 숨김 */
+  document.querySelectorAll('[data-gallery]').forEach(g => {
+    const track = g.querySelector('.rgal-track'), prev = g.querySelector('.prev'), next = g.querySelector('.next');
+    const sync = () => {
+      prev.disabled = track.scrollLeft <= 4;
+      next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    };
+    prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth * .8 }));
+    next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth * .8 }));
+    track.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    track.querySelectorAll('img').forEach(i => i.addEventListener('load', sync));
+    sync();
+  });
 
   /* reveal */
   const io = new IntersectionObserver(es => es.forEach(e => {

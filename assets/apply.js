@@ -21,6 +21,8 @@
   // phone 은 문자열 하나 (예전 꼴 { badminton } 도 받음)
   CFG.phone = (CFG.phone && typeof CFG.phone === 'object') ? (CFG.phone.badminton || '') : (CFG.phone || '');
   const DAYS = ['월', '화', '수', '목', '금'];
+  const WAIT_DEPOSIT = 10000;                  // 대기 보증금 — 표시용, 금액은 관리프로그램이 정함 (WAIT_DEPOSIT)
+  const won = n => Number(n).toLocaleString('ko-KR') + '원';
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -47,8 +49,13 @@
         c[1].split(' · ').forEach(x => { if (!g.coaches.includes(x)) g.coaches.push(x); });
       });
     });
-    const list = Object.values(groups);
-    list.forEach(g => { g.days.sort(); g.dayLabel = g.days.map(i => DAYS[i]).join('·'); });
+    // 카드 순서: 넓은 화면 4칸 = 월수 오전 · 화목 오전 · 월수 저녁 · 화목 저녁 / 유소년 월 · 화 · 수 · 목 (2026-11 유소년이 요일반 넷이 되며 —
+    // 옛 2026-10-31 센터 요청 '오전 · 오전 · 유소년 / 저녁 · 저녁 · 유소년' 3칸을 바꿈). 2칸 화면도 style.css 가 유소년을 맨 뒤로
+    const ORDER = ['am_mw', 'am_tt', 'pm_mw', 'pm_tt', 'jr_mo', 'jr_tu', 'jr_we', 'jr_th'];
+    const rank = k => (ORDER.indexOf(k) + 1) || ORDER.length + 1;
+    const list = Object.values(groups).sort((a, b) => rank(a.key) - rank(b.key));
+    // 요일 하나인 반(유소년 요일반 — 주 1회)은 '월요일', 두 요일 반은 '월·수'
+    list.forEach(g => { g.days.sort(); g.dayLabel = g.days.length === 1 ? DAYS[g.days[0]] + '요일' : g.days.map(i => DAYS[i]).join('·'); });
 
     // 타임별 마감 (2026-10-19 사용자 "꽉 찬 반도 마감이라고 안 떠" · "있는 사람이랑 급수가 안 맞으면 마감") — 관리프로그램
     // GET api?action=bd_slots&grade= 가 정원·'붙은 두 급수까지'·입문 3명 조·타임별 받을 급수로 달마다 들어갈 수 있는지 준다.
@@ -68,23 +75,26 @@
       $('prefGroups').innerHTML = list.map(g => {
         const cat = window.BD_CATS[g.key], full = classFull(g);
         const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
-        return `<label style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
-          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}</span>
+        return `<label data-k="${g.key}" style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="wl"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key ? ' checked' : ''}>
+          <span class="grp-card">${full ? '<em class="full">마감 · 대기</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}${g.days.length === 1 ? ' · 주 1회' : ''}</span>
           <span class="t">${first} – ${last} · ${g.times.length}타임</span>
           <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
       }).join('');
     }
 
+    // 마감된 시간도 고를 수 있다 — 고르면 대기 신청 (2026-11-02). '상관없음'은 줄 설 타임이 없어 반 전체가 마감이면 막음
     const chip = (name, v, st, on) => {
-      const off = st === 'full', note = off ? '마감' : '';
-      return `<label${off ? ' class="off"' : ''}><input type="radio" name="${name}" value="${esc(v)}"${on ? ' checked' : ''}${off ? ' disabled' : ''}><span>${esc(v)}${note ? `<small>${note}</small>` : ''}</span></label>`;
+      const full = st === 'full', off = full && v === '상관없음', note = full ? (off ? '마감' : '마감 · 대기') : '';
+      return `<label${off ? ' class="off"' : full ? ' class="wl"' : ''}><input type="radio" name="${name}" value="${esc(v)}"${on ? ' checked' : ''}${off ? ' disabled' : ''}><span>${esc(v)}${note ? `<small>${note}</small>` : ''}</span></label>`;
     };
     function drawSub() {
       const k = form.cls && form.cls.value, g = k && groups[k];
       if (!g) { $('prefSub').hidden = true; return; }
-      const curT = (form.time && form.time.value) || '상관없음', curC = (form.coach && form.coach.value) || '상관없음';
+      // 반을 바꿔 앞서 고른 타임·코치가 새 반에 없으면 '상관없음'으로 (안 그러면 아무 칩도 안 켜진 채로 보임)
+      const orAny = (opts, v) => opts.includes(v) ? v : '상관없음';
+      const curT = orAny(g.times, form.time && form.time.value), curC = orAny(g.coaches, form.coach && form.coach.value);
       const tState = t => t === '상관없음' ? (classFull(g) ? 'full' : '') : slotState(k, t);
-      const okT = tState(curT) === 'full' ? '상관없음' : curT;    // 급수를 바꿔 고른 시간이 마감되면 '상관없음'으로
+      const okT = curT === '상관없음' && classFull(g) ? '' : curT;   // 반 전체가 마감이면 대기할 시간을 직접 고르게
       $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => chip('time', v, tState(v), v === okT)).join('');
       $('prefCoach').innerHTML = ['상관없음', ...g.coaches].map(v => chip('coach', v, '', v === curC)).join('');
       $('prefSub').hidden = false;
@@ -100,6 +110,7 @@
         drawCards();
         drawSub();
         updateSummary();
+        syncWait();
       }).catch(() => { /* 못 받으면 마감 표시 없이 — 결제 화면이 정원·급수를 다시 본다 */ });
     }
     function drawNote(byGrade) {
@@ -107,7 +118,7 @@
       $('prefNote').innerHTML = (byGrade
         ? '급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. '
         : '<b>마감</b>은 정원이 찬 시간이에요. ')
-        + `마감된 시간의 <b>대기 신청은 ${esc(CFG.phone)}</b>로 연락 주세요.`;
+        + `마감된 시간을 고르면 <b>보증금 ${won(WAIT_DEPOSIT)}으로 대기 신청</b>할 수 있어요. 수강 등록할 때 수강료에서 빼 드려요.`;
     }
     drawNote(true);
     drawCards();
@@ -115,14 +126,22 @@
     form.addEventListener('change', e => {
       if (e.target.name === 'cls') drawSub();
       else if (e.target.name === 'grade') loadAvail();
+      syncWait();
     });
+    // 신청 버튼 글 — 고른 시간이 마감이면 대기 신청
+    function syncWait() {
+      const v = pref.value ? pref.value() : null;
+      const btn = $('applySubmit');
+      if (btn && !btn.disabled) btn.textContent = v && v.wait ? `보증금 ${won(WAIT_DEPOSIT)} 내고 대기 신청` : '신청하고 결제하기';
+    }
 
     return {
       value() {
         const k = form.cls && form.cls.value;
         if (!k) return null;
         const g = groups[k];
-        return { classKey: k, class: g.cls, days: g.dayLabel, time: (form.time && form.time.value) || '상관없음', coach: (form.coach && form.coach.value) || '상관없음', price: window.BD_CATS[k].price || '' };
+        const tm = (form.time && form.time.value) || (classFull(g) ? '' : '상관없음');
+        return { wait: !!tm && tm !== '상관없음' && slotState(k, tm) === 'full', classKey: k, class: g.cls, days: g.dayLabel, time: tm, coach: (form.coach && form.coach.value) || '상관없음', price: window.BD_CATS[k].price || '' };
       },
       text(v) { return v ? `${v.class} ${v.days} / ${v.time === '상관없음' ? '시간 무관' : v.time} / 코치 ${v.coach}` : ''; },
     };
@@ -160,7 +179,7 @@
     if (!PHONE_RE.test(v.phone)) errs.push('phone');
     if (!v.grade) errs.push('grade');
     if (!v.experience) errs.push('experience');
-    if (!v.preference) errs.push('preference');
+    if (!v.preference || !v.preference.time) errs.push('preference');
     if (!v.region) errs.push('region');
     if (!v.agreements.privacy) errs.push('agree');
     if (v.guardian) {
@@ -227,6 +246,12 @@
     }
     // test = 시험 주소(?paytest=1) — 결제가 켜져 있으면 관리프로그램이 신청서를 '결제 전'으로 받아 결제가 끝나야 신청으로 보여 준다 (2026-10-19)
     const payload = { action: 'apply', ...v, test: isPayTest(), clientId: CLIENT_ID, submittedAt: new Date().toISOString(), source: 'homepage' };
+    // 이용 안내를 확인한 버전 (2026-11-01 센터 요청 10번 — 관리프로그램이 신청 내역에 버전·일시를 남김). 안내를 안 거친 화면(뒤로 가기 등)이면 지금 확인
+    if (CFG.api && window.PAYUI) {
+      const g = await askGuide();
+      if (!g) return;
+      payload.guide = { version: g.version };
+    }
 
     if (!CFG.api) { done(v, null, 'fallback'); return; }
 
@@ -267,7 +292,8 @@
     const text = receipt(v, id);
     const box = $('applyDone');
     const msg = mode === 'ok'
-      ? `아래에서 결제하면 신청과 등록이 끝나요${id ? ` (신청번호 ${esc(id)})` : ''}. 결제 전에는 신청이 접수되지 않아요.`
+      ? (v.preference && v.preference.wait ? `보증금을 결제하면 대기 순번이 정해져요${id ? ` (신청번호 ${esc(id)})` : ''}. 결제 전에는 대기가 접수되지 않아요.`
+        : `아래에서 결제하면 신청과 등록이 끝나요${id ? ` (신청번호 ${esc(id)})` : ''}. 결제 전에는 신청이 접수되지 않아요.`)
       : `아래 신청 내용을 복사해 인스타그램 DM으로 보내주시거나<br>${esc(CFG.phone)}로 전화 주시면 바로 접수해드립니다.`;
     box.innerHTML = `<div class="ok">${mode === 'ok' ? '✓' : '!'}</div>
       <h2>${mode === 'ok' ? '신청 내용 확인' : '신청 내용을 보내주세요'}</h2>
@@ -287,7 +313,9 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (mode === 'ok' && id) {
       const what = v.preference ? `${v.preference.class} ${v.preference.days}` : '';
-      payBox($('payBox'), { id, phone: v.phone, name: v.name, test: isPayTest(), what });
+      const o = { id, phone: v.phone, name: v.name, test: isPayTest(), what };
+      if (v.preference && v.preference.wait) waitBox($('payBox'), Object.assign(o, { time: v.preference.time, wait: true }));
+      else payBox($('payBox'), o);
     }
   }
 
@@ -300,16 +328,19 @@
   // ?msg= 는 누구나 주소에 적을 수 있어서 관리프로그램 PAY_MSG 와 같은 문구만 보여준다 (그 밖의 글은 버림)
   const PAY_MSGS = ['결제가 완료되지 않았어요.', '결제가 취소됐거나 인증되지 않았어요.', '이미 끝났거나 취소된 결제예요.',
     '신청 내용이 바뀌어 결제하지 않았어요.', '카드 승인이 되지 않았어요.', '결제 승인 중 연결이 끊겨 결제를 취소했어요.',
-    '결제 결과를 확인하고 있어요. 결과는 문자로 알려드릴게요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.'];
+    '결제 결과를 확인하고 있어요. 결과는 문자로 알려드릴게요.', '요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.',
+    '결제할 수 있는 시간(24시간)이 지났어요.'];
   const PAY_UNKNOWN = PAY_MSGS[6];   // 관리프로그램 PAY_MSG.unknown — 실패가 아니라 결과 대기 (다시 결제하게 하지 않음)
+  // 관리프로그램 PAY_MSG.late — 접수 24시간이 지나 승인 안 함 (2026-11-01). 결제 전 신청서는 그 뒤 지워지니 다시 결제가 아니라 처음부터 다시 신청
+  const PAY_LATE = PAY_MSGS[8];
+  const AGAIN = '처음부터 다시 신청해 주세요.';
   const payMsgOk = m => PAY_MSGS.includes(m) || /^결제 시간\(\d{1,3}분\)이 지났어요\.$/.test(m);
   const PAY_ERR = {
     full: '방금 마감됐어요. 다른 것을 골라주세요.', already_registered: '이미 그 달 그 시간에 등록돼 있어요. 앱에서 결제해 주세요.', bad_option: '고를 수 있는 것이 바뀌었어요. 화면을 새로 고쳐주세요.',
     already_paid: '이미 결제가 끝났어요.', in_progress: '결제를 확인하고 있어요. 잠시 뒤 다시 확인해주세요.',
-    not_payable: '이미 등록이 끝났거나 결제할 수 없는 신청이에요.', not_found: '결제할 수 있는 시간이 지났어요. 신청은 접수됐으니 담당자가 연락드릴게요.',
+    not_payable: '이미 등록이 끝났거나 결제할 수 없는 신청이에요.', not_found: '결제할 수 있는 시간(24시간)이 지났어요. 처음부터 다시 신청해 주세요.',
   };
   const isPayTest = () => new URLSearchParams(location.search).get('paytest') === '1';
-  const won = n => Number(n).toLocaleString('ko-KR') + '원';
   let sdk = null;
 
   /** 관리프로그램 /api/site POST → 응답 JSON (오류 응답 4xx 도 JSON 이라 그대로 읽음, 연결 실패는 throw) */
@@ -351,6 +382,8 @@
 
   /** 오류 코드별 문구 (관리프로그램 수강신청 결제 응답 = ok·error(+test)만 — 옵션 칸은 key·label·sub·amount·disabled·time, 2026-10-20 요가 삭제 뒤) */
   const errText = (r, dflt) => PAY_ERR[r && r.error] || dflt;
+  /** 처음부터 다시 신청 — 같은 페이지 빈 신청서 (paytest 같은 주소 값은 그대로) */
+  const againLink = () => `<div class="acts"><a class="pri" href="${esc(location.pathname + location.search)}">처음부터 다시 신청하기</a></div>`;
   /** 고른 것 한 줄 — '19:30~20:30 · 11월\n한 달 · 8회' */
   const optText = x => `${x.time ? x.time + ' · ' : ''}${x.label}${x.sub ? '\n' + x.sub : ''}`;
   const appLogin = () => { try { return new URL(CFG.api).origin + '/login'; } catch (e) { return ''; } };
@@ -379,7 +412,12 @@
       return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
     }
     if (r.ok && !r.enabled) return say(`신청은 접수됐어요. 확인 후 담당자가 ${esc(o.phone)}로 연락드리겠습니다.`);
-    if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : errText(r, '결제 정보를 불러오지 못했어요. 담당자가 연락드릴게요.')));
+    if (r.error === 'not_found') {             // 접수 24시간이 지났거나 지워진 신청 — 결제도 접수도 안 됨 (2026-11-01, 담당자 연락 없음)
+      box.innerHTML = `<p class="ap-pay-msg">${esc(PAY_ERR.not_found)}</p>${againLink()}`;
+      if ($('doneMsg')) $('doneMsg').textContent = '결제 시간이 지나 신청이 접수되지 않았어요.';
+      return;
+    }
+    if (!r.ok) return say(esc(r.error === 'already_paid' && r.test ? '테스트 결제가 이미 끝났어요 (실제 결제·등록은 안 됨).' : errText(r, `결제 정보를 불러오지 못했어요. 잠시 뒤 다시 시도하거나 ${CFG.phone}로 연락 주세요.`)));
     if (!r.options.length) return closed(esc(r.note || `지금은 신청할 수 없어요. 문의는 ${CFG.phone}로 연락 주세요.`));
     const picked = o.pick ? r.options.find(x => x.key === o.pick) : null;
     const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
@@ -392,9 +430,9 @@
           ${optBody(x)}</label>`).join('')}</div>
       ${picked && picked.disabled ? `<p class="ap-pay-msg err" role="alert">앞서 고른 ${esc(picked.label)}은 지금 고를 수 없어요 — 다른 것을 골라 주세요.</p>` : ''}
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
-      ${first ? '<div id="payTerms"></div>' : ''}
+      ${first && !window.PAYUI.guideSeen('refund_class') ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
-        <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 대기 신청은 ${esc(CFG.phone)}로 연락 주세요.</p>`}
+        <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 처음부터 다시 신청하면서 대기할 시간을 골라 주세요.</p>${againLink()}`}
       <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
       ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
         : (o.test ? '<p class="ap-pay-note">시험 주소예요 — 실제로 결제되고 등록돼요.</p>' : '')}`;
@@ -408,8 +446,15 @@
       go.disabled = st.busy || !st.agreed;
       box.querySelector('#payHint').hidden = st.agreed;
     };
-    st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
-      onChange: ok => { st.agreed = ok; sync(); } });
+    // 이용 안내(환불 규정 포함)를 신청 전에 확인했으면 다시 묻지 않음 (2026-11-01) — 다른 탭에서 결제만 이어 가는 경우 등은 옛 체크칸
+    if (window.PAYUI.guideSeen('refund_class')) {
+      st.terms = { ok: () => true };
+      st.agreed = true;
+      sync();
+    } else {
+      st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
+        onChange: ok => { st.agreed = ok; sync(); } });
+    }
     box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
       const x = r.options.find(y => y.key === i.value);
       if (x && !st.busy) go.textContent = `${won(x.amount)} 결제하기`;
@@ -455,6 +500,62 @@
     setTimeout(() => { if (st.busy) { st.busy = false; go.classList.remove('busy'); go.textContent = label; sync(); } }, 8000);   // PC: 결제창(레이어)을 그냥 닫았을 때 다시 누를 수 있게
   }
 
+  /* ---------- 대기 보증금 (2026-11-02) — 마감된 시간에 줄 서기. 결제가 끝나야 순번이 생기고 입력한 번호로 대기 현황 링크가 간다 ---------- */
+  function waitBox(box, o) {
+    box.innerHTML = `<h3>대기 보증금</h3>
+      <dl class="ap-wait"><dt>대기할 수업</dt><dd>${esc(o.what)} ${esc(o.time)}</dd><dt>보증금</dt><dd><b>${won(WAIT_DEPOSIT)}</b></dd></dl>
+      <ul class="ap-wait-note"><li>수강 등록할 때 수강료에서 빼 드려요.</li><li>대기를 취소하시면 담당자 확인 후 카드 결제를 취소해 드려요.</li>
+        <li>자리가 나면 담당자가 연락드리고, 받으신 링크에서 결제하면 등록돼요.</li></ul>
+      <button type="button" class="ap-paybtn" id="payGo">${won(WAIT_DEPOSIT)} 결제하고 대기 신청</button>
+      <p class="ap-pay-msg err" id="payMsg" role="alert"></p>`;
+    const go = box.querySelector('#payGo'), msg = box.querySelector('#payMsg'), label = go.textContent;
+    const fail = t => { go.disabled = false; go.classList.remove('busy'); go.textContent = label; msg.textContent = t; };
+    go.onclick = async () => {
+      const yes = await window.PAYUI.confirm({ title: '대기 신청 전에 확인해 주세요',
+        rows: [['대기', `${o.what} ${o.time}`], ['이름', o.name], ['연락처', o.phone]], amount: WAIT_DEPOSIT,
+        note: '결제하면 대기 순번이 정해지고, 입력하신 번호로 대기 현황 링크가 가요.' });
+      if (!yes) return;
+      go.disabled = true; go.classList.add('busy'); go.textContent = '결제창을 여는 중…'; msg.textContent = '';
+      let p;
+      try { p = await post({ action: 'pay_prepare', kind: 'wait', id: o.id, phone: o.phone, test: o.test, agreeRefund: true }); }
+      catch (e) { return fail('인터넷 연결을 확인하고 다시 눌러주세요.'); }
+      if (p.error === 'not_full') {             // 그 사이 자리가 남 — 대기 말고 바로 수강 결제
+        if ($('doneMsg')) $('doneMsg').textContent = '그 사이 자리가 났어요. 대기 없이 바로 신청할 수 있어요.';
+        return payBox(box, Object.assign({}, o, { wait: false }));
+      }
+      if (p.error === 'already_waiting') return fail('이미 이 시간에 대기 중이에요. 받으신 대기 현황 링크를 확인해 주세요.');
+      if (!p.ok) return fail(errText(p, '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.'));
+      if (!p.enabled) return fail(`지금은 온라인으로 대기를 받지 않아요. ${CFG.phone}로 연락 주세요.`);
+      try { await loadSdk(); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
+      stash(Object.assign({}, o, { orderId: p.orderId, at: Date.now() }));
+      window.AUTHNICE.requestPay({
+        clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
+        returnUrl: p.returnUrl, buyerName: cutBytes(o.name, 30), buyerTel: String(o.phone || '').replace(/\D/g, ''),
+        fnError: res => {
+          post({ action: 'pay_cancel', kind: 'wait', id: o.id, phone: o.phone, orderId: p.orderId }).catch(() => {});
+          const why = res && (res.errorMsg || res.msg);
+          fail(`결제가 완료되지 않았어요${why ? ` (${why})` : ''}. 다시 눌러 결제할 수 있어요.`);
+        },
+      });
+      setTimeout(() => { if (go.disabled) fail(''); }, 8000);
+    };
+  }
+  /** 보증금 결제 완료 화면 — 대기 n번 (링크는 문자·카톡으로만, 토큰은 서버에 해시만 있어 여기선 못 보여 줌) */
+  function waitDone(box, no, mine) {
+    const view = (rank, what) => {
+      box.innerHTML = window.PAYUI.done({ title: rank ? `대기 ${rank}번이에요` : '대기 신청이 접수됐어요', sub: '보증금 결제가 끝났어요.',
+        rows: [...(what ? [['대기', what]] : []), ['보증금', won(WAIT_DEPOSIT)], ...(no ? [['신청번호', no]] : [])],
+        steps: ['입력하신 번호로 대기 현황 링크를 보내드려요 (카카오톡 또는 문자). 언제든 눌러서 지금 순번을 볼 수 있어요.',
+          '자리가 나면 담당자가 연락드리고, 그 링크에서 수강료를 결제하면 등록돼요. 보증금은 수강료에서 빼 드려요.'],
+        foot: `링크가 오지 않으면 ${CFG.phone}로 연락 주세요.` }) + `<div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+    };
+    view(0, '');
+    if (mine) post({ action: 'wait_status', id: mine.id, phone: mine.phone }).then(r => {
+      if (r && r.ok) view(r.no, r.what);
+      else if (mine.test) box.innerHTML = window.PAYUI.done({ title: '테스트 결제가 끝났어요', sub: '샌드박스라 실제 결제·대기 접수는 되지 않았어요.', rows: [['신청번호', no]] });
+    }).catch(() => {});
+  }
+
   /** 결제 완료 화면 — 무엇을 · 얼마에 · 다음 할 일(입력한 번호로 결제 확인 + 첫 등록이면 앱 로그인 링크 문자 — 관리프로그램 on_first_payment) */
   function paidView(no, mine) {
     const rows = [['종목', TYPE_NAME + (mine && mine.what ? ` · ${mine.what}` : '')]];
@@ -471,6 +572,16 @@
         <a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
   }
 
+  /** 레슨 이용 안내 (센터 요청 10번) — 이 탭에서 이미 확인한 버전이면 바로 통과 */
+  function askGuide() {
+    return window.PAYUI.guide({ api: CFG.api, key: 'refund_class', phone: CFG.phone,
+      check: '레슨 이용수칙과 결석·시간 변경·환불 규정을 확인했습니다.', okText: '확인하고 수강신청 계속하기' });
+  }
+  /* 신청 화면을 열면(수강신청 막대) 안내 먼저 — 결제를 마치고 돌아온 주소는 결과 화면이라 빼고, 취소하면 들어온 곳인 레슨 탭으로 */
+  if (CFG.api && window.PAYUI && !/[?&]pay=/.test(location.search)) {
+    askGuide().then(g => { if (!g) location.href = `${TYPE}.html#academy`; });
+  }
+
   /** 결제를 마치고 돌아온 주소(?pay=ok|fail&no=신청번호&msg=) → 결과 화면 + 주소에서 pay·no·msg 를 뗌 (paytest 는 그대로) */
   function payResult() {
     const q = new URLSearchParams(location.search);
@@ -478,7 +589,8 @@
     if (st !== 'ok' && st !== 'fail') return;
     const no = /^AP\d{6}-\d{3,6}$/.test(q.get('no') || '') ? q.get('no') : '';
     const m = q.get('msg') || '';
-    ['pay', 'no', 'msg'].forEach(k => q.delete(k));
+    const isWait = q.get('wait') === '1';
+    ['pay', 'no', 'msg', 'wait'].forEach(k => q.delete(k));
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
     const s = stashed();
     const mine = s && no && s.id === no ? s : null;
@@ -488,6 +600,7 @@
     const back = `<a href="${TYPE}.html">${TYPE_NAME} 페이지로</a>`;
     if (st === 'ok') {
       stash(null);
+      if (isWait) { waitDone(box, no, mine); box.scrollIntoView({ block: 'start' }); return; }
       box.innerHTML = paidView(no, mine);
       if (mine) {                               // 샌드박스 시험 결제면 등록되지 않는다 — 서버에 물어 안내를 바꿈
         post({ action: 'pay_options', kind: 'apply', id: mine.id, phone: mine.phone, test: mine.test }).then(r => {
@@ -503,13 +616,21 @@
     }
     const why = payMsgOk(m) ? m : '결제가 완료되지 않았어요.';
     const unknown = m === PAY_UNKNOWN;
+    if (m === PAY_LATE) {                       // 24시간이 지나 승인 안 함 — 주문은 이미 닫힘, 신청서도 곧 지워짐
+      stash(null);
+      box.innerHTML = `<div class="ok">!</div><h2>결제가 완료되지 않았어요</h2>
+        <p>${esc(why)} ${AGAIN}</p>${againLink()}
+        <div class="acts"><a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>${back}</div>`;
+      box.scrollIntoView({ block: 'start' });
+      return;
+    }
     box.innerHTML = `<div class="ok">!</div><h2>${unknown ? '결제 결과를 확인하고 있어요' : '결제가 완료되지 않았어요'}</h2>
-      <p>${esc(why)}${unknown ? '' : ' 결제가 끝나야 신청이 접수돼요 — 아래에서 다시 결제할 수 있어요.'}</p>
+      <p id="doneMsg">${esc(why)}${unknown ? '' : ' 결제가 끝나야 신청이 접수돼요 — 아래에서 다시 결제할 수 있어요.'}</p>
       ${mine && !unknown ? '<div class="ap-pay" id="payBox"></div>' : ''}
       <div class="acts"><a href="tel:${esc(CFG.phone)}">전화 ${esc(CFG.phone)}</a>${back}</div>`;
     if (mine && !unknown) {                     // 남은 결제 대기 주문을 닫고(이미 닫혔으면 할 일 없음) 다시 고르게
-      post({ action: 'pay_cancel', kind: 'apply', id: mine.id, phone: mine.phone, orderId: mine.orderId }).catch(() => {})
-        .finally(() => payBox($('payBox'), mine));
+      post({ action: 'pay_cancel', kind: isWait ? 'wait' : 'apply', id: mine.id, phone: mine.phone, orderId: mine.orderId }).catch(() => {})
+        .finally(() => (isWait && mine.wait ? waitBox : payBox)($('payBox'), mine));
     }
   }
   payResult();

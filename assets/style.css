@@ -14,7 +14,7 @@
   --display:'Anton','Pretendard',sans-serif;
   --sans:'Pretendard','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --max:1240px;
-  --fab-gap:32px;   /* 수강신청 버튼과 화면 오른쪽(아래) 끝 사이 여백 — 모든 화면 크기 동일 */
+  --apply-bar-h:64px;   /* 아래 전체 폭 수강신청 막대 높이 (아이폰 홈 막대 자리는 따로 더함) */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -39,7 +39,7 @@ a{color:inherit;text-decoration:none}
 .brand .logo-color,.nav.solid .brand .logo-white{opacity:0}
 .nav.solid .brand .logo-color{opacity:1}
 .menu{display:flex;gap:38px;font-size:14px;font-weight:500}
-.menu a{opacity:.85;position:relative;white-space:nowrap}   /* '예약 조회'(2026-10-31 — 메뉴 다섯 칸)가 두 줄로 갈리지 않게 */
+.menu a{opacity:.85;position:relative}
 .menu a:hover,.menu a.on{opacity:1}
 .menu a::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:1.5px;background:currentColor;transition:width .25s}
 .menu a:hover::after,.menu a.on::after{width:100%}
@@ -53,15 +53,17 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- HOME HERO (split) ---------- */
 .hero{position:relative;height:100vh;min-height:640px;display:flex;background:var(--sky)}
-.panel{position:relative;flex:1;overflow:hidden;cursor:pointer;container-type:inline-size;transition:flex .7s cubic-bezier(.2,.8,.2,1)}
+.panel{position:relative;flex:1;overflow:hidden;cursor:pointer;container-type:inline-size;transition:flex .7s cubic-bezier(.2,.8,.2,1);
+  max-width:calc(2 * max(100vh,640px))}   /* 칸이 높이의 2배(= 홈 사진 2:1)보다 넓어지지 않게 — 넓어지면 사진이 가로에 맞춰 커져 머리가 큰 글자 뒤로 올라감(32:9 모니터에서 마우스를 올릴 때) */
 .panel + .panel{border-left:1px solid rgba(255,255,255,.35)}
 .hero:hover .panel{flex:.8}
 .hero .panel:hover{flex:1.35}
+@media (min-aspect-ratio:4/1){.panel{max-width:none}.hero:hover .panel,.hero .panel:hover{flex:1}}   /* 화면이 높이의 4배보다 넓으면 두 칸이 위 max-width 에 걸려 오른쪽에 빈 하늘색 띠가 생김 — 이때만 칸을 끝까지 채우고, 마우스를 올려도 칸 너비는 그대로 */
 .panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.04);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
 .panel:hover img{transform:scale(1)}
 .panel::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,90,.25) 0%,rgba(10,30,90,0) 35%,rgba(5,15,50,.55) 100%)}
 .panel .word{position:absolute;left:0;right:0;top:max(96px,12vh);z-index:2;text-align:center;font-family:var(--display);color:#fff;
-  font-size:20cqw;white-space:nowrap;line-height:.86;letter-spacing:-.01em;text-transform:uppercase;pointer-events:none;
+  font-size:20cqw;font-size:min(20cqw,17vh);white-space:nowrap;line-height:.86;letter-spacing:-.01em;text-transform:uppercase;pointer-events:none;   /* 17vh — 넓고 낮은 화면(노트북 · 울트라와이드)에서 글자가 사람 머리를 덮지 않게 */
   text-shadow:0 4px 40px rgba(0,20,80,.18)}
 .panel .word span{color:#fff}
 .panel .meta{position:absolute;left:32px;right:32px;bottom:44px;z-index:2;color:#fff;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
@@ -242,6 +244,18 @@ section.tight{padding:90px 0}
 /* .tt-top·.tt-note 는 badminton.html 이 씀. 표(.tt-wrap·.tt·.cls·.daytabs·.daylist·.drow·.chips)는 지금 쓰는 페이지 없음 — 배드민턴 표를 다시 넣을 때용
    (data-timetable="badminton" 구역 — assets/main.js initTimetable, 2026-10-20 요가 시간표 삭제 뒤) */
 .tt-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:26px}
+/* 대관 코트 사진 줄 (badminton.html #rental 맨 위, main.js [data-gallery]) — 높이를 맞추고 폭은 사진 비율대로(세로 · 가로 섞임), 옆으로 넘김.
+   좁은 화면에서 화면보다 넓은 가로 사진은 잘라 보임(object-fit) — 휴대폰은 다음 사진이 40px 쯤 보이게(옆에 더 있다는 표시) */
+.rgal{position:relative;margin:-14px 0 56px}
+.rgal-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none}
+.rgal-track::-webkit-scrollbar{display:none}
+.rgal-track:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.rgal-track img{display:block;flex:none;height:440px;width:auto;max-width:calc(100vw - 40px);object-fit:cover;scroll-snap-align:start;background:#dfe5ee}
+.rgal-track img:last-child{scroll-snap-align:end}   /* 끝 자리도 맞춤 자리로 — 없으면 마지막 사진이 조금 잘린 채 멈추고 [›] 가 안 사라짐 */
+.rgal-btn{position:absolute;top:50%;width:46px;height:46px;margin-top:-23px;border:0;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 12px rgba(6,16,31,.18);color:var(--ink);font:400 30px/1 var(--sans);padding:0 0 4px;cursor:pointer;display:grid;place-items:center;transition:opacity .2s}
+.rgal-btn.prev{left:14px}.rgal-btn.next{right:14px}
+.rgal-btn:disabled{opacity:0;pointer-events:none}
+@media (max-width:640px){.rgal{margin:-24px 0 40px}.rgal-track{gap:8px}.rgal-track img{height:300px;max-width:calc(100vw - 80px)}.rgal-btn{width:38px;height:38px;margin-top:-19px;font-size:26px}.rgal-btn.prev{left:8px}.rgal-btn.next{right:8px}}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chipbtn{border:1px solid var(--line);background:#fff;padding:8px 13px;font:600 13px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
 .chipbtn i{width:10px;height:10px;display:inline-block}
@@ -315,6 +329,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .foot-biz{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:28px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.62)}
 .foot-biz a{color:inherit}
 .foot-biz .addr{flex-basis:100%}
+.foot-biz .cs{flex-basis:100%;display:flex;gap:10px}  /* 고객센터 — 대관 · 레슨 번호 두 줄 (2026-11-01) */
 .foot-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,.2);font-size:12.5px;opacity:.75}
 
 /* ---------- 대관 / 레슨 탭 (배드민턴) ---------- */
@@ -372,7 +387,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .atb-l{grid-column:1 / -1;flex-direction:row;align-items:baseline;gap:10px;padding:16px 16px 4px}
   .atb-c{border-left:0;padding:12px 16px 18px}
   .atb-c + .atb-c{border-left:1px solid var(--line)}
-  .atb-d{display:block;font-size:12px;font-weight:800;color:var(--blue)}
+  .atb-d{display:block;font-size:12px;font-weight:800;color:var(--ink)}
   .atb-t{font-size:18px}.atb-t i{margin:0 3px}
   .atb-co{font-size:13px;flex-direction:column;align-items:flex-start;gap:4px}
 }
@@ -425,7 +440,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .hero{flex-direction:column;height:100svh}
   .hero:hover .panel,.hero .panel:hover{flex:1}
   .panel + .panel{border-left:0;border-top:1px solid rgba(255,255,255,.35)}
-  .panel .word{top:auto;bottom:74px;font-size:19cqw}
+  .panel{container-type:size}   /* 칸 높이(cqh)도 쓰려고 — 위아래로 쌓인 칸은 높이가 정해져 있음 */
+  .panel .word{top:auto;bottom:74px;font-size:16cqw;font-size:min(16cqw,calc(46cqh - 95px))}   /* 19 → 16cqw: 'BADMINTON' 이 잘리던 것. 칸이 낮으면(가로 폰 · 화면 분할 · 주소창 보이는 사파리) 높이로도 줄여 오른쪽 칸 여자(런지라 얼굴이 낮음) 얼굴을 안 덮게 */
   .panel .meta{left:16px;right:16px;bottom:18px}
   .glass{padding:10px 12px}
   .glass .v{font-size:15px}
@@ -651,27 +667,20 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 }
 .bk-tab:only-child{cursor:default}
 
-/* ---------- FLOATING APPLY BUTTON ---------- */
-.apply-fab{position:fixed;right:var(--fab-gap);bottom:var(--fab-gap);z-index:60;
-  display:inline-flex;align-items:center;justify-content:space-between;gap:18px;min-width:230px;
-  padding:13px 13px 13px 30px;border-radius:999px;color:var(--ink);font:800 17px var(--sans);letter-spacing:-.01em;
-  background:linear-gradient(180deg,#ffffff 0%,#f3f5f9 55%,#e7ebf2 100%);
-  border:1px solid rgba(255,255,255,.95);
-  box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 rgba(6,16,31,.07),0 2px 4px rgba(6,16,31,.12),0 10px 18px rgba(6,16,31,.16),0 22px 40px rgba(6,16,31,.18);
-  transition:transform .18s ease,box-shadow .18s ease,opacity .25s ease,visibility .25s}
-.apply-fab .arr{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#fff;font-size:16px;
-  background:linear-gradient(180deg,#2a2f3a 0%,var(--ink) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 6px rgba(6,16,31,.3)}
-.apply-fab:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 rgba(6,16,31,.07),0 4px 8px rgba(6,16,31,.12),0 16px 26px rgba(6,16,31,.18),0 30px 52px rgba(6,16,31,.2)}
-.apply-fab:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(6,16,31,.1),0 1px 2px rgba(6,16,31,.14),0 6px 12px rgba(6,16,31,.14)}
-
-/* 천천히 위아래로 떠다니기. transform 대신 translate 를 써서 hover·숨김 효과와 안 겹침 */
-/* 2.8초 동안 한 번 오르내리고 0.5초 쉼 (전체 3.3초) */
-@keyframes fab-float{0%{translate:0 0}42%{translate:0 -10px}85%,100%{translate:0 0}}
-.apply-fab{animation:fab-float 3.3s ease-in-out infinite}
-.apply-fab:hover,.apply-fab:focus-visible,.apply-fab.hide{animation:none}
-@media (prefers-reduced-motion:reduce){.apply-fab{animation:none}}
-.apply-fab.hide{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(16px)}
-@media (max-width:640px){.apply-fab{min-width:200px;font-size:16px;padding:11px 11px 11px 26px}.apply-fab .arr{width:32px;height:32px}}
+/* ---------- 수강신청 막대 (2026-11-02 — 떠 있던 버튼 대신 화면 아래 전체 폭 고정 · 파란 바탕 흰 글씨) ----------
+   배드민턴 레슨 탭에서만: main.js 가 body.has-apply-bar 를 켜고 끔. 페이지 맨 아래(푸터)가 막대에 가리지 않게 그만큼 띄움 */
+.apply-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;align-items:center;justify-content:center;gap:10px;
+  height:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px));padding:0 16px env(safe-area-inset-bottom,0px);
+  background:var(--blue);color:#fff;font:800 18px var(--sans);letter-spacing:-.01em;transition:background .15s}
+.apply-bar .arr{font-size:20px;line-height:1;transition:transform .15s}
+.apply-bar:hover{background:#0047cc}
+.apply-bar:hover .arr{transform:translateX(4px)}
+.apply-bar:active{background:#003bab}
+.apply-bar:focus-visible{outline:3px solid #fff;outline-offset:-6px}
+body.has-apply-bar{padding-bottom:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px))}
+body.has-apply-bar .apply-bar{display:flex}
+:root:has(body.has-apply-bar){scroll-padding-bottom:calc(var(--apply-bar-h) + 12px)}   /* 키보드로 옮겨 다닐 때 고른 칸이 막대 뒤로 숨지 않게 */
+@media (max-width:640px){:root{--apply-bar-h:58px}.apply-bar{font-size:17px}}
 
 /* ---------- APPLY FORM ---------- */
 .apply{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start}
@@ -698,7 +707,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .seg span{display:block;text-align:center;padding:12px 0;border:1px solid var(--line);font-size:15px;font-weight:700;transition:all .15s}
 .seg input:checked + span{background:var(--navy);border-color:var(--navy);color:#fff}
 .seg input:focus-visible + span,.chips2 input:focus-visible + span,.grp input:focus-visible + .grp-card{outline:2px solid var(--blue);outline-offset:2px}
-.grp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}   /* 4칸 = 성인 넷 / 유소년 요일반 넷 (2026-11, apply.js ORDER) */
+@media (max-width:1180px){.grp{grid-template-columns:1fr 1fr}}   /* 4칸이면 카드가 150px 아래로 좁아져 시간·코치가 줄바꿈 — 그보다 좁은 화면은 2칸 */
 .grp label{cursor:pointer;position:relative}
 .grp-card{display:block;height:100%;border:1px solid var(--line);border-top:4px solid var(--c);padding:14px 14px 13px;transition:all .15s;background:#fff}
 .grp-card b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.02em}
@@ -748,6 +758,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .apply{grid-template-columns:1fr}
   .ap-side{position:static}
   .grp{grid-template-columns:1fr 1fr}
+  .grp label[data-k^="jr_"]{order:1}
 }
 @media (max-width:640px){
   .ap-card{padding:22px 16px}
@@ -856,6 +867,23 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 
 .pc-dlg{width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;background:#fff;color:var(--ink);box-shadow:0 24px 60px rgba(6,16,31,.32);overflow:auto}
 .pc-dlg::backdrop{background:rgba(6,16,31,.55)}
+/* 신청 전 이용 안내 (2026-11-01 센터 요청 10번 — assets/pay-ui.js guide) */
+.gd-dlg{width:min(640px,calc(100vw - 24px));height:calc(100dvh - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:0;border:0;background:#fff;color:var(--ink);box-shadow:0 24px 60px rgba(6,16,31,.3)}
+.gd-dlg::backdrop{background:rgba(6,16,31,.55)}
+.gd-in{display:flex;flex-direction:column;height:100%;padding:22px 22px 18px;gap:12px}
+.gd-in h2{font-size:19px;font-weight:800;letter-spacing:-.03em;line-height:1.35}
+.gd-body{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);background:var(--paper-2);padding:14px 16px;font-size:14px;line-height:1.75;color:var(--ink-2);overflow-wrap:anywhere}
+.gd-body:focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
+.gd-body h3{font-size:15.5px;font-weight:800;color:var(--ink);margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.gd-body h3:first-of-type{margin-top:10px}
+.gd-body p{margin:0 0 8px}
+.gd-ck{margin-top:0}
+.gd-acts{display:grid;grid-template-columns:1fr 2.4fr;gap:8px}
+.gd-acts button{min-height:50px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:800 15px var(--sans);cursor:pointer}
+.gd-acts .gd-yes{background:var(--blue);border-color:var(--blue);color:#fff}
+.gd-acts .gd-yes:disabled{background:var(--line);border-color:var(--line);color:var(--ink-3);cursor:not-allowed}
+.gd-acts button:focus-visible{outline:3px solid var(--blue-2);outline-offset:2px}
+@media (max-width:480px){.gd-dlg{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh}.gd-in{padding:18px 16px 14px}.gd-acts button{font-size:14px}}
 .pc-in{padding:26px 24px 22px}
 .pc-in h2{font-size:20px;font-weight:800;letter-spacing:-.03em;margin-bottom:16px}
 .pc-rows{display:grid;gap:0;border-top:2px solid var(--ink)}
@@ -889,10 +917,6 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .bk2-result.done .pd-ok{width:52px;height:52px;font-size:24px;margin-bottom:14px}
 .bk2-result.done .pd-h{font-size:24px}
 .bk2-result.done small{display:inline;margin:0;font-size:inherit;color:inherit}
-/* 결제 완료 화면 밑 [예약 조회] (2026-10-31 — booking.js paidView, 모양은 .ap-done .acts 와 같게) */
-.bk2-result.done .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
-.bk2-result.done .acts a{border:1px solid var(--ink);background:#fff;padding:12px 18px;font:700 14px var(--sans);color:var(--ink)}
-.bk2-result.done .acts .pri{background:var(--blue);border-color:var(--blue);color:#fff}
 @media (max-width:640px){
   .pc-in{padding:22px 18px 18px}
   .pd-h{font-size:24px}
@@ -921,8 +945,8 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .end-page .lead{margin-top:12px}
 .end-page .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
 
-/* ---------- 2026-10-22 공간대여 · 소개 타일 3개 (피클볼 머리 사진 규칙 .pk-hero 는 2026-10-27 피클볼을 빼며 지움) ---------- */
-/* 소개 Programs 타일 3개(배드민턴 아카데미 · 코트 대관 · 공간대여 — 2026-10-27 피클볼 타일 뺌) — 1020px 이하 2열(셋째는 두 칸 폭 가로 타일), 640px 이하 1열 가로 타일 */
+/* ---------- 2026-10-22 공간대여 · 소개 타일 3개 ---------- */
+/* 소개 Programs 타일 3개(배드민턴 아카데미 · 코트 대관 · 공간대여) — 1020px 이하 2열(셋째는 두 칸 폭 가로 타일), 640px 이하 1열 가로 타일 */
 .tiles.three{grid-template-columns:repeat(3,1fr);margin-top:0}
 @media (max-width:1020px){.tiles.three{grid-template-columns:1fr 1fr}.tiles.three .tile:last-child{grid-column:1 / -1;aspect-ratio:2/1}}
 @media (max-width:640px){.tiles.three{grid-template-columns:minmax(0,1fr)}.tiles.three .tile,.tiles.three .tile:last-child{aspect-ratio:16/10}}
@@ -931,21 +955,75 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .space-hourly{margin-top:56px}
 .promo-strip .acts{display:flex;gap:8px;flex-wrap:wrap}
 
-/* ---------- 2026-10-31 대관 예약 조회 (reservation.html · assets/reservation.js) ---------- */
-/* 휴대폰 번호만 받아 관리프로그램이 그 번호로 예약 조회 링크를 보냄 — 머리 사진 없는 페이지(메뉴는 처음부터 .solid), 폭은 폼 한 장 */
+/* 대기 신청 (2026-11-02) — 마감된 반·시간도 고를 수 있음 */
+.grp label.wl .grp-card{background:var(--paper-2)}
+.chips2 label.wl span small{color:#d0342c}
+.chips2 label.wl input:checked + span small{color:#fff}
+.ap-wait{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 12px}
+.ap-wait dt{font-weight:600;color:var(--ink-3)}
+.ap-wait dd{margin:0;overflow-wrap:anywhere}
+.ap-wait-note{margin:0 0 14px;padding-left:18px;font-size:14px;line-height:1.6}
+
+/* ---------- 2026-11-04 대관 예약 확인·취소 (reservation.html · assets/reservation.js) ---------- */
+/* 머리 사진 없는 페이지(메뉴는 처음부터 .solid), 폭은 한 장 — 번호로 링크 받기 또는 그 번호의 대관 카드 */
 .rsv{min-height:72vh;padding-top:150px}
 .rsv .wrap{max-width:640px}
 .rsv .shead{margin-bottom:28px}
 .rsv .lead{margin-top:12px;overflow-wrap:anywhere}
+.rsv [hidden]{display:none!important}
 .rsv-card{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:28px;background:#fff;border:1px solid var(--line);padding:28px}
 .rsv-card .bk-submit{min-height:52px}
 .rsv-msg{font-size:14px;line-height:1.7;padding:14px 16px;border:1px solid var(--line);overflow-wrap:anywhere}
 .rsv-msg:empty{display:none}
+.rsv>.wrap>.rsv-msg{margin-top:20px}
 .rsv-msg.ok{background:#eaf7f0;border-color:#9fd8bb;color:#0f7a4a}
 .rsv-msg.err{background:#fdf0ee;border-color:#f0b7ae;color:#c0392b}
 .rsv-msg a{font-weight:700;text-decoration:underline;white-space:nowrap}
 .rsv-notes{margin-top:22px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.65;color:var(--ink-2);overflow-wrap:anywhere}
 .rsv-notes a{white-space:nowrap}
+.rsv-h{font-size:14px;font-weight:800;color:var(--ink-2);margin:28px 0 10px}
+.rsv-empty{margin-top:24px;padding:18px;background:#fff;border:1px solid var(--line);font-size:14px;color:var(--ink-2)}
+.rsv-bk{background:#fff;border:1px solid var(--line);margin-bottom:12px}
+.rsv-bk>summary{display:block;list-style:none;cursor:pointer;padding:18px 44px 18px 18px;position:relative}
+.rsv-bk>summary::-webkit-details-marker{display:none}
+.rsv-bk>summary::after{content:"";position:absolute;right:20px;top:26px;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(45deg)}
+.rsv-bk[open]>summary::after{transform:rotate(-135deg);top:30px}
+.rsv-top{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-bottom:8px}
+.rsv-chip{display:inline-block;padding:3px 8px;font-size:12px;font-weight:700;line-height:1.4}
+.rsv-chip.ok{background:#eaf7f0;color:#0f7a4a}
+.rsv-chip.blue{background:#e8f0ff;color:var(--blue)}
+.rsv-chip.warn{background:#fff4e0;color:#a35f00}
+.rsv-chip.gray{background:var(--paper-2);color:var(--ink-2)}
+.rsv-chip.bad{background:#fdf0ee;color:#c0392b}
+.rsv-left{font-size:12.5px;font-weight:700;color:var(--blue)}
+.rsv-when{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rsv-when small{font-size:13px;font-weight:600;color:var(--ink-2)}
+.rsv-sub{display:block;margin-top:2px;font-size:13.5px;color:var(--ink-2);overflow-wrap:anywhere}
+.rsv-body{padding:2px 18px 18px;border-top:1px solid var(--line)}
+.rsv-dl{display:grid;gap:8px;margin:14px 0 0;font-size:14px;line-height:1.6}
+.rsv-dl>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px}
+.rsv-dl dt{color:var(--ink-2);white-space:nowrap}
+.rsv-dl dd{margin:0;overflow-wrap:anywhere;min-width:0;font-variant-numeric:tabular-nums}
+.rsv-dl a{font-weight:700;text-decoration:underline;white-space:nowrap}
+.rsv-refund{color:#c0392b}
+.rsv-note{margin:12px 0 0;font-size:13px;line-height:1.65;color:var(--ink-2);overflow-wrap:anywhere}
+.rsv-note a{font-weight:700;white-space:nowrap}
+.rsv-cancel{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.rsv-est{background:var(--paper-2);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.6}
+.rsv-est-h{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-weight:700}
+.rsv-est-h b{font-size:16px;font-weight:800}
+.rsv-est ul{list-style:none;margin:6px 0 0;padding:0;color:var(--ink-2)}
+.rsv-est li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px}
+.rsv-cancel-btn{display:block;width:100%;min-height:48px;border:1px solid #e0a8a0;background:#fff;color:#c0392b;font:700 15px var(--sans);cursor:pointer}
+.rsv-cancel-btn:hover{border-color:#c0392b;background:#fdf0ee}
+.rsv-cancel-btn:disabled{opacity:.6;cursor:default}
+.rsv-policy{background:#fff;border:1px solid var(--line);margin-top:24px}
+.rsv-policy>summary{cursor:pointer;padding:14px 18px;font-size:14px;font-weight:700}
+.rsv-policy-body{white-space:pre-line;padding:0 18px 18px;font-size:13px;line-height:1.7;color:var(--ink-2);overflow-wrap:anywhere}
+.rsv-help{background:#fff;border:1px solid var(--line);margin-top:12px;padding:16px 18px;font-size:14px}
+.rsv-help p{margin:0 0 10px;color:var(--ink-2)}
+.rsv-tel{display:block;width:100%;min-height:46px;line-height:46px;text-align:center;border:1px solid var(--ink);background:#fff;color:var(--ink);font:700 14px/46px var(--sans);cursor:pointer}
+.rsv-foot{margin:14px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-3);overflow-wrap:anywhere}
 @media (max-width:640px){
   .rsv{padding-top:110px}
   .rsv-card{padding:22px 16px}

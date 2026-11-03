@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261031a">
+<link rel="stylesheet" href="assets/style.css?v=20261101q">
 </head>
 <body data-page="home">
 
@@ -21,19 +21,24 @@
   </a>
   <div class="menu" id="menu">
     <a href="index.html" data-page="home">홈</a>
+    <a href="about.html" data-page="about">소개</a>
     <a href="badminton.html" data-page="badminton">배드민턴</a>
     <a href="space.html" data-page="space">공간대여</a>
-    <a href="about.html" data-page="about">소개</a>
-    <a href="reservation.html" data-page="reservation">예약 조회</a>
   </div>
   <button class="burger" id="burger" aria-label="메뉴">☰</button>
 </nav>
 
 <header class="hero">
   <!-- 2026-10-22 센터 요청 — 배드민턴 칸은 레슨 말고 대관으로.
-       2026-10-27 피클볼은 뺌(센터가 피클볼을 안 함) — 오른쪽 칸은 배드민턴 아카데미(레슨), 사진은 왼쪽 칸과 같은 하늘 · 구도의 여자 선수 점프 스매시 -->
+       오른쪽 칸은 배드민턴 아카데미(레슨), 사진은 왼쪽 칸과 같은 하늘 · 구도의 여자 선수 점프 스매시.
+       (2026-10-27 오른쪽 칸을 RENTAL · 공간대여로 바꿨다가 2026-10-31 사용자 요청으로 다시 Academy · 레슨으로.)
+       사진 = hero-home-man / hero-home-woman — 2:1 파노라마(2800×1400, 양옆 · 위를 하늘로 넓힘)에 두 사람 머리 크기를 같게(높이의 8.4%), 아래에 붙임:
+       칸이 사진보다 좁으면 늘 높이에 맞춰져서 마우스를 올려 칸이 넓어져도 · 울트라와이드에서도 머리 위치가 그대로 — 큰 글자(.panel .word, 최대 17vh)에 안 가림.
+       두 사람 위치 같게(사용자 2026-10-27 '둘 다 같은 위치, 여자도 공중에') — 머리 크기 · 머리끝 높이(아래에서 62%) 같음, 여자도 발 아래 하늘이 보이게 떠 있음.
+       여자 사진(2026-10-31 새로 — 남자 사진을 넣어 같은 조명 · 옷으로 생성한 '공중에서 낮게 뻗어 받기')은 사람만 오려(birefnet)
+       남자 사진의 하늘(사람 지운 것)을 760px 옆으로 민 부분 위에 올림 — 두 칸 하늘 톤이 같게. 밀어서 빈 오른쪽 760px 는 AI로 이어 그림(거울 복사 X — 2026-11-01 고침: 거울 복사는 21:9 · 마우스 올림에서 데칼코마니로 보였음). 세로 태블릿 · 정사각에 가까운 창(641px 이상 · 가로가 세로의 1.25배 이하)은 칸이 좁아 파노라마면 양옆이 잘림 → -tall(2:3, 사람을 작게 · 위에 하늘) 사용 -->
   <a class="panel" href="badminton.html#rental" aria-label="배드민턴 코트 대관으로">
-    <img src="images/hero-badminton.jpg" alt="점프 스매시를 하는 배드민턴 선수">
+    <picture><source media="(min-width:641px) and (max-aspect-ratio:5/4)" srcset="images/hero-home-man-tall.jpg"><img src="images/hero-home-man.jpg" alt="점프 스매시를 하는 배드민턴 선수" style="object-position:center bottom"></picture>
     <div class="word">Badminton</div>
     <div class="meta">
       <div class="glass"><div class="k">— COURT · RENTAL</div><div class="v">배드민턴 코트 4면<br>코트별 24시간 대관</div></div>
@@ -41,7 +46,7 @@
     </div>
   </a>
   <a class="panel" href="badminton.html#academy" aria-label="배드민턴 아카데미(레슨)로">
-    <img src="images/hero-badminton-woman.jpg" alt="점프 스매시를 하는 여자 배드민턴 선수">
+    <picture><source media="(min-width:641px) and (max-aspect-ratio:5/4)" srcset="images/hero-home-woman-tall.jpg"><img src="images/hero-home-woman.jpg" alt="공중에서 낮게 뻗어 셔틀콕을 받는 여자 배드민턴 선수" style="object-position:center bottom"></picture>
     <div class="word">Academy</div>
     <div class="meta">
       <div class="glass"><div class="k">— ACADEMY · LESSON</div><div class="v">성인 · 유소년<br>배드민턴 아카데미</div></div>
@@ -55,21 +60,21 @@
   <div class="wrap">
     <div class="foot-brand"><img src="images/logo-footer.png" alt="THE SQUARE — Premium Indoor Sports Studio" width="1200" height="300"></div>
     <div class="foot-links">
-      <a href="index.html">홈</a><a href="badminton.html">배드민턴</a><a href="space.html">공간대여</a><a href="about.html">소개</a>
+      <a href="index.html">홈</a><a href="about.html">소개</a><a href="badminton.html">배드민턴</a><a href="space.html">공간대여</a>
       <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
     </div>
     <div class="foot-biz">
-      <span>주식회사 온파이브</span><span>대표자 송혜인</span><span>사업자등록번호 305-86-42234</span><span>고객센터 <a href="tel:02-6956-1861">02-6956-1861</a></span>
-      <span class="addr">주소 서울시 금천구 디지털로 178, CA201, CA-202, CA301, CA-401, CA401-1호 일부(가산동, 현대 지식산업센터 퍼블릭가산)</span>
+      <span>주식회사 온파이브</span><span>대표자 송혜인</span><span>사업자등록번호 305-86-42234</span><span class="cs"><span class="cs-k">고객센터</span><span class="cs-v">대관 <a href="tel:010-7569-1861">010-7569-1861</a><br>레슨 <a href="tel:010-7576-1861">010-7576-1861</a></span></span>
+      <span class="addr">주소 서울시 금천구 디지털로 178, A동 2층 E홀</span>
     </div>
     <div class="foot-row">
-      <span>THE SQUARE STUDIO — Premium Indoor Sports Studio</span>
+      <span>더 스퀘어 - 프리미엄 실내 스포츠 스튜디오</span>
       <span>금천구 디지털로 178 A동 2층 E홀 · 가산디지털단지역 도보 5분</span>
       <span>© 2026 THE SQUARE STUDIO</span>
     </div>
   </div>
 </footer>
 
-<script src="assets/main.js?v=20261023a"></script>
+<script src="assets/main.js?v=20261031a"></script>
 </body>
 </html>
