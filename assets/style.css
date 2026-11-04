@@ -39,7 +39,7 @@ a{color:inherit;text-decoration:none}
 .brand .logo-color,.nav.solid .brand .logo-white{opacity:0}
 .nav.solid .brand .logo-color{opacity:1}
 .menu{display:flex;gap:38px;font-size:14px;font-weight:500}
-.menu a{opacity:.85;position:relative}
+.menu a{opacity:.85;position:relative;white-space:nowrap}   /* 메뉴 다섯 칸 — '예약 조회'가 두 줄로 갈리지 않게 (2026-11-04) */
 .menu a:hover,.menu a.on{opacity:1}
 .menu a::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:1.5px;background:currentColor;transition:width .25s}
 .menu a:hover::after,.menu a.on::after{width:100%}

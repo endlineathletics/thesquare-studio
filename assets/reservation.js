@@ -116,10 +116,17 @@
   const lineText = l => `${l.d} ${l.time} · ${l.where}`;
   const people = p => (p ? `${p}${/^\d+$/.test(String(p)) ? '명' : ''}` : '');
   const STATE_NOTE = {
-    req_open: '환불 금액은 담당자가 확인한 뒤 돌려드려요. 처리되면 카카오톡 · 문자로 알려 드려요.',
+    req_open: '담당자가 환불 규정대로 확인한 뒤 처리해 드려요. 돌려드릴 금액이 있으면 카카오톡 · 문자로 알려 드려요.',
     unpaid: '대관료 결제 전이에요. 결제 방법은 대관 문의로 연락해 주세요.',
     new: '체육관에서 신청을 확인하고 있어요. 확정되면 카카오톡 · 문자로 알려 드려요.',
   };
+
+  /** 취소 버튼 밑 · 확인창 안내 — 받은 돈이 있으면 환불 이야기까지 */
+  function cancelNote(c) {
+    const base = '취소하면 그 시간은 바로 다른 분이 예약할 수 있어 되돌릴 수 없어요.';
+    if (!c.estimate) return base;
+    return base + (c.estimate.amount ? ' 환불은 담당자가 확인한 뒤 진행돼요.' : ' 환불 규정상 돌려드릴 금액이 없어요.');
+  }
 
   /** 지금 취소하면 규정상 돌려받을 돈 — 한 줄이면 규칙까지, 여러 줄이면 줄마다 */
   function estimateHtml(est) {
@@ -147,7 +154,7 @@
     if (c.canCancel) {
       foot = `<div class="rsv-cancel">${estimateHtml(c.estimate)}
         <button type="button" class="rsv-cancel-btn" data-cancel="${esc(c.no)}">예약 취소</button>
-        <p class="rsv-note">취소하면 그 시간은 바로 다른 분이 예약할 수 있어 되돌릴 수 없어요.${c.estimate ? ' 환불은 담당자가 확인한 뒤 진행돼요.' : ''}</p></div>`;
+        <p class="rsv-note">${esc(cancelNote(c))}</p></div>`;
     } else if (c.busy) {
       foot = `<p class="rsv-note">결제를 확인하는 중이라 지금은 취소할 수 없어요. 잠시 뒤 다시 열어 주시거나 대관 문의 ${TEL}로 연락해 주세요.</p>`;
     } else if (c.started) {
@@ -212,8 +219,8 @@
     if (!c) return;
     const yes = await window.PAYUI.confirm({
       title: '이 예약을 취소할까요?', okText: '예약 취소하기', noText: '돌아가기',
-      rows: [['예약번호', c.no], ['이용', c.lines.map(lineText).join('\n')], ['예상 환불', c.estimate ? won(c.estimate.amount) : '']],
-      note: `취소하면 그 시간은 바로 다른 분이 예약할 수 있어 되돌릴 수 없어요.${c.estimate ? ' 환불은 담당자가 확인한 뒤 진행돼요.' : ''}`,
+      rows: [['예약번호', c.no], ['이용', c.lines.map(lineText).join('\n')], ['예상 환불', c.estimate ? (c.estimate.amount ? won(c.estimate.amount) : '0원 (환불 규정상 돌려드릴 금액이 없어요)') : '']],
+      note: cancelNote(c),
     });
     if (!yes) return;
     busy = true;
