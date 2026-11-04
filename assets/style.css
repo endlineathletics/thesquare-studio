@@ -154,6 +154,14 @@ section.tight{padding:90px 0}
 .pillar .n b{font:600 12px 'Inter';color:var(--blue)}
 .pillar .n span{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1.45}
 .bignum{display:flex;align-items:flex-end;gap:18px}
+.parking-guide{margin-top:28px;padding:24px;background:var(--paper-2);border-left:3px solid var(--blue);font-size:16px;line-height:1.7;color:var(--ink-2)}
+.parking-guide h3{font-size:18px;color:var(--ink);margin:0 0 12px;font-weight:700}
+.parking-guide dl{margin:0;display:grid;gap:4px}
+.parking-guide dl div{display:flex;gap:14px}
+.parking-guide dt{font-weight:600}
+.parking-guide dd{margin:0}
+.parking-guide p{margin:14px 0 0;font-size:14px;line-height:1.7}
+.parking-guide p strong{color:var(--blue);margin-right:6px}
 .bignum b{font-family:'Inter';font-weight:400;font-size:clamp(110px,12vw,170px);line-height:.8;color:var(--lime);letter-spacing:-.06em}
 .bignum span{font-size:17px;font-weight:600;line-height:1.35;padding-bottom:10px}
 .split{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center}
