@@ -928,14 +928,52 @@
     return sdk;
   }
 
-  /** 결제창 열기 — p: pay_prepare 응답(서버가 정한 clientId · orderId · amount · goodsName · returnUrl), o: { id(신청번호), name, phone, dates } */
+  /* 나이스페이 정식 MID 인증결제 (2026-11-09) — pay_prepare 가 pg 'npg' 를 주면 관리프로그램이 만든 폼 칸(form — 서명 SignData 포함)으로
+     나이스페이 결제창(goPay). 성공하면 결제창이 nicepaySubmit 을 불러 폼이 관리프로그램 returnUrl 로 POST 되고(PC), 휴대폰은 결제창으로
+     화면째 넘어갔다가 returnUrl 로 돌아온다. 닫기·실패는 nicepayClose — 두 이름은 나이스페이 결제창 JS 가 정한 전역 함수. 폼은 EUC-KR.
+     MID·키는 페이지에 없다 (관리프로그램이 폼 칸을 만든다). */
+  const NPG_SDK = 'https://pg-web.nicepay.co.kr/v3/common/js/nicepay-pgweb.js';
+  let npgSdk = null;
+  function loadNpg() {
+    if (typeof window.goPay === 'function') return Promise.resolve();
+    if (!npgSdk) {
+      npgSdk = new Promise((ok, no) => {
+        const s = document.createElement('script');
+        const t = setTimeout(() => no(new Error('sdk_timeout')), 20000);
+        s.src = NPG_SDK; s.async = true;
+        s.onload = () => { clearTimeout(t); if (typeof window.goPay === 'function') ok(); else no(new Error('no_gopay')); };
+        s.onerror = () => { clearTimeout(t); s.remove(); no(new Error('sdk_load')); };
+        document.head.appendChild(s);
+      }).catch(err => { npgSdk = null; throw err; });
+    }
+    return npgSdk;
+  }
+  /** 인증결제 결제창 — p: pay_prepare 응답(form · returnUrl), onClose(why) = 닫기·실패 (why = 나이스페이 안내 문구, 없으면 '') */
+  function npgOpen(p, onClose) {
+    const old = document.getElementById('npgPayForm');
+    if (old) old.remove();
+    const f = document.createElement('form');
+    f.id = 'npgPayForm'; f.name = 'npgPayForm'; f.method = 'post'; f.action = p.returnUrl; f.hidden = true;
+    f.setAttribute('accept-charset', 'euc-kr');
+    for (const [k, v] of Object.entries(p.form || {})) {
+      const i = document.createElement('input');
+      i.type = 'hidden'; i.name = k; i.value = v == null ? '' : String(v);
+      f.appendChild(i);
+    }
+    document.body.appendChild(f);
+    window.nicepaySubmit = () => f.submit();
+    window.nicepayClose = () => { const m = f.elements.AuthResultMsg; onClose(m ? m.value : ''); };
+    window.goPay(f);
+  }
+
+  /** 결제창 열기 — p: pay_prepare 응답(서버가 정한 clientId · orderId · amount · goodsName · returnUrl, 정식 MID 면 pg 'npg' · form), o: { id(신청번호), name, phone, dates } */
   async function openPay(p, o) {
     const test = p.mode !== 'live';
     const cur = pay = { id: o.id, phone: o.phone, orderId: p.orderId, dates: o.dates, test, timer: 0, closing: false };
     stash({ id: o.id, phone: o.phone, orderId: p.orderId, space, test, at: Date.now(), sum: o.sum || null });   // sum = 결제 완료 화면 '무엇을 · 얼마에'
     const btn = $('bkSubmit');
     btn.textContent = '결제창 여는 중…';
-    try { await loadSdk(p.mode); } catch (e) { payStop(cur, 'sdk'); return; }
+    try { await (p.pg === 'npg' ? loadNpg() : loadSdk(p.mode)); } catch (e) { payStop(cur, 'sdk'); return; }
     if (pay !== cur) return;   // 그 사이 끝남 (뒤로 오기 등)
     // 결제 대기 시간(서버 expiresAt, KST)이 지나면 서버가 칸을 푼다 — 결제창이 결과 없이 사라졌을 때 화면도 되돌리게.
     // 기기 시계가 크게 어긋나 있으면 HOLD_MIN 분으로
@@ -945,8 +983,9 @@
     holdCountdown(until);   // 버튼 위 빨간 남은 시간 — 결제창이 끝나면(payStop) 고정 경고로 되돌림
     btn.textContent = '결제 진행 중…';
     try {
+      if (p.pg === 'npg') { npgOpen(p, why => payStop(cur, 'error', { msg: why })); return; }
       window.AUTHNICE.requestPay({
-        clientId: p.clientId, MID: CFG.mid, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount,
+        clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount,
         goodsName: p.goodsName, returnUrl: p.returnUrl,
         buyerName: cutBytes(o.name, 30), buyerTel: telDigits(o.phone),
         fnError: res => { payStop(cur, 'error', res); },

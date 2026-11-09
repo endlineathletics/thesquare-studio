@@ -13,7 +13,6 @@ window.APPLY = {
   api: 'https://thesquare-admin-production.up.railway.app/api/site',
   paySdk: 'https://pay.nicepay.co.kr/v1/js/',   // 운영·샌드박스 같은 주소 (모드는 관리프로그램 키가 정함 — booking-config.js 와 같음)
   payMethod: 'cardAndEasyPay',   // 카드 + 간편결제 — 상점에 켜진 간편결제가 있을 때만 탭이 생김 (booking-config.js 와 같음)
-  mid: 'UT0039027m',   // 나이스페이 상점 MID — 결제창 호출에 'MID' 로 같이 보냄 (booking-config.js 와 같음, 소문자 mid 로 보내면 결제창 오류)
   alimtalk: false,
   phone: '010-7576-1861',   // 수강 문의 번호 (오류·대기 신청 안내)
   instagram: 'https://www.instagram.com/the__square_studio/',
