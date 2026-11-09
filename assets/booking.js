@@ -946,7 +946,7 @@
     btn.textContent = '결제 진행 중…';
     try {
       window.AUTHNICE.requestPay({
-        clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount,
+        clientId: p.clientId, MID: CFG.mid, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount,
         goodsName: p.goodsName, returnUrl: p.returnUrl,
         buyerName: cutBytes(o.name, 30), buyerTel: telDigits(o.phone),
         fnError: res => { payStop(cur, 'error', res); },

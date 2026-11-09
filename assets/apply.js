@@ -489,7 +489,7 @@
     stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now(), what: o.what || '', pick: x.key,
       item: { text: optText(x), amount: p.amount } });
     window.AUTHNICE.requestPay({
-      clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
+      clientId: p.clientId, MID: CFG.mid, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
       returnUrl: p.returnUrl, buyerName: cutBytes(o.name, 30), buyerTel: String(o.phone || '').replace(/\D/g, ''),
       fnError: res => {
         post({ action: 'pay_cancel', kind: 'apply', id: o.id, phone: o.phone, orderId: p.orderId }).catch(() => {});
@@ -529,7 +529,7 @@
       try { await loadSdk(); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
       stash(Object.assign({}, o, { orderId: p.orderId, at: Date.now() }));
       window.AUTHNICE.requestPay({
-        clientId: p.clientId, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
+        clientId: p.clientId, MID: CFG.mid, method: CFG.payMethod || 'card', orderId: p.orderId, amount: p.amount, goodsName: p.goodsName,
         returnUrl: p.returnUrl, buyerName: cutBytes(o.name, 30), buyerTel: String(o.phone || '').replace(/\D/g, ''),
         fnError: res => {
           post({ action: 'pay_cancel', kind: 'wait', id: o.id, phone: o.phone, orderId: p.orderId }).catch(() => {});
