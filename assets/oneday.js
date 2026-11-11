@@ -190,7 +190,7 @@
     if (!p.enabled) return fail(`지금은 온라인 원데이 신청을 받지 않아요. ${CFG.phone}로 연락 주세요.`);
     try { await (p.pg === 'npg' ? loadNpg() : loadSdk()); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
     stash({ no: String(p.orderId || '').split('-')[0], orderId: p.orderId, phone: o.phone, name: o.name, test: o.test, amount: p.amount,
-      when: `${o.day.label} ${o.slot.time}–${o.slot.end}`, cls: `${o.slot.cls} ${o.slot.days}` });
+      when: `${o.day.label} ${o.slot.time}~${o.slot.end}`, cls: `${o.slot.cls} ${o.slot.days}` });
     payWindow(p, o, why => {
       post({ action: 'pay_cancel', kind: 'oneday', orderId: p.orderId, phone: o.phone }).catch(() => {});
       fail(`결제가 완료되지 않았어요${why ? ` (${why})` : ''}. 다시 눌러 결제할 수 있어요.`);
@@ -215,12 +215,17 @@
     const back = '<div class="acts"><a class="pri" href="badminton.html">배드민턴 페이지로</a></div>';
     if (res === 'ok') {
       stash(null);
-      const rows = mine ? [['일시', mine.when], ['수업', mine.cls], ['결제 금액', won(mine.amount)]] : [];
+      // 문구는 손님 알림톡(관리프로그램 oneday_paid — 2026-11-11 센터 문구)과 같은 결로
+      const rows = [...(mine ? [['수업 일시', mine.when.replace('–', '~')], ['수업', mine.cls]] : []),
+        ['장소', '퍼블릭 가산 A동 2층 E HALL'], ['준비물', '개인 라켓과 실내용 배드민턴화'], ...(mine ? [['결제 금액', won(mine.amount)]] : [])];
       const to = mine ? `입력하신 번호(${window.PAYUI.maskPhone(mine.phone)})` : '입력하신 번호';
-      box.innerHTML = window.PAYUI.done({ title: mine && mine.test ? '결제가 끝났어요' : '원데이 신청이 완료됐어요', sub: '결제가 끝났어요.',
+      box.innerHTML = window.PAYUI.done({ title: mine && mine.test ? '결제가 끝났어요' : '원데이 레슨 신청이 확정됐어요! 🏸', sub: '결제가 끝났어요.',
         rows: [...rows, ...(no ? [['신청번호', no]] : [])],
-        steps: [`${to}로 결제 확인 문자를 보내드려요.`, '신청한 날 수업 시간에 맞춰 와 주세요.'],
-        foot: `문자가 오지 않거나 일정을 바꾸려면 ${CFG.phone}로 연락 주세요.` }) + back;
+        steps: [`${to}로 확정 안내(카카오톡 또는 문자)를 보내드려요.`,
+          '수업은 코치 1명과 회원 3명이 함께하는 1:3 레슨으로, 1시간 진행돼요.',
+          '수업 시작 15분 전에 도착해 실내화로 갈아신고 가볍게 몸을 풀어주세요.',
+          '수업이 끝나면 다음 타임 회원분들이 바로 이용할 수 있도록 사용한 셔틀콕(헌볼)을 모으고 코트 바닥 정리도 함께 부탁드려요.'],
+        foot: `그럼 코트에서 뵙겠습니다! 😊 안내가 오지 않거나 일정을 바꾸려면 ${CFG.phone}로 연락 주세요.` }) + back;
     } else {
       const why = payMsgOk(m) ? m : '결제가 완료되지 않았어요.';
       const unknown = m === PAY_UNKNOWN;
