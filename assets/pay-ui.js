@@ -164,7 +164,7 @@
       ${o.sub ? `<p class="pd-sub">${esc(o.sub)}</p>` : ''}
       ${rows.length ? `<dl class="pd-rows">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v).replace(/\n/g, '<br>')}</dd></div>`).join('')}</dl>` : ''}
       ${o.steps && o.steps.length ? `<div class="pd-next"><b>다음 할 일</b><ol>${o.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : ''}
-      ${o.foot ? `<p class="pd-foot">${esc(o.foot)}</p>` : ''}
+      ${o.foot ? `<p class="pd-foot">${esc(o.foot).replace(/\n/g, '<br>')}</p>` : ''}
     </div>`;
   }
 
