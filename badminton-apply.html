@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261109c">
+<link rel="stylesheet" href="assets/style.css?v=20261111r">
 </head>
 <body data-page="badminton" data-apply="badminton">
 
@@ -77,6 +77,14 @@
         <div class="ap-h"><b>03</b>희망 시간 &amp; 코치 <small>반을 고른 뒤 타임과 코치를 선택하세요</small></div>
         <div class="fld" data-f="preference">
           <p class="ap-note pref-note" id="prefNote">급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. 마감된 시간을 고르면 <b>보증금 10,000원으로 대기 신청</b>할 수 있어요.</p>
+          <!-- 모집 중인 새 반 (2026-11-11 — 관리프로그램 반 개설·모집, apply.js 'newOpen'). 목록이 없으면 통째로 숨김 -->
+          <div class="nw" id="newOpen" hidden>
+            <div class="nw-h"><b>모집 중인 새 반</b><small>요일 하나 · 주 1회 · 월 4회 — 시간이나 코치 이름으로 찾아보세요</small></div>
+            <input type="search" class="nw-q" id="newQ" placeholder="예: 10:00, 토요일, 이동욱" aria-label="시간·요일·코치 이름으로 찾기">
+            <div class="chips2 nw-days" id="newDays" role="group" aria-label="요일"></div>
+            <div class="nw-list" id="newList" role="radiogroup" aria-label="모집 중인 새 반"></div>
+            <p class="nw-none" id="newNone" hidden>찾는 반이 없어요. 다른 시간·코치로 찾아보세요.</p>
+          </div>
           <div class="grp" id="prefGroups"></div>
           <span class="msg">희망하는 반과 시간을 선택해주세요.</span>
           <div class="sub-pick" id="prefSub" hidden>
@@ -141,6 +149,6 @@
 <script src="assets/apply-config.js?v=20261109n"></script>
 <script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261101s"></script>
-<script src="assets/apply.js?v=20261109n"></script>
+<script src="assets/apply.js?v=20261111r"></script>
 </body>
 </html>

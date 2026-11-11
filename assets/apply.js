@@ -120,12 +120,63 @@
         : '<b>마감</b>은 정원이 찬 시간이에요. ')
         + `마감된 시간을 고르면 <b>보증금 ${won(WAIT_DEPOSIT)}으로 대기 신청</b>할 수 있어요. 수강 등록할 때 수강료에서 빼 드려요.`;
     }
+    /* 모집 중인 새 반 (2026-11-11 — 관리프로그램 '반 개설·모집'): GET api?action=bd_open&grade= → 그룹마다 한 줄
+       {key 'r12.1', classKey, grp, dayLabel, start, end, kind, age, title, coach, fee, left, ok}. 시간·요일·코치 이름으로 찾고 하나 고르면
+       위 옛 반 카드 선택은 풀림(둘 중 하나). ?g=<key> 로 열면(앱 '새 반 찾기') 그 반을 골라 둔다 */
+    let opens = [], nday = '', picked = '', want = new URLSearchParams(location.search).get('g') || '';
+    const NDAYS = [['', '전체'], ['mo', '월'], ['tu', '화'], ['we', '수'], ['th', '목'], ['fr', '금'], ['sa', '토'], ['su', '일']];
+    const openOf = k => opens.find(x => x.key === k);
+    function drawOpen() {
+      const box = $('newOpen');
+      if (!box) return;
+      box.hidden = !opens.length;
+      if (!opens.length) return;
+      const cur = picked;
+      const ws = ($('newQ').value || '').toLowerCase().split(/\s+/).filter(Boolean);
+      const days = new Set(opens.map(x => x.day));
+      $('newDays').innerHTML = NDAYS.filter(([k]) => !k || days.has(k))
+        .map(([k, l]) => `<button type="button" data-nd="${k}" class="${k === nday ? 'on' : ''}" aria-pressed="${k === nday}">${l}</button>`).join('');
+      const shown = opens.filter(x => (!nday || x.day === nday) && ws.every(w => `${x.dayLabel} ${x.start} ${x.end} ${x.kind} ${x.age} ${x.title} ${x.coach}`.toLowerCase().includes(w)));
+      $('newList').innerHTML = shown.map(x => `<label${x.ok ? '' : ' class="off"'}><input type="radio" name="ncls" value="${esc(x.key)}"${cur === x.key ? ' checked' : ''}${x.ok ? '' : ' disabled'}>
+        <span class="nw-it"><b>${esc(x.dayLabel)} ${esc(x.start)}–${esc(x.end)}</b><span class="l${x.ok ? '' : ' x'}">${x.ok ? `잔여 ${x.left}석` : '마감'}</span>
+        <span class="m"><em>${esc(x.kind)} ${esc(x.age)}</em> · ${x.coach ? esc(x.coach) + ' 코치' : '코치 미정'} · 월 ${won(x.fee)}</span></span></label>`).join('');
+      $('newNone').hidden = !!shown.length;
+    }
+    function loadOpen() {
+      if (!CFG.api) return;
+      const gr = (form.grade && form.grade.value) || '';
+      fetch(CFG.api + '?action=bd_open' + (gr ? '&grade=' + encodeURIComponent(gr) : '')).then(r => r.json()).then(r => {
+        if (!r || !r.ok || !Array.isArray(r.items)) return;
+        opens = r.items;
+        if (picked && !(openOf(picked) || {}).ok) picked = '';   // 그 사이 마감·급수가 안 맞게 됨 — 고른 것 풂
+        drawOpen();
+        if (want && openOf(want)) {             // 앱에서 고른 반 — 한 번만
+          const it = form.querySelector(`input[name="ncls"][value="${CSS.escape(want)}"]`);
+          if (it && !it.disabled) { it.checked = true; picked = want; pickNew(); $('newOpen').scrollIntoView({ block: 'center' }); }
+          want = '';
+        }
+        updateSummary();
+        syncWait();
+      }).catch(() => { /* 못 받으면 새 반 목록 없이 — 옛 반 카드는 그대로 */ });
+    }
+    function pickNew() {                        // 새 반을 고르면 옛 반 카드·타임·코치 선택을 푼다
+      form.querySelectorAll('input[name="cls"]').forEach(x => { x.checked = false; });
+      $('prefSub').hidden = true;
+      updateSummary();
+    }
+    if ($('newOpen')) {
+      $('newQ').addEventListener('input', drawOpen);
+      $('newDays').addEventListener('click', e => { const b = e.target.closest('[data-nd]'); if (b) { nday = b.dataset.nd; drawOpen(); } });
+    }
+
     drawNote(true);
     drawCards();
     loadAvail();
+    loadOpen();
     form.addEventListener('change', e => {
-      if (e.target.name === 'cls') drawSub();
-      else if (e.target.name === 'grade') loadAvail();
+      if (e.target.name === 'cls') { picked = ''; form.querySelectorAll('input[name="ncls"]').forEach(x => { x.checked = false; }); drawSub(); }
+      else if (e.target.name === 'ncls') { picked = e.target.value; pickNew(); }
+      else if (e.target.name === 'grade') { loadAvail(); loadOpen(); }
       syncWait();
     });
     // 신청 버튼 글 — 고른 시간이 마감이면 대기 신청
@@ -137,6 +188,8 @@
 
     return {
       value() {
+        const n = picked && openOf(picked);   // 찾기로 목록이 줄어도 고른 반은 그대로
+        if (n) return { wait: false, classKey: n.classKey, group: n.grp, class: n.title, days: n.dayLabel, time: `${n.start}~${n.end}`, coach: n.coach || '미정', price: `월 ${won(n.fee)}` };
         const k = form.cls && form.cls.value;
         if (!k) return null;
         const g = groups[k];
@@ -263,7 +316,9 @@
       if (!r.ok) throw new Error(r.error || 'fail');
       done(v, r.id, 'ok');
     } catch (err) {
-      $('applyErr').textContent = `신청 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
+      $('applyErr').textContent = err && err.message === 'closed'     // 새 반 — 그 사이 모집이 마감됨 (2026-11-11)
+        ? '고르신 반은 방금 모집이 마감됐어요. 다른 반을 골라 주세요.'
+        : `신청 중 오류가 발생했습니다. 잠시 후 다시 시도하시거나 ${CFG.phone}로 문의해주세요.`;
       btn.disabled = false; btn.textContent = '신청하고 결제하기';
     }
     sending = false;
