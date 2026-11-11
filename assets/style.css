@@ -1122,3 +1122,14 @@ body.has-apply-bar .apply-bar{display:flex}
 .od-times .chips2 span small{color:var(--ink-3)}
 .od-times .chips2 input:checked + span small{color:rgba(255,255,255,.8)}
 .price .od-go{display:inline-block;margin-top:14px;font-size:14px;font-weight:800;color:var(--blue)}
+
+/* 수강신청 계좌입금 (2026-11-12 — apply.js xferWire) */
+.ap-xferbtn{width:100%;margin-top:8px;background:#fff;color:var(--blue);border:1px solid var(--blue);padding:14px;font:800 15px var(--sans);cursor:pointer}
+.ap-xferbtn:disabled{color:#9aa3b5;border-color:#c9cfdb;cursor:not-allowed}
+.ap-xfer{margin-top:10px;border:1px solid var(--line);background:var(--paper-2);padding:16px}
+.ap-xfer[hidden]{display:none}
+.ap-xfer p{font-size:14px;line-height:1.6}
+.ap-xfer-acct{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);padding:12px 14px;margin:10px 0;font-size:15px;overflow-wrap:anywhere}
+.ap-xfer-acct .nw{white-space:nowrap}
+.ap-xfer-acct small{color:var(--ink-3);font-size:12.5px}
+.ap-xfer-copy{flex:none;border:1px solid var(--ink);background:#fff;padding:8px 12px;font:700 13px var(--sans);cursor:pointer}

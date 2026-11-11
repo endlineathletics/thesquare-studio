@@ -14,6 +14,7 @@ window.APPLY = {
   paySdk: 'https://pay.nicepay.co.kr/v1/js/',   // 운영·샌드박스 같은 주소 (모드는 관리프로그램 키가 정함 — booking-config.js 와 같음)
   payMethod: 'cardAndEasyPay',   // 카드 + 간편결제 — 상점에 켜진 간편결제가 있을 때만 탭이 생김 (booking-config.js 와 같음)
   alimtalk: false,
-  phone: '010-7576-1861',   // 수강 문의 번호 (오류·대기 신청 안내)
+  phone: '010-7576-1861',
+  bank: { name: '하나은행', account: '332-910080-48104', holder: '주식회사 온파이브' },   // 계좌입금 (2026-11-12) — 관리프로그램 BANK_* 와 같게   // 수강 문의 번호 (오류·대기 신청 안내)
   instagram: 'https://www.instagram.com/the__square_studio/',
 };

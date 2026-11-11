@@ -493,6 +493,58 @@
   /** 결제 칸 그리기 — o = { id: 신청번호, phone, name, test, what(반 이름), pick(결제가 안 끝나 다시 그릴 때 — 앞서 고른 옵션 key) }
       고르기 → 환불 규정 체크(PAYUI.terms — 체크해야 버튼이 켜짐) → [N원 결제하기] → 확인창(종목·수강·금액·이름·연락처) → 결제창.
       앞서 고른 것(o.pick)이 아직 고를 수 있으면 그것을 미리 골라 두고, 없으면 고를 수 있는 첫 것 */
+  /* ---------- 계좌입금 (2026-11-12) — 카드 대신 계좌로. [입금했어요] → 관리프로그램 apply_transfer: 자리만 잡아 두고(수강생 아님),
+     담당자가 입금을 확인하면 그때 수강 등록. 계좌는 apply-config.js CFG.bank (관리프로그램 BANK_* 와 같아야 함) ---------- */
+  function xferWire(box, o, r, st, sync) {
+    const xbtn = box.querySelector('#payXfer'), xbox = box.querySelector('#payXferBox'), done = box.querySelector('#xferDone');
+    const msg = box.querySelector('#payMsg');
+    xbtn.onclick = () => {
+      if (!st.terms.ok()) return;
+      xbox.hidden = !xbox.hidden;
+      xbtn.setAttribute('aria-expanded', String(!xbox.hidden));
+    };
+    box.querySelector('#xferCopy').onclick = e => {
+      const t = CFG.bank.account;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { e.target.textContent = '복사됨'; })
+        .catch(() => { e.target.textContent = t; });
+    };
+    done.onclick = async () => {
+      const sel = box.querySelector('input[name=payopt]:checked');
+      const x = sel && r.options.find(y => y.key === sel.value);
+      if (!x || st.busy || !st.terms.ok()) return;
+      const yes = await window.PAYUI.confirm({
+        title: '입금하셨나요?',
+        rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', optText(x)], ['이름', o.name], ['연락처', o.phone],
+          ['입금 계좌', `${CFG.bank.name} ${CFG.bank.account} (${CFG.bank.holder})`]],
+        amount: x.amount, okText: '네, 입금했어요',
+        note: '담당자가 입금을 확인하면 수강 등록이 끝나고 안내 문자가 가요. 그 전까지 자리는 잡아 둬요.',
+      });
+      if (!yes) return;
+      st.busy = true; sync(); done.disabled = true; done.textContent = '보내는 중…'; msg.textContent = '';
+      let j;
+      try { j = await post({ action: 'apply_transfer', id: o.id, phone: o.phone, option: x.key, agreeRefund: st.terms.ok() }); }
+      catch (e) { j = null; }
+      if (!j || !j.ok) {
+        st.busy = false; sync(); done.disabled = false; done.textContent = '입금했어요';
+        msg.textContent = !j ? '인터넷 연결을 확인하고 다시 눌러주세요.'
+          : j.error === 'full' ? '방금 마감됐어요. 다른 것을 골라주세요.'
+          : (PAY_ERR[j.error] || `요청을 보내지 못했어요. ${CFG.phone}로 연락 주세요.`);
+        return;
+      }
+      stash(null);
+      const wrap = $('applyDone');
+      wrap.innerHTML = window.PAYUI.done({ title: '입금 확인을 요청했어요', sub: '담당자가 입금을 확인하면 수강 등록이 끝나요.',
+        rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', j.what || optText(x)], ['입금 금액', won(j.amount)],
+          ['입금 계좌', `${j.bank} ${j.account} (${j.holder})`], ['신청번호', o.id]],
+        steps: ['아직 입금하지 않으셨다면 위 계좌로 입금해 주세요. 입금자명은 수강생 이름으로 해 주세요.',
+          `입력하신 번호(${window.PAYUI.maskPhone(o.phone)})로 입금 안내 문자를 보내드려요.`,
+          '입금이 확인되면 등록 완료 안내와 앱 로그인 링크가 가요. 그 전까지 자리는 잡아 둬요.'],
+        foot: `입금이 늦어지거나 바꿀 게 있으면 ${CFG.phone}로 연락 주세요.` })
+        + `<div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
+      wrap.scrollIntoView({ block: 'start' });
+    };
+  }
+
   async function payBox(box, o) {
     if (!box) return;
     box.innerHTML = '<p class="ap-pay-msg">결제 정보를 불러오는 중…</p>';
@@ -534,6 +586,14 @@
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
       ${first && !window.PAYUI.guideSeen('refund_class') ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
+        ${CFG.bank ? `<button type="button" class="ap-xferbtn" id="payXfer" disabled aria-expanded="false" aria-controls="payXferBox">계좌입금</button>
+        <div class="ap-xfer" id="payXferBox" hidden>
+          <p>아래 계좌로 <b id="xferAmt">${won(first.amount)}</b>을 입금해 주세요.</p>
+          <div class="ap-xfer-acct"><span><b>${esc(CFG.bank.name)} <span class="nw">${esc(CFG.bank.account)}</span></b><br><small>예금주 ${esc(CFG.bank.holder)}</small></span>
+            <button type="button" class="ap-xfer-copy" id="xferCopy">복사</button></div>
+          <p class="ap-pay-note">입금자명은 수강생 이름으로 해 주세요. 입금한 뒤 아래 버튼을 눌러 주세요 — 담당자가 입금을 확인하면 수강 등록이 끝나요.</p>
+          <button type="button" class="ap-paybtn" id="xferDone">입금했어요</button>
+        </div>` : ''}
         <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 처음부터 다시 신청하면서 대기할 시간을 골라 주세요.</p>${againLink()}`}
       <p class="ap-pay-msg err" id="payMsg" role="alert"></p>
       ${r.mode !== 'live' ? '<p class="ap-pay-note">테스트 결제창이에요 — 실제로 돈이 나가지 않고 등록되지 않아요.</p>'
@@ -544,8 +604,10 @@
       return;
     }
     const st = { busy: false, agreed: false };
+    const xbtn = box.querySelector('#payXfer');
     const sync = () => {                        // 버튼: 동의해야 켜짐, 결제 준비 중엔 꺼짐
       go.disabled = st.busy || !st.agreed;
+      if (xbtn) xbtn.disabled = st.busy || !st.agreed;
       box.querySelector('#payHint').hidden = st.agreed;
     };
     // 이용 안내(환불 규정 포함)를 신청 전에 확인했으면 다시 묻지 않음 (2026-11-01) — 다른 탭에서 결제만 이어 가는 경우 등은 옛 체크칸
@@ -560,7 +622,9 @@
     box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
       const x = r.options.find(y => y.key === i.value);
       if (x && !st.busy) go.textContent = `${won(x.amount)} 결제하기`;
+      if (x && box.querySelector('#xferAmt')) box.querySelector('#xferAmt').textContent = won(x.amount);
     }));
+    if (xbtn) xferWire(box, o, r, st, sync);
     go.onclick = async () => {
       const sel = box.querySelector('input[name=payopt]:checked');
       const x = sel && r.options.find(y => y.key === sel.value);
