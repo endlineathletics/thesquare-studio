@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>원데이 신청 — THE SQUARE STUDIO</title>
+<meta name="description" content="THE SQUARE STUDIO 배드민턴 원데이(1일 체험권) 신청 · 날짜와 시간을 골라 바로 결제">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23ffffff%22/%3E%3Cg fill=%22none%22 stroke=%22%233E9AD5%22 stroke-width=%227%22 transform=%22translate(12 12) scale(.76)%22%3E%3Crect x=%223.3%22 y=%223.3%22 width=%2293.4%22 height=%2293.4%22/%3E%3Cpath d=%22M3.3 7.2L81.7 69.4M96.7 14.2L47.1 72.7M3.3 36.8L65.9 88.1L96.7 51.7%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="assets/style.css?v=20261111a">
+</head>
+<body data-page="badminton" data-oneday="1">
+
+<nav class="nav" id="nav">
+  <a href="index.html" class="brand" aria-label="THE SQUARE STUDIO 홈">
+    <img class="logo-white" src="images/logo-white.png" alt="THE SQUARE — Premium Indoor Sports Studio" width="1200" height="300">
+    <img class="logo-color" src="images/logo-color.png" alt="" width="1200" height="300">
+  </a>
+  <div class="menu" id="menu">
+    <a href="index.html" data-page="home">홈</a>
+    <a href="about.html" data-page="about">소개</a>
+    <a href="badminton.html" data-page="badminton">배드민턴</a>
+    <a href="space.html" data-page="space">공간대여</a>
+    <a href="reservation.html" data-page="reservation">예약 조회</a>
+  </div>
+  <button class="burger" id="burger" aria-label="메뉴">☰</button>
+</nav>
+
+<header class="page-hero short">
+  <img src="images/badminton-coach.jpg" alt="">
+  <div class="wrap">
+    <div class="eyebrow">THE SQUARE BADMINTON · 원데이</div>
+    <h1>One Day</h1>
+    <p>하루 레슨 체험 · 날짜와 시간을 골라 바로 신청</p>
+  </div>
+</header>
+
+<section class="bg-soft tight">
+  <div class="wrap">
+    <div id="odWrap">
+    <form class="apply" id="odForm" novalidate>
+      <div class="ap-card">
+      <div class="ap-sec">
+        <div class="ap-h"><b>01</b>기본 정보</div>
+        <div class="ap-grid">
+          <div class="fld" data-f="name"><span class="lb">이름<i>*</i></span><input type="text" name="name" autocomplete="name" maxlength="30" placeholder="홍길동"><span class="msg">이름을 입력해주세요.</span></div>
+          <div class="fld" data-f="phone"><span class="lb">연락처 (휴대폰)<i>*</i></span><input type="tel" name="phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+            <span class="hint">유소년은 보호자 휴대폰 번호를 입력해주세요.</span><span class="msg">휴대폰 번호를 정확히 입력해주세요.</span></div>
+          <div class="fld" data-f="grade"><span class="lb">급수<i>*</i></span><select name="grade"><option value="">선택해주세요</option><option value="입문">입문 (처음 배워요)</option><option>초심</option><option>D조</option><option>C조</option><option>B조</option><option>A조</option></select>
+            <span class="hint">비슷한 급수끼리 수업해요. 고르신 급수가 들어갈 수 있는 시간만 열려요.</span><span class="msg">급수를 선택해주세요.</span></div>
+        </div>
+      </div>
+      <div class="ap-sec">
+        <div class="ap-h"><b>02</b>날짜 &amp; 시간 <small>정원이 남고 급수가 맞는 시간만 고를 수 있어요</small></div>
+        <div class="fld" data-f="slot">
+          <p class="ap-note" id="odNote">급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요.</p>
+          <div class="ap-days od-days" id="odDays"></div>
+          <div class="od-times" id="odTimes"></div>
+          <span class="msg">날짜와 시간을 선택해주세요.</span>
+        </div>
+      </div>
+      <div class="ap-sec">
+        <div class="ap-h"><b>03</b>동의</div>
+        <div class="fld" data-f="agree">
+          <div class="agree-box">
+            <label class="ck"><input type="checkbox" name="agree"> [필수] 개인정보 수집·이용 및 알림(카카오 알림톡·문자) 수신에 동의합니다.</label>
+            <details><summary>자세히 보기</summary>
+              <table>
+                <tr><th>수집 항목</th><td>이름, 휴대폰 번호, 급수, 신청한 날짜·시간</td></tr>
+                <tr><th>이용 목적</th><td>원데이 레슨 신청·결제 확인, 수업 관련 안내(카카오 알림톡 또는 문자) 발송</td></tr>
+                <tr><th>보유 기간</th><td>수업 후 1년까지 보관 후 파기 (관계 법령에 따라 보관이 필요한 경우 해당 기간)</td></tr>
+              </table>
+              동의를 거부할 수 있으나, 거부 시 온라인 원데이 신청이 제한됩니다.
+            </details>
+          </div>
+          <span class="msg">개인정보 수집·이용 및 알림 수신에 동의해주세요.</span>
+        </div>
+      </div>
+      </div>
+      <aside class="ap-side">
+        <div class="ap-sum">
+          <h3>ONE DAY</h3>
+          <div class="ttl">원데이 신청</div>
+          <dl id="odSum"></dl>
+        </div>
+        <button type="submit" class="bk-submit" id="odSubmit">신청하고 결제하기</button>
+        <p class="bk-msg err" id="odErr" role="alert"></p>
+      </aside>
+    </form>
+    </div>
+    <div class="ap-done" id="odDone" hidden></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand"><img src="images/logo-footer.png" alt="THE SQUARE — Premium Indoor Sports Studio" width="1200" height="300"></div>
+    <div class="foot-links">
+      <a href="index.html">홈</a><a href="about.html">소개</a><a href="badminton.html">배드민턴</a><a href="space.html">공간대여</a>
+      <a href="https://www.instagram.com/the__square_studio/" target="_blank" rel="noopener">Instagram ↗</a>
+    </div>
+    <div class="foot-biz">
+      <span>주식회사 온파이브</span><span>대표자 송혜인</span><span>사업자등록번호 305-86-42234</span><span class="cs"><span class="cs-k">고객센터</span><span class="cs-v">대관 <a href="tel:010-7569-1861">010-7569-1861</a><br>레슨 <a href="tel:010-7576-1861">010-7576-1861</a></span></span>
+      <span class="addr">주소 서울시 금천구 디지털로 178, A동 2층 E홀</span>
+    </div>
+    <div class="foot-row">
+      <span>더 스퀘어 - 프리미엄 실내 스포츠 스튜디오</span>
+      <span>금천구 디지털로 178 A동 2층 E홀 · 가산디지털단지역 도보 5분</span>
+      <span>© 2026 THE SQUARE STUDIO</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/apply-config.js?v=20261111a"></script>
+<script src="assets/main.js?v=20261031a"></script>
+<script src="assets/pay-ui.js?v=20261101s"></script>
+<script src="assets/oneday.js?v=20261111a"></script>
+</body>
+</html>

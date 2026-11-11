@@ -1090,3 +1090,12 @@ body.has-apply-bar .apply-bar{display:flex}
 }
 .jc-br{display:none}
 @media (max-width:640px){.jc-br{display:inline}.jc-cards{grid-template-columns:1fr}.jc-days{gap:6px}.jc-prs{grid-template-columns:1fr}}
+
+/* 원데이 신청 (2026-11-11 — oneday.html · assets/oneday.js) — 수강신청 화면과 같은 틀(.apply · .ap-days · .chips2) */
+.od-days{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.od-days button{font-size:14px;padding:10px 4px}
+.od-days button small{display:block;font-size:11px;font-weight:700;color:#d0342c;margin-top:1px}
+.od-days button:disabled{cursor:not-allowed;background:var(--paper-2);color:var(--ink-3)}
+.od-times .chips2 span small{color:var(--ink-3)}
+.od-times .chips2 input:checked + span small{color:rgba(255,255,255,.8)}
+.price .od-go{display:inline-block;margin-top:14px;font-size:14px;font-weight:800;color:var(--blue)}
