@@ -27,6 +27,23 @@
   const ALL = SP.courts.map((_, i) => i);
   /** 코트(표의 열) 1시간 금액 — 코트별 가격(prices)이 있으면 그것, 없으면 공간 price (2026-10-22 COURT 4 — 2026-10-23 이름 'PRIVATE' · 77,000원 · 금액은 관리프로그램이 다시 계산) */
   const priceAt = c => (SP.prices && SP.prices[c] != null ? SP.prices[c] : SP.price);
+  /** 심야 할인 (2026-11-17 — 밤 12시~아침 6시 시작 칸 20%, 관리프로그램 설정 '대관 요금'에서 바뀜 · 아래 loadPrices 가 받아 씀) — 시작 시각 'HH:MM' 칸이 할인 칸인지 */
+  const nightAt = start => {
+    const n = SP.night;
+    if (!n || !n.pct || n.from === n.to) return false;
+    const h = Number(start.slice(0, 2));
+    return n.from < n.to ? (h >= n.from && h < n.to) : (h >= n.from || h < n.to);
+  };
+  /** 칸(1코트 1시간) 금액 — 정가에 심야 칸이면 할인 (원 단위 반올림 — 관리프로그램 rental_slot_price 와 같게) */
+  const cellPrice = (c, start) => (nightAt(start) ? Math.round(priceAt(c) * (100 - SP.night.pct) / 100) : priceAt(c));
+  /** '밤 12시~아침 6시 20% 할인' (없으면 '') */
+  function nightText() {
+    const n = SP.night;
+    if (!n || !n.pct || n.from === n.to) return '';
+    const hr = h => { h %= 24; if (h === 0) return '밤 12시'; if (h === 12) return '낮 12시';
+      const w = h < 6 ? '새벽' : h < 12 ? '아침' : h < 18 ? '오후' : h < 22 ? '저녁' : '밤'; return `${w} ${h < 12 ? h : h - 12}시`; };
+    return `${hr(n.from)}~${hr(n.to)} ${n.pct}% 할인`;
+  }
   const MAX = CFG.maxItems || 96;                                         // 한 번에 신청할 수 있는 최대 칸 (코트 × 시간)
   const COURT_MAX = Math.max(1, Math.min(CFG.maxCourts || NC, NC));      // 같이 고를 수 있는 코트 수
   const WHOLE = CFG.wholeLabel || '전체대관';
@@ -107,12 +124,19 @@
   const state = { date: todayStr(), month: '', sel: null, focus: null, scroll: true, lost: null, sending: false };
   const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (칸 하나 = 1시간 단위)
   const cellsOf = sel => sel.courts.length * hoursOf(sel);
-  const priceOf = sel => sel.courts.reduce((t, c) => t + priceAt(c), 0) * hoursOf(sel);
-  /** 금액 내역 — 고른 코트 가격이 같으면 "1코트 1시간 52,800원 × 4", 섞이면 "52,800원 × 2 + 75,000원 × 2" (같은 가격끼리 칸 수를 묶음 · 코트 순) */
+  const priceOf = sel => cellsIn(sel).reduce((t, x) => t + sel.courts.reduce((u, c) => u + cellPrice(c, x.start), 0), 0);
+  /** 금액 내역 — 칸 금액이 모두 같으면 "1코트 1시간 52,800원 × 4", 섞이면 "52,800원 × 2 + 42,240원 × 2" (같은 금액끼리 칸 수를 묶음 · 코트·시간 순)
+      심야 할인 칸이 있으면 끝에 "(밤 12시~아침 6시 20% 할인)" */
   function priceNote(sel) {
     const by = new Map();
-    sel.courts.forEach(c => by.set(priceAt(c), (by.get(priceAt(c)) || 0) + hoursOf(sel)));
-    return by.size === 1 ? `${SP.unit} ${won(priceAt(sel.courts[0]))} × ${cellsOf(sel)}` : [...by].map(([p, n]) => `${won(p)} × ${n}`).join(' + ');
+    let night = false;
+    sel.courts.forEach(c => cellsIn(sel).forEach(x => {
+      const p = cellPrice(c, x.start);
+      if (nightAt(x.start)) night = true;
+      by.set(p, (by.get(p) || 0) + 1);
+    }));
+    const base = by.size === 1 ? `${SP.unit} ${won([...by.keys()][0])} × ${cellsOf(sel)}` : [...by].map(([p, n]) => `${won(p)} × ${n}`).join(' + ');
+    return night ? `${base} (${nightText()})` : base;
   }
   function timeText(sel) { return `${rangeOnly(sel)} (${hoursOf(sel)}시간)`; }
   /** "22:00~24:00" · 자정을 넘기면 "22:00~다음 날 02:00" */
@@ -1118,6 +1142,31 @@
     if (r === 'ok' || r === 'done') { await loading[state.date]; delete booked[state.date]; load(state.date); }   // 풀린 칸을 다시 불러옴 (처음 조회가 끝난 뒤)
   }
 
+  /* ---------- 요금 (관리프로그램 설정 '대관 요금' — 2026-11-17) ----------
+     booking-config.js 의 price·prices·night 는 처음 그릴 때 쓰는 기본값이고, 관리프로그램 rental_prices 를 받으면 바꿔서 다시 그린다.
+     실제 결제 금액은 관리프로그램이 칸마다 다시 계산함 (여기는 표시용). [data-rental-price] 안내 글(배드민턴 페이지 공간 카드)도 같이 바꿈 */
+  function priceLine() {
+    const by = [];
+    ALL.forEach(c => { const last = by[by.length - 1]; if (last && last.p === priceAt(c)) last.cs.push(c); else by.push({ p: priceAt(c), cs: [c] }); });
+    const parts = by.map((g, i) => `${i === 0 ? SP.unit : (g.cs.length === 1 ? SP.courts[g.cs[0]] : courtLabel(g.cs))} ${won(g.p)}`);
+    const n = nightText();
+    return parts.join(' · ') + (n ? ` · ${n}` : '');
+  }
+  function showPriceLine() { document.querySelectorAll(`[data-rental-price="${space}"]`).forEach(el => { el.textContent = priceLine(); }); }
+  async function loadPrices() {
+    showPriceLine();
+    if (!CFG.api) return;
+    try {
+      const r = await (await fetch(`${CFG.api}?action=rental_prices&space=${encodeURIComponent(space)}`)).json();
+      if (!r.ok || !Array.isArray(r.prices) || r.prices.length !== NC) return;
+      SP.prices = r.prices.slice();
+      SP.price = r.prices[0];
+      if (r.night) SP.night = r.night;
+      showPriceLine();
+      update();
+    } catch (e) { /* 못 받으면 기본값 그대로 — 신청 때 관리프로그램이 다시 계산 */ }
+  }
+
   /* ---------- 예약 현황 (관리프로그램 조회) ---------- */
   function load(date) {
     if (!CFG.api || booked[date] || loading[date]) return loading[date];
@@ -1154,6 +1203,7 @@
   $('bkGuide').textContent = SP.note || '';
   if (SP.title) $('bkTitle').textContent = SP.title;
   update();
+  loadPrices();
   load(state.date);
   resumePay(payResult());   // 결제를 마치고(?pay=) · 결과 없이(뒤로) 돌아온 경우
 })();
