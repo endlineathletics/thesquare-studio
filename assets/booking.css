@@ -84,6 +84,9 @@
 @media (hover:hover){.bk2-c:not(.off):not(.wait):not(.on):hover{border-color:var(--blue);color:var(--blue)}}
 .bk2-c:focus-visible{outline:3px solid var(--blue-2);outline-offset:1px;z-index:1}
 .bk2-c.off{background:var(--paper-2);border-color:var(--paper-2);color:var(--ink-3);font-weight:500;cursor:not-allowed}
+/* 막힌 까닭별 색 (2026-11-17 사용자 "대관이 찬 건지 레슨이 찬 건지 그냥 막힌 건지 색별로") — 글자는 '—' 그대로, 위 안내(bk2-legend)와 같은 색 */
+.bk2-c.off.k-rental{background:#fbe9cf;border-color:#fbe9cf;color:#a26a1f}
+.bk2-c.off.k-lesson{background:#dcefe2;border-color:#dcefe2;color:#2f7a4a}
 .bk2-c.wait{background:var(--paper-2);border-color:var(--paper-2);cursor:progress}
 .bk2-c.add{border:1px dashed var(--blue);color:var(--blue)}
 .bk2-c.on{background:rgba(0,88,252,.14);border-color:rgba(0,88,252,.4);color:var(--blue);font-size:12px;letter-spacing:.02em}   /* 시작~끝 사이: 반투명 파랑 */
@@ -93,11 +96,15 @@
 
 .bk2-empty{padding:28px 16px;color:var(--ink-3);font-size:14px}
 .bk2-empty[hidden]{display:none}
+.bk2-foot:not(:has(> :not([hidden]))){display:none}   /* 안내가 표 위로 옮겨가(2026-11-17) [선택 해제]가 숨으면 빈 줄 */
 .bk2-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;padding:12px 16px;border-top:1px solid var(--line)}
 .bk2-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2)}
 .bk2-legend span{display:inline-flex;align-items:center;gap:6px}
 .bk2-legend i{width:14px;height:14px;border:1px solid var(--line);background:#fff}
 .bk2-legend i.l-off{background:var(--paper-2);border-color:#d5d9e1}
+.bk2-legend i.l-rental{background:#fbe9cf;border-color:#efcf9d}
+.bk2-legend i.l-lesson{background:#dcefe2;border-color:#a9d5b7}
+.bk2-legend-top{padding:10px 16px 2px}
 .bk2-legend i.l-on{background:rgba(0,88,252,.14);border-color:rgba(0,88,252,.4)}
 .bk2-clear{border:0;background:none;padding:6px 0;font:700 12.5px var(--sans);color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .bk2-clear[hidden]{display:none}

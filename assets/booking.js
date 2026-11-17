@@ -78,6 +78,7 @@
     return date < t || (date === t && mins(start) <= now.getHours() * 60 + now.getMinutes());
   };
   const booked = {};    // 날짜 -> Set("코트|시작") — 관리프로그램이 알려준 막힌 칸(예약 · 레슨 시간). 없으면 아직 안 불러옴
+  const kinds = {};     // 날짜 -> Map("코트|시작" → 'rental' | 'lesson') — 막힌 까닭(칸 색, 2026-11-17). 없는 칸은 그냥 막힘
   const loading = {};   // 날짜 -> 진행 중인 조회
   const ready = date => !CFG.api || !!booked[date];
   /** 그 칸을 그 코트로 신청할 수 있는지 — 지난 시간 · 예약된 칸 · 레슨 시간이면 false */
@@ -319,7 +320,12 @@
         label: `${col.name} ${t} 선택됨${mark ? ` (${mark})` : ''}` };
     }
     if (!col.courts.every(c => free(D, i, c, list))) {
-      return { cls: 'off', text: '—', off: true, label: `${col.name} ${t} ${isPast(D, x.start) ? '지난 시간' : '예약 마감'}` };
+      // 2026-11-17 사용자 "대관이 찬 건지 레슨이 찬 건지 그냥 막힌 건지 색별로" — 관리프로그램 slots 의 kind(rental · lesson)로 색만 다르게(글자는 '—' 그대로).
+      // 여러 코트 열이면 막힌 코트들의 kind 가 모두 같을 때만 그 색, 지난 시간·닫은 칸·정리 시간은 회색(off)
+      const ks = isPast(D, x.start) ? [] : [...new Set(col.courts.filter(c => !free(D, i, c, list)).map(c => (kinds[D] && kinds[D].get(`${c}|${x.start}`)) || ''))];
+      const k = ks.length === 1 ? ks[0] : '';
+      const why = isPast(D, x.start) ? '지난 시간' : k === 'rental' ? '대관 예약됨' : k === 'lesson' ? '레슨 시간' : '예약 마감';
+      return { cls: 'off' + (k ? ' k-' + k : ''), text: '—', off: true, label: `${col.name} ${t} ${why}` };
     }
     if (inR && canAdd(state.sel, col.courts[0])) {
       return { cls: 'add', text: '+ 추가', label: `${col.name} ${t} 선택 가능, 누르면 같은 시간으로 추가` };
@@ -1174,8 +1180,9 @@
       try {
         const r = await (await fetch(`${CFG.api}?action=slots&space=${encodeURIComponent(space)}&date=${date}`)).json();
         booked[date] = new Set((r.slots || []).map(x => `${x.court}|${x.start}`));
+        kinds[date] = new Map((r.slots || []).filter(x => x.kind).map(x => [`${x.court}|${x.start}`, x.kind]));   // 막힌 까닭 — 칸 색 (cellView)
       } catch (e) {
-        booked[date] = new Set();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
+        booked[date] = new Set(); kinds[date] = new Map();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
       }
       delete loading[date];
       if (state.sel && datesOf(state.sel).includes(date) && !keepSel()) return;   // 담은 시간이 그 사이 막혔으면 지우고 다시 그림
