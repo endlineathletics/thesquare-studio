@@ -78,7 +78,8 @@
     return date < t || (date === t && mins(start) <= now.getHours() * 60 + now.getMinutes());
   };
   const booked = {};    // 날짜 -> Set("코트|시작") — 관리프로그램이 알려준 막힌 칸(예약 · 레슨 시간). 없으면 아직 안 불러옴
-  const kinds = {};     // 날짜 -> Map("코트|시작" → 'rental' | 'lesson') — 막힌 까닭(칸 색, 2026-11-17). 없는 칸은 그냥 막힘
+  const kinds = {};     // 날짜 -> Map("코트|시작" → 'rental' | 'lesson') — 막힌 까닭(화면 읽기 글, 2026-11-17). 없는 칸은 그냥 막힘
+  const lessons = {};   // 날짜 -> Map("코트|시작" → 반 이름) — 레슨 칸 (renderGrid 가 이어진 칸을 묶어 '레슨 · 오전반' 한 번)
   const loading = {};   // 날짜 -> 진행 중인 조회
   const ready = date => !CFG.api || !!booked[date];
   /** 그 칸을 그 코트로 신청할 수 있는지 — 지난 시간 · 예약된 칸 · 레슨 시간이면 false */
@@ -320,12 +321,11 @@
         label: `${col.name} ${t} 선택됨${mark ? ` (${mark})` : ''}` };
     }
     if (!col.courts.every(c => free(D, i, c, list))) {
-      // 2026-11-17 사용자 "대관이 찬 건지 레슨이 찬 건지 그냥 막힌 건지 색별로" — 관리프로그램 slots 의 kind(rental · lesson)로 색만 다르게(글자는 '—' 그대로).
-      // 여러 코트 열이면 막힌 코트들의 kind 가 모두 같을 때만 그 색, 지난 시간·닫은 칸·정리 시간은 회색(off)
+      // 막힌 까닭(관리프로그램 slots kind)은 화면 읽기 글로만 — 색은 모두 회색 (2026-11-17 사용자 "색 다 똑같이 전처럼 회색으로"). 레슨 칸은 renderGrid 가 묶어 그림
       const ks = isPast(D, x.start) ? [] : [...new Set(col.courts.filter(c => !free(D, i, c, list)).map(c => (kinds[D] && kinds[D].get(`${c}|${x.start}`)) || ''))];
       const k = ks.length === 1 ? ks[0] : '';
       const why = isPast(D, x.start) ? '지난 시간' : k === 'rental' ? '대관 예약됨' : k === 'lesson' ? '레슨 시간' : '예약 마감';
-      return { cls: 'off' + (k ? ' k-' + k : ''), text: '—', off: true, label: `${col.name} ${t} ${why}` };
+      return { cls: 'off', text: '—', off: true, label: `${col.name} ${t} ${why}` };
     }
     if (inR && canAdd(state.sel, col.courts[0])) {
       return { cls: 'add', text: '+ 추가', label: `${col.name} ${t} 선택 가능, 누르면 같은 시간으로 추가` };
@@ -392,7 +392,16 @@
       const cl = [on ? 'on' : '', col.gold ? 'gold' : ''].filter(Boolean).join(' ');
       return `<th scope="col"${cl ? ` class="${cl}"` : ''}>${esc(col.name)}${col.sub ? `<small>${esc(col.sub)}</small>` : ''}</th>`;
     }).join('');
+    const lb = lessonBlocks(D, list, cs);
     const rows = list.map((x, i) => `<tr><th scope="row" class="bk2-t"><b>${x.start}</b><small>~${x.end}</small></th>${cs.map((col, c) => {
+      if (lb.skip.has(`${c}|${i}`)) return '';
+      const L = lb.top.get(`${c}|${i}`);
+      if (L) {
+        const span = (L.rs > 1 ? ` rowspan="${L.rs}"` : '') + (L.cs > 1 ? ` colspan="${L.cs}"` : '');
+        const where = cs.slice(c, c + L.cs).map(k => k.name).join('·');
+        return `<td class="bk2-lt"${span}><div class="bk2-c off bk2-lesson" role="img" aria-label="${esc(`${where} ${x.start}~${list[i + L.rs - 1].end} 레슨${L.name ? ' ' + L.name : ''} — 대관 불가`)}">`
+          + `<b>레슨</b>${L.name ? `<small>${esc(L.name)}</small>` : ''}</div></td>`;
+      }
       const v = cellView(col, i, list);
       return `<td${col.gold ? ' class="gold"' : ''}><button type="button" class="bk2-c ${v.cls}" data-c="${c}" data-i="${i}" tabindex="${f.c === c && f.i === i ? 0 : -1}"`
         + `${v.off ? ' aria-disabled="true"' : ` aria-pressed="${v.pressed || 'false'}"`} aria-label="${esc(v.label)}">${v.text}</button></td>`;
@@ -402,6 +411,34 @@
     grid.setAttribute('aria-busy', String(!ready(D)));
     if (had) focusCell(f.c, f.i, true);   // 다시 그려도 키보드 포커스 유지
     scrollStart();
+  }
+  /** 레슨 칸 묶음 (2026-11-17 사용자 "레슨 타임은 묶어서 레슨 글자 하나만, 오전반인지 유소년반인지도") — 한 열에서 같은 반 이름이 이어진 칸을 한 덩어리로,
+      옆 열 덩어리와 시간·반이 같으면 가로로도 합침. → { top: Map("열|줄" → {rs, cs, name}) 왼쪽 위 칸, skip: Set("열|줄") 덩어리에 덮인 칸 } */
+  function lessonBlocks(D, list, cs) {
+    const top = new Map(), skip = new Set(), L = lessons[D];
+    if (!L || !L.size) return { top, skip };
+    const nameAt = (c, i) => (cs[c].courts.length === 1 ? L.get(`${cs[c].courts[0]}|${list[i].start}`) : undefined);
+    const runs = cs.map((_, c) => {
+      const out = [];
+      for (let i = 0; i < list.length; i++) {
+        const n = nameAt(c, i);
+        if (n === undefined) continue;
+        let j = i; while (j + 1 < list.length && nameAt(c, j + 1) === n) j++;
+        out.push({ i, j, n }); i = j;
+      }
+      return out;
+    });
+    cs.forEach((_, c) => runs[c].forEach(r => {
+      if (r.used) return;
+      let w = 1;
+      for (let k = c + 1; k < cs.length; k++) {
+        const m = runs[k].find(x => !x.used && x.i === r.i && x.j === r.j && x.n === r.n);
+        if (!m) break; m.used = true; w++;
+      }
+      top.set(`${c}|${r.i}`, { rs: r.j - r.i + 1, cs: w, name: r.n });
+      for (let k = c; k < c + w; k++) for (let i = r.i; i <= r.j; i++) if (k !== c || i !== r.i) skip.add(`${k}|${i}`);
+    }));
+    return { top, skip };
   }
   /** 화면에서 가리는 곳 — 위: 떠 있는 메뉴(nav) · 대관/레슨 탭의 아래 끝, 아래: 고정 요약 바의 위 끝 */
   function cover() {
@@ -447,7 +484,12 @@
       default: return;
     }
     e.preventDefault();
-    focusCell(Math.max(0, Math.min(nc - 1, c)), Math.max(0, Math.min(nr - 1, i)));
+    // 레슨 묶음(버튼 없음)은 같은 방향으로 건너뜀 — 끝까지 없으면 그대로
+    const dc = Math.sign(c - +b.dataset.c), di = Math.sign(i - +b.dataset.i);
+    const has = (x, y) => !!$('bkGrid').querySelector(`button[data-c="${x}"][data-i="${y}"]`);
+    c = Math.max(0, Math.min(nc - 1, c)); i = Math.max(0, Math.min(nr - 1, i));
+    while ((dc || di) && !has(c, i) && c + dc >= 0 && c + dc < nc && i + di >= 0 && i + di < nr) { c += dc; i += di; }
+    if (has(c, i)) focusCell(c, i);
   });
   $('bkGrid').addEventListener('click', e => {
     const b = e.target.closest('button.bk2-c'); if (!b) return;
@@ -1180,9 +1222,10 @@
       try {
         const r = await (await fetch(`${CFG.api}?action=slots&space=${encodeURIComponent(space)}&date=${date}`)).json();
         booked[date] = new Set((r.slots || []).map(x => `${x.court}|${x.start}`));
-        kinds[date] = new Map((r.slots || []).filter(x => x.kind).map(x => [`${x.court}|${x.start}`, x.kind]));   // 막힌 까닭 — 칸 색 (cellView)
+        kinds[date] = new Map((r.slots || []).filter(x => x.kind).map(x => [`${x.court}|${x.start}`, x.kind]));   // 막힌 까닭 (cellView 화면 읽기 글)
+        lessons[date] = new Map((r.slots || []).filter(x => x.kind === 'lesson').map(x => [`${x.court}|${x.start}`, x.name || '']));   // 레슨 칸 → 반 이름 (renderGrid 묶음)
       } catch (e) {
-        booked[date] = new Set(); kinds[date] = new Map();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
+        booked[date] = new Set(); kinds[date] = new Map(); lessons[date] = new Map();   // 조회 실패 — 전체 가능으로 표시 (신청 때 관리프로그램이 다시 확인)
       }
       delete loading[date];
       if (state.sel && datesOf(state.sel).includes(date) && !keepSel()) return;   // 담은 시간이 그 사이 막혔으면 지우고 다시 그림
