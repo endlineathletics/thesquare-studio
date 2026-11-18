@@ -79,16 +79,25 @@
           <span class="grp-card">${full ? '<em class="full">마감 · 대기</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}${g.days.length === 1 ? ' · 주 1회' : ''}</span>
           <span class="t">${first} – ${last} · ${g.times.length}타임</span>
           <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
+      }).join('') + nList().map(g => {
+        const full = !g.items.some(x => x.ok), first = g.slots[0].t.split('~')[0], last = g.slots[g.slots.length - 1].t.split('~')[1];
+        return `<label data-k="${esc(g.key)}" style="--c:${g.c};--bg:${g.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${esc(g.key)}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
+          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.title)}</b><span class="d">${esc(g.dayLabel)} · 주 1회</span>
+          <span class="t">${first} – ${last} · ${g.slots.length}타임</span>
+          <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(g.price)}</span></span></label>`;
       }).join('');
     }
 
     // 마감된 시간도 고를 수 있다 — 고르면 대기 신청 (2026-11-02). '상관없음'은 줄 설 타임이 없어 반 전체가 마감이면 막음
-    const chip = (name, v, st, on) => {
-      const full = st === 'full', off = full && v === '상관없음', note = full ? (off ? '마감' : '마감 · 대기') : '';
+    // o.noWait — 새 반은 대기 신청이 없어 마감이면 못 고름 · o.note — 마감 아닐 때 밑 글(새 반 '잔여 N석')
+    const chip = (name, v, st, on, o = {}) => {
+      const full = st === 'full', off = full && (v === '상관없음' || !!o.noWait), note = full ? (off ? '마감' : '마감 · 대기') : (o.note || '');
       return `<label${off ? ' class="off"' : full ? ' class="wl"' : ''}><input type="radio" name="${name}" value="${esc(v)}"${on ? ' checked' : ''}${off ? ' disabled' : ''}><span>${esc(v)}${note ? `<small>${note}</small>` : ''}</span></label>`;
     };
     function drawSub() {
-      const k = form.cls && form.cls.value, g = k && groups[k];
+      const k = form.cls && form.cls.value;
+      if (k && nGroups[k]) { drawSubNew(nGroups[k]); return; }
+      const g = k && groups[k];
       if (!g) { $('prefSub').hidden = true; return; }
       // 반을 바꿔 앞서 고른 타임·코치가 새 반에 없으면 '상관없음'으로 (안 그러면 아무 칩도 안 켜진 채로 보임)
       const orAny = (opts, v) => opts.includes(v) ? v : '상관없음';
@@ -120,27 +129,53 @@
         : '<b>마감</b>은 정원이 찬 시간이에요. ')
         + `마감된 시간을 고르면 <b>보증금 ${won(WAIT_DEPOSIT)}으로 대기 신청</b>할 수 있어요. 수강 등록할 때 수강료에서 빼 드려요.`;
     }
-    /* 모집 중인 새 반 (2026-11-11 — 관리프로그램 '반 개설·모집'): GET api?action=bd_open&grade= → 그룹마다 한 줄
-       {key 'r12.1', classKey, grp, dayLabel, start, end, kind, age, title, coach, fee, left, ok}. 시간·요일·코치 이름으로 찾고 하나 고르면
-       위 옛 반 카드 선택은 풀림(둘 중 하나). ?g=<key> 로 열면(앱 '새 반 찾기') 그 반을 골라 둔다 */
-    let opens = [], nday = '', picked = '', want = new URLSearchParams(location.search).get('g') || '';
-    const NDAYS = [['', '전체'], ['mo', '월'], ['tu', '화'], ['we', '수'], ['th', '목'], ['fr', '금'], ['sa', '토'], ['su', '일']];
-    const openOf = k => opens.find(x => x.key === k);
-    function drawOpen() {
-      const box = $('newOpen');
-      if (!box) return;
-      box.hidden = !opens.length;
-      if (!opens.length) return;
-      const cur = picked;
-      const ws = ($('newQ').value || '').toLowerCase().split(/\s+/).filter(Boolean);
-      const days = new Set(opens.map(x => x.day));
-      $('newDays').innerHTML = NDAYS.filter(([k]) => !k || days.has(k))
-        .map(([k, l]) => `<button type="button" data-nd="${k}" class="${k === nday ? 'on' : ''}" aria-pressed="${k === nday}">${l}</button>`).join('');
-      const shown = opens.filter(x => (!nday || x.day === nday) && ws.every(w => `${x.dayLabel} ${x.start} ${x.end} ${x.kind} ${x.age} ${x.title} ${x.coach}`.toLowerCase().includes(w)));
-      $('newList').innerHTML = shown.map(x => `<label${x.ok ? '' : ' class="off"'}><input type="radio" name="ncls" value="${esc(x.key)}"${cur === x.key ? ' checked' : ''}${x.ok ? '' : ' disabled'}>
-        <span class="nw-it"><b>${esc(x.dayLabel)} ${esc(x.start)}–${esc(x.end)}</b><span class="l${x.ok ? '' : ' x'}">${x.ok ? `잔여 ${x.left}석` : '마감'}</span>
-        <span class="m"><em>${esc(x.kind)} ${esc(x.age)}</em> · ${x.coach ? esc(x.coach) + ' 코치' : '코치 미정'} · 월 ${won(x.fee)}</span></span></label>`).join('');
-      $('newNone').hidden = !!shown.length;
+    /* 새 반 (2026-11-11 관리프로그램 '반 개설·모집' — GET api?action=bd_open&grade= → 그룹마다 한 줄
+       {key 'r12.36.1', classKey, grp, day, dayLabel, start, end, kind, age, title, coach, fee, left, ok}).
+       2026-11-18 사용자 "카드 누르면 그 반에 대한 것만 나오면 돼" — 따로 있던 '모집 중인 새 반' 찾기 목록을 없애고 반(classKey)마다
+       카드 하나로 위 반 카드 뒤에 붙인다(값 'n:<classKey>'). 고르면 아래 희망 타임·코치에 그 반 것만(타임마다 남은 자리, 마감은 못 고름 —
+       새 반은 대기 신청 없음). '상관없음'이면 자리 있는 첫 타임·그룹. ?g=<key> 로 열면(앱 '새 반 찾기') 그 반·타임·코치를 골라 둔다 */
+    let opens = [], nGroups = {}, want = new URLSearchParams(location.search).get('g') || '';
+    const NCOLORS = [['#2b59ff', '#eef2ff'], ['#c2410c', '#fff4ec'], ['#0e7490', '#ecfbfd'], ['#a21caf', '#fcf0fd'], ['#4d7c0f', '#f3f9ea'], ['#b45309', '#fff8eb']];
+    const man = n => (n / 10000).toLocaleString('ko-KR');
+    const nList = () => Object.values(nGroups);
+    function buildNew() {
+      nGroups = {};
+      opens.forEach(x => {
+        const k = 'n:' + x.classKey;
+        const g = nGroups[k] || (nGroups[k] = { key: k, title: x.title, dayLabel: x.dayLabel, items: [], slots: [], coaches: [], fees: [] });
+        g.items.push(x);
+        const t = `${x.start}~${x.end}`;
+        let sl = g.slots.find(y => y.t === t);
+        if (!sl) g.slots.push(sl = { t, items: [] });
+        sl.items.push(x);
+        const c = x.coach || '미정';
+        if (!g.coaches.includes(c)) g.coaches.push(c);
+        if (!g.fees.includes(x.fee)) g.fees.push(x.fee);
+      });
+      nList().forEach((g, i) => {
+        [g.c, g.bg] = NCOLORS[i % NCOLORS.length];
+        const lo = Math.min(...g.fees), hi = Math.max(...g.fees);
+        g.price = lo === hi ? `월 ${man(lo)}만원` : `월 ${man(lo)}~${man(hi)}만원`;
+      });
+    }
+    const coachOf = x => x.coach || '미정';
+    // 고른 타임·코치에 맞는 자리 있는 그룹 — '상관없음'은 아무거나 (타임 순 → 그룹 순)
+    const nPick = (g, t, c) => g.items.find(x => x.ok && (t === '상관없음' || `${x.start}~${x.end}` === t) && (c === '상관없음' || coachOf(x) === c)) || null;
+    const nLeft = (g, t, c) => g.items.filter(x => x.ok && `${x.start}~${x.end}` === t && (c === '상관없음' || coachOf(x) === c)).reduce((n, x) => n + x.left, 0);
+    function drawSubNew(g) {
+      const times = g.slots.map(y => y.t);
+      const orAny = (opts, v) => opts.includes(v) ? v : '상관없음';
+      let curT = orAny(times, form.time && form.time.value), curC = orAny(g.coaches, form.coach && form.coach.value);
+      if (!nPick(g, curT, '상관없음')) curT = '';               // 그 사이 마감된 타임 — 다시 고르게
+      const tSt = t => nPick(g, t, '상관없음') ? '' : 'full';
+      const cSt = c => nPick(g, curT || '상관없음', c) ? '' : 'full';
+      if (curC !== '상관없음' && cSt(curC)) curC = '상관없음';
+      $('prefTimes').innerHTML = ['상관없음', ...times].map(t => {
+        const left = t === '상관없음' ? 0 : nLeft(g, t, '상관없음');
+        return chip('time', t, tSt(t), t === curT, { noWait: true, note: left ? `잔여 ${left}석` : '' });
+      }).join('');
+      $('prefCoach').innerHTML = ['상관없음', ...g.coaches].map(c => chip('coach', c, cSt(c), c === curC, { noWait: true })).join('');
+      $('prefSub').hidden = false;
     }
     function loadOpen() {
       if (!CFG.api) return;
@@ -148,25 +183,26 @@
       fetch(CFG.api + '?action=bd_open' + (gr ? '&grade=' + encodeURIComponent(gr) : '')).then(r => r.json()).then(r => {
         if (!r || !r.ok || !Array.isArray(r.items)) return;
         opens = r.items;
-        if (picked && !(openOf(picked) || {}).ok) picked = '';   // 그 사이 마감·급수가 안 맞게 됨 — 고른 것 풂
-        drawOpen();
-        if (want && openOf(want)) {             // 앱에서 고른 반 — 한 번만
-          const it = form.querySelector(`input[name="ncls"][value="${CSS.escape(want)}"]`);
-          if (it && !it.disabled) { it.checked = true; picked = want; pickNew(); $('newOpen').scrollIntoView({ block: 'center' }); }
-          want = '';
+        buildNew();
+        drawCards();
+        drawSub();
+        const w = want && opens.find(x => x.key === want);
+        if (w && w.ok) {                        // 앱에서 고른 반 — 한 번만
+          const it = form.querySelector(`input[name="cls"][value="${CSS.escape('n:' + w.classKey)}"]`);
+          if (it && !it.disabled) {
+            it.checked = true;
+            drawSub();
+            const set = (name, v) => { const x = form.querySelector(`input[name="${name}"][value="${CSS.escape(v)}"]`); if (x && !x.disabled) x.checked = true; };
+            set('time', `${w.start}~${w.end}`);
+            drawSub();
+            set('coach', coachOf(w));
+            it.closest('label').scrollIntoView({ block: 'center' });
+          }
         }
+        want = '';
         updateSummary();
         syncWait();
-      }).catch(() => { /* 못 받으면 새 반 목록 없이 — 옛 반 카드는 그대로 */ });
-    }
-    function pickNew() {                        // 새 반을 고르면 옛 반 카드·타임·코치 선택을 푼다
-      form.querySelectorAll('input[name="cls"]').forEach(x => { x.checked = false; });
-      $('prefSub').hidden = true;
-      updateSummary();
-    }
-    if ($('newOpen')) {
-      $('newQ').addEventListener('input', drawOpen);
-      $('newDays').addEventListener('click', e => { const b = e.target.closest('[data-nd]'); if (b) { nday = b.dataset.nd; drawOpen(); } });
+      }).catch(() => { /* 못 받으면 새 반 카드 없이 — 옛 반 카드는 그대로 */ });
     }
 
     drawNote(true);
@@ -174,8 +210,8 @@
     loadAvail();
     loadOpen();
     form.addEventListener('change', e => {
-      if (e.target.name === 'cls') { picked = ''; form.querySelectorAll('input[name="ncls"]').forEach(x => { x.checked = false; }); drawSub(); }
-      else if (e.target.name === 'ncls') { picked = e.target.value; pickNew(); }
+      if (e.target.name === 'cls') drawSub();
+      else if (e.target.name === 'time' && nGroups[form.cls && form.cls.value]) drawSub();   // 새 반 — 그 타임에 자리 있는 코치만
       else if (e.target.name === 'grade') { loadAvail(); loadOpen(); }
       syncWait();
     });
@@ -188,10 +224,12 @@
 
     return {
       value() {
-        const n = picked && openOf(picked);   // 찾기로 목록이 줄어도 고른 반은 그대로
-        if (n) return { wait: false, classKey: n.classKey, group: n.grp, class: n.title, days: n.dayLabel, time: `${n.start}~${n.end}`, coach: n.coach || '미정', price: `월 ${won(n.fee)}` };
         const k = form.cls && form.cls.value;
         if (!k) return null;
+        if (nGroups[k]) {                       // 새 반 — 고른 타임·코치로 자리 있는 그룹 하나
+          const n = nPick(nGroups[k], (form.time && form.time.value) || '상관없음', (form.coach && form.coach.value) || '상관없음');
+          return n ? { wait: false, classKey: n.classKey, group: n.grp, class: n.title, days: n.dayLabel, time: `${n.start}~${n.end}`, coach: coachOf(n), price: `월 ${won(n.fee)}` } : null;
+        }
         const g = groups[k];
         const tm = (form.time && form.time.value) || (classFull(g) ? '' : '상관없음');
         return { wait: !!tm && tm !== '상관없음' && slotState(k, tm) === 'full', classKey: k, class: g.cls, days: g.dayLabel, time: tm, coach: (form.coach && form.coach.value) || '상관없음', price: window.BD_CATS[k].price || '' };
