@@ -693,18 +693,25 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 
 /* ---------- 수강신청 막대 (2026-11-02 — 떠 있던 버튼 대신 화면 아래 전체 폭 고정 · 파란 바탕 흰 글씨) ----------
    배드민턴 레슨 탭에서만: main.js 가 body.has-apply-bar 를 켜고 끔. 페이지 맨 아래(푸터)가 막대에 가리지 않게 그만큼 띄움 */
-.apply-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;align-items:center;justify-content:center;gap:10px;
-  height:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px));padding:0 16px env(safe-area-inset-bottom,0px);
-  background:var(--blue);color:#fff;font:800 18px var(--sans);letter-spacing:-.01em;transition:background .15s}
+.apply-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;
+  height:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--blue)}
+/* 2026-11-18 — 반으로 나눔: 왼쪽 원데이(흰 바탕·파란 글씨·파란 선) · 오른쪽 수강신청(파란 바탕 흰 글씨, 전과 같음) */
+.apply-bar a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 12px;
+  font:800 18px var(--sans);letter-spacing:-.01em;white-space:nowrap;transition:background .15s}
+.apply-bar .ab-go{background:var(--blue);color:#fff}
+.apply-bar .ab-od{background:#fff;color:var(--blue);box-shadow:inset 0 0 0 2px var(--blue)}
 .apply-bar .arr{font-size:20px;line-height:1;transition:transform .15s}
-.apply-bar:hover{background:#0047cc}
-.apply-bar:hover .arr{transform:translateX(4px)}
-.apply-bar:active{background:#003bab}
-.apply-bar:focus-visible{outline:3px solid #fff;outline-offset:-6px}
+.apply-bar .ab-go:hover{background:#0047cc}
+.apply-bar .ab-go:active{background:#003bab}
+.apply-bar .ab-od:hover{background:#eef3ff}
+.apply-bar .ab-od:active{background:#dde7ff}
+.apply-bar a:hover .arr{transform:translateX(4px)}
+.apply-bar .ab-go:focus-visible{outline:3px solid #fff;outline-offset:-6px}
+.apply-bar .ab-od:focus-visible{outline:3px solid var(--blue);outline-offset:-6px}
 body.has-apply-bar{padding-bottom:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px))}
 body.has-apply-bar .apply-bar{display:flex}
 :root:has(body.has-apply-bar){scroll-padding-bottom:calc(var(--apply-bar-h) + 12px)}   /* 키보드로 옮겨 다닐 때 고른 칸이 막대 뒤로 숨지 않게 */
-@media (max-width:640px){:root{--apply-bar-h:58px}.apply-bar{font-size:17px}}
+@media (max-width:640px){:root{--apply-bar-h:58px}.apply-bar a{font-size:16px;gap:6px;padding:0 8px}.apply-bar .arr{font-size:17px}}
 
 /* ---------- APPLY FORM ---------- */
 .apply{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start}
@@ -1121,7 +1128,6 @@ body.has-apply-bar .apply-bar{display:flex}
 .od-days button:disabled{cursor:not-allowed;background:var(--paper-2);color:var(--ink-3)}
 .od-times .chips2 span small{color:var(--ink-3)}
 .od-times .chips2 input:checked + span small{color:rgba(255,255,255,.8)}
-.price .od-go{display:inline-block;margin-top:14px;font-size:14px;font-weight:800;color:var(--blue)}
 
 /* 수강신청 계좌입금 (2026-11-12 — apply.js xferWire) */
 .ap-xferbtn{width:100%;margin-top:8px;background:#fff;color:var(--blue);border:1px solid var(--blue);padding:14px;font:800 15px var(--sans);cursor:pointer}
