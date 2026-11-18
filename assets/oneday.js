@@ -112,7 +112,7 @@
     if (!r || !r.ok) { $('odTimes').innerHTML = `<p class="ap-note">시간을 불러오지 못했어요. 잠시 뒤 다시 골라 주세요. 계속 안 되면 ${esc(CFG.phone)}로 연락 주세요.</p>`; return; }
     if (!r.enabled && !isPayTest()) { $('odTimes').innerHTML = `<p class="ap-note">지금은 온라인 원데이 신청을 받지 않아요. ${esc(CFG.phone)}로 연락 주세요.</p>`; $('odDays').innerHTML = ''; return; }
     st.days = r.days || [];
-    $('odNote').innerHTML = r.byGrade ? '<b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요.' : '<b>마감</b>은 정원이 찬 시간이에요.';
+    $('odNote').innerHTML = '원데이는 <b>수업 시작 24시간 전까지</b> 신청할 수 있어요 (그 안의 시간은 목록에 나오지 않아요). ' + (r.byGrade ? '<b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요.' : '<b>마감</b>은 정원이 찬 시간이에요.');   // 24시간 — 관리앱 ONEDAY_CUTOFF_MIN (2026-11-18)
     const keep = st.days.find(x => x.d === st.day && x.slots.some(s => s.ok));
     st.day = keep ? keep.d : ((st.days.find(x => x.slots.some(s => s.ok)) || {}).d || '');
     if (st.slot && !(keep && keep.slots.some(s => s.ok && s.id === st.slot.id))) st.slot = null;
