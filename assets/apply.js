@@ -74,7 +74,8 @@
 
     function drawCards() {
       const cur = form.cls && form.cls.value;
-      $('prefGroups').innerHTML = list.map(g => {
+      // 2026-11-18 관리프로그램 반 합치기 — 원래 반도 그룹마다 코치·모집으로 bd_open 에 나오면 그쪽 카드만 (이 정적 카드는 bd_open 을 못 받았을 때만)
+      $('prefGroups').innerHTML = list.filter(g => !nGroups['n:' + g.key]).map(g => {
         const cat = window.BD_CATS[g.key], full = classFull(g);
         const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
         return `<label data-k="${g.key}" style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="wl"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key ? ' checked' : ''}>
@@ -84,7 +85,7 @@
       }).join('') + nList().map(g => {
         const full = !g.items.some(x => x.ok), first = g.slots[0].t.split('~')[0], last = g.slots[g.slots.length - 1].t.split('~')[1];
         return `<label data-k="${esc(g.key)}" style="--c:${g.c};--bg:${g.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${esc(g.key)}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
-          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.title)}</b><span class="d">${esc(g.dayLabel)} · 주 1회</span>
+          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.title)}</b><span class="d">${esc(g.dayLabel)} · ${g.dayLabel.includes('·') ? '주 2회' : '주 1회'}</span>
           <span class="t">${first} – ${last} · ${g.slots.length}타임</span>
           <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(g.price)}</span></span></label>`;
       }).join('');
@@ -147,7 +148,7 @@
       nGroups = {};
       opens.forEach(x => {
         const k = 'n:' + x.classKey;
-        const g = nGroups[k] || (nGroups[k] = { key: k, title: x.title, dayLabel: x.dayLabel, items: [], slots: [], coaches: [], fees: [] });
+        const g = nGroups[k] || (nGroups[k] = { key: k, classKey: x.classKey, title: x.title, dayLabel: x.dayLabel, items: [], slots: [], coaches: [], fees: [] });
         g.items.push(x);
         const t = `${x.start}~${x.end}`;
         let sl = g.slots.find(y => y.t === t);
@@ -157,8 +158,14 @@
         if (!g.coaches.includes(c)) g.coaches.push(c);
         if (!g.fees.includes(x.fee)) g.fees.push(x.fee);
       });
-      nList().forEach((g, i) => {
-        [g.c, g.bg] = NCOLORS[i % NCOLORS.length];
+      // 원래 반(오전반·저녁반·유소년반 — 키 am_mw 등)은 그 반 색·순서 그대로, 나머지는 뒤에 돌아가며 색 (2026-11-18 반 합치기)
+      const sorted = nList().sort((a, b) => rank(a.classKey) - rank(b.classKey));
+      nGroups = {};
+      let n = 0;
+      sorted.forEach(g => {
+        nGroups[g.key] = g;
+        const cat = window.BD_CATS && window.BD_CATS[g.classKey];
+        [g.c, g.bg] = cat ? [cat.c, cat.bg] : NCOLORS[n++ % NCOLORS.length];
         const lo = Math.min(...g.fees), hi = Math.max(...g.fees);
         g.price = lo === hi ? `월 ${man(lo)}만원` : `월 ${man(lo)}~${man(hi)}만원`;
       });
