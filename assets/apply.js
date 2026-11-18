@@ -69,6 +69,8 @@
       return ms[0].ok ? 'ok' : 'full';
     };
     const classFull = g => g.times.every(t => slotState(g.key, t) === 'full');
+    // 첫 달 남은 자리 (2026-11-18 사용자 "유소년반은 몇 명 남았는지 왜 안 떠?" — 관리프로그램 bd_slots months[].left, 옛 응답엔 없어 0 = 안 띄움)
+    const slotLeft = (k, t) => { const ms = (avail[k] || {})[t.split('~')[0]]; return ms && ms.length && ms[0].ok ? (ms[0].left | 0) : 0; };
 
     function drawCards() {
       const cur = form.cls && form.cls.value;
@@ -104,7 +106,10 @@
       const curT = orAny(g.times, form.time && form.time.value), curC = orAny(g.coaches, form.coach && form.coach.value);
       const tState = t => t === '상관없음' ? (classFull(g) ? 'full' : '') : slotState(k, t);
       const okT = curT === '상관없음' && classFull(g) ? '' : curT;   // 반 전체가 마감이면 대기할 시간을 직접 고르게
-      $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => chip('time', v, tState(v), v === okT)).join('');
+      $('prefTimes').innerHTML = ['상관없음', ...g.times].map(v => {
+        const left = v === '상관없음' ? 0 : slotLeft(k, v);
+        return chip('time', v, tState(v), v === okT, { note: left ? `잔여 ${left}석` : '' });
+      }).join('');
       $('prefCoach').innerHTML = ['상관없음', ...g.coaches].map(v => chip('coach', v, '', v === curC)).join('');
       $('prefSub').hidden = false;
     }
