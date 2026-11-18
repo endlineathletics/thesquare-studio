@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261118b">
-<link rel="stylesheet" href="assets/booking.css?v=20261117d">
+<link rel="stylesheet" href="assets/style.css?v=20261118p">
+<link rel="stylesheet" href="assets/booking.css?v=20261118p">
 </head>
 <body data-page="badminton">
 
@@ -128,6 +128,11 @@
           <label>연락처 *<input name="phone" type="tel" required inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
           <label>인원<input name="people" type="number" min="1" max="8" inputmode="numeric" placeholder="코트당 최대 8명" aria-describedby="bkPeopleNote"></label><!-- 2026-11-01 사용자 "코트당 최대 인원 8명" — 고른 코트 수 × 8 넘으면 [결제하기]가 꺼지고 아래 안내 (booking.js peopleCheck, 관리프로그램도 거절) -->
           <p class="bk-people-note" id="bkPeopleNote" aria-live="polite"></p>
+          <div class="bk-coupon" id="bkCoupon" hidden><!-- 2026-11-18 쿠폰 코드 — 대관에 쓸 수 있는 쿠폰이 있을 때만 (booking.js couponShow) -->
+            <label for="bkCouponIn">쿠폰 코드</label>
+            <div class="bk-coupon-row"><input id="bkCouponIn" name="coupon" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="코드가 있으면 입력"><button type="button" id="bkCouponBtn">적용</button></div>
+            <p class="bk-coupon-msg" id="bkCouponMsg" aria-live="polite"></p>
+          </div>
           <label>요청사항<textarea name="memo" rows="2" placeholder="용도, 요청사항 등"></textarea></label>
           <label class="agree"><input type="checkbox" name="agree" required> 예약 확인 연락을 위한 개인정보(이름·연락처) 수집·이용에 동의합니다.</label>
           <p class="bk-hold" id="bkHold" hidden aria-live="polite"></p><!-- 결제 대기 15분 경고 · 결제창이 열린 동안 남은 시간 (assets/booking.js holdNote) -->
@@ -427,6 +432,6 @@
 <script src="assets/booking-config.js?v=20261117a"></script>
 <script src="assets/main.js?v=20261102b"></script>
 <script src="assets/pay-ui.js?v=20261101s"></script>
-<script src="assets/booking.js?v=20261117c"></script>
+<script src="assets/booking.js?v=20261118p"></script>
 </body>
 </html>

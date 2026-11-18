@@ -411,7 +411,7 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (mode === 'ok' && id) {
       const what = v.preference ? `${v.preference.class} ${v.preference.days}` : '';
-      const o = { id, phone: v.phone, name: v.name, test: isPayTest(), what };
+      const o = { id, phone: v.phone, name: v.name, test: isPayTest(), what, coupon: couponCode() };
       if (v.preference && v.preference.wait) waitBox($('payBox'), Object.assign(o, { time: v.preference.time, wait: true }));
       else payBox($('payBox'), o);
     }
@@ -559,13 +559,13 @@
         title: '입금하셨나요?',
         rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', optText(x)], ['이름', o.name], ['연락처', o.phone],
           ['입금 계좌', `${CFG.bank.name} ${CFG.bank.account} (${CFG.bank.holder})`]],
-        amount: x.amount, okText: '네, 입금했어요',
+        amount: x.bank != null ? x.bank : x.amount, okText: '네, 입금했어요',
         note: '담당자가 입금을 확인하면 수강 등록이 끝나고 안내 문자가 가요. 그 전까지 자리는 잡아 둬요.',
       });
       if (!yes) return;
       st.busy = true; sync(); done.disabled = true; done.textContent = '보내는 중…'; msg.textContent = '';
       let j;
-      try { j = await post({ action: 'apply_transfer', id: o.id, phone: o.phone, option: x.key, agreeRefund: st.terms.ok() }); }
+      try { j = await post({ action: 'apply_transfer', id: o.id, phone: o.phone, option: x.key, agreeRefund: st.terms.ok(), coupon: x.bank != null ? o.coupon : undefined }); }
       catch (e) { j = null; }
       if (!j || !j.ok) {
         st.busy = false; sync(); done.disabled = false; done.textContent = '입금했어요';
@@ -587,6 +587,31 @@
       wrap.scrollIntoView({ block: 'start' });
     };
   }
+
+  /* ---------- 쿠폰 코드 칸 (2026-11-18 — 관리프로그램 설정 › 프로모션) — 수강신청에 쓸 수 있는 쿠폰이 있을 때만 보임(GET promo).
+     여기선 코드만 확인([확인] → coupon_check 미리 보기), 금액은 결제 단계에서 고른 것마다 다시 계산 ---------- */
+  function couponCode() {
+    const box = $('apCoupon'), i = $('apCouponIn');
+    return box && !box.hidden && i ? i.value.trim() : '';
+  }
+  function couponInit() {
+    const box = $('apCoupon');
+    if (!box || !CFG.api) return;
+    fetch(CFG.api + '?action=promo&target=apply').then(r => r.json()).then(r => { box.hidden = !(r && r.ok && (r.coupon || r.couponBank)); }).catch(() => {});
+    const msg = (t, cls) => { const m = $('apCouponMsg'); m.className = 'bk-coupon-msg ' + (cls || ''); m.textContent = t; };
+    const check = async () => {
+      const code = $('apCouponIn').value.trim();
+      if (!code) return msg('쿠폰 코드를 적어 주세요', 'err');
+      try {
+        const r = await post({ action: 'coupon_check', target: 'apply', code });
+        msg(r.message || (r.valid ? '쓸 수 있는 쿠폰이에요' : '쓸 수 없는 쿠폰이에요'), r.valid ? 'ok' : 'err');
+      } catch (e) { msg('쿠폰을 확인하지 못했어요 — 결제 단계에서 다시 확인해요', 'err'); }
+    };
+    $('apCouponBtn').addEventListener('click', check);
+    $('apCouponIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); check(); } });
+    $('apCouponIn').addEventListener('input', () => msg('', ''));
+  }
+  couponInit();
 
   async function payBox(box, o) {
     if (!box) return;
@@ -620,13 +645,14 @@
     const first = (picked && !picked.disabled) ? picked : r.options.find(x => !x.disabled);
     const times = new Set(r.options.map(x => x.time).filter(Boolean)).size > 1;
     const optBody = x => `<span class="t">${times && x.time ? `<b class="tm">${esc(x.time)}</b> ` : ''}${esc(x.label)}<small>${esc(x.sub)}</small></span>
-          <span class="p">${won(x.amount)}</span>`;
+          <span class="p">${x.was ? `<s class="was">${won(x.was)}</s>` : ''}${won(x.amount)}</span>`;
     box.innerHTML = `<h3>시작할 달을 골라주세요</h3>
       <div class="ap-opts" role="radiogroup">${r.options.map(x => `
         <label class="ap-opt${x.disabled ? ' off' : ''}"><input type="radio" name="payopt" value="${esc(x.key)}"${x === first ? ' checked' : ''}${x.disabled ? ' disabled' : ''}>
           ${optBody(x)}</label>`).join('')}</div>
       ${picked && picked.disabled ? `<p class="ap-pay-msg err" role="alert">앞서 고른 ${esc(picked.label)}은 지금 고를 수 없어요 — 다른 것을 골라 주세요.</p>` : ''}
       ${r.note ? `<p class="ap-pay-note">${esc(r.note)}</p>` : ''}
+      ${o.coupon ? '<p class="ap-coupon-line" id="payCoupon" aria-live="polite"></p>' : ''}
       ${first && !window.PAYUI.guideSeen('refund_class') ? '<div id="payTerms"></div>' : ''}
       ${first ? `<button type="button" class="ap-paybtn" id="payGo" disabled>${won(first.amount)} 결제하기</button>
         ${CFG.bank ? `<button type="button" class="ap-xferbtn" id="payXfer" disabled aria-expanded="false" aria-controls="payXferBox">계좌입금</button>
@@ -662,11 +688,36 @@
       st.terms = window.PAYUI.terms(box.querySelector('#payTerms'), { api: CFG.api, key: 'refund_class', phone: CFG.phone,
         onChange: ok => { st.agreed = ok; sync(); } });
     }
+    /* 쿠폰 (2026-11-18) — 고른 것마다 관리프로그램 coupon_check 로 카드·계좌 금액을 받아 버튼·계좌 금액에 (x.card · x.bank — 못 쓰면 null) */
+    const show = x => {
+      if (!x) return;
+      if (!st.busy) go.textContent = `${won(x.card != null ? x.card : x.amount)} 결제하기`;
+      if (box.querySelector('#xferAmt')) box.querySelector('#xferAmt').textContent = won(x.bank != null ? x.bank : x.amount);
+    };
+    const couponFor = async x => {
+      const line = box.querySelector('#payCoupon');
+      if (!o.coupon || !x || !line) return;
+      if (x.checked === undefined) {
+        x.checked = true;
+        const ask = method => post({ action: 'coupon_check', target: 'apply', code: o.coupon, method, id: o.id, phone: o.phone, option: x.key }).catch(() => null);
+        const [c, b] = await Promise.all([ask('card'), CFG.bank ? ask('bank') : Promise.resolve(null)]);
+        x.card = c && c.valid ? c.total : null; x.bank = b && b.valid ? b.total : null;
+        x.cMsg = c && c.valid ? c.message : (c && c.message) || '쿠폰을 확인하지 못했어요';
+        x.bMsg = b && !b.valid && x.card != null ? b.message : '';
+      }
+      const cur = box.querySelector('input[name=payopt]:checked');
+      if (!cur || cur.value !== x.key) return;
+      line.className = 'ap-coupon-line' + (x.card == null && x.bank == null ? ' err' : '');
+      line.textContent = x.card != null ? `${x.cMsg} · 결제 금액 ${won(x.card)}` + (x.bMsg ? ` (계좌입금: ${x.bMsg})` : '')
+        : x.bank != null ? `쿠폰은 계좌입금에만 쓸 수 있어요 · 입금 금액 ${won(x.bank)}` : `${x.cMsg} — 쿠폰 없이 결제돼요`;
+      show(x);
+    };
     box.querySelectorAll('input[name=payopt]').forEach(i => i.addEventListener('change', () => {
       const x = r.options.find(y => y.key === i.value);
-      if (x && !st.busy) go.textContent = `${won(x.amount)} 결제하기`;
-      if (x && box.querySelector('#xferAmt')) box.querySelector('#xferAmt').textContent = won(x.amount);
+      show(x);
+      couponFor(x);
     }));
+    couponFor(first);
     if (xbtn) xferWire(box, o, r, st, sync);
     go.onclick = async () => {
       const sel = box.querySelector('input[name=payopt]:checked');
@@ -675,8 +726,8 @@
       const yes = await window.PAYUI.confirm({
         title: '결제 전에 확인해 주세요',
         rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', optText(x)],
-          ['이름', o.name], ['연락처', o.phone]],
-        amount: x.amount,
+          ['이름', o.name], ['연락처', o.phone], x.card != null && x.card !== x.amount ? ['쿠폰', o.coupon] : null].filter(Boolean),
+        amount: x.card != null ? x.card : x.amount,
         note: r.mode !== 'live' ? '테스트 결제창이 열려요 — 실제로 돈이 나가지 않아요.' : '결제하면 바로 등록되고, 입력하신 번호로 첫 수업일 안내 문자가 가요. 결제 후 24시간이 지난 수업부터 참석할 수 있어요.',
       });
       if (yes) startPay(box, o, go, x, st, sync);
@@ -685,18 +736,19 @@
 
   async function startPay(box, o, go, x, st, sync) {
     const msg = box.querySelector('#payMsg');
-    const label = `${won(x.amount)} 결제하기`;
+    const label = `${won(x.card != null ? x.card : x.amount)} 결제하기`;
     const fail = t => { st.busy = false; go.classList.remove('busy'); go.textContent = label; sync(); msg.textContent = t; };
     st.busy = true; go.classList.add('busy'); sync(); go.textContent = '결제창을 여는 중…'; msg.textContent = '';
     let p;
-    try { p = await post({ action: 'pay_prepare', kind: 'apply', id: o.id, phone: o.phone, test: o.test, option: x.key, agreeRefund: st.terms.ok() }); }
+    try { p = await post({ action: 'pay_prepare', kind: 'apply', id: o.id, phone: o.phone, test: o.test, option: x.key, agreeRefund: st.terms.ok(),
+      coupon: x.card != null ? o.coupon : undefined }); }
     catch (e) { return fail('인터넷 연결을 확인하고 다시 눌러주세요.'); }
     if (!p.ok) return fail(errText(p, '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.'));
     if (!p.enabled) return fail('지금은 온라인 결제를 받지 않아요. 담당자가 연락드릴게요.');
     try { await (p.pg === 'npg' ? loadNpg() : loadSdk()); } catch (e) { return fail('결제창을 불러오지 못했어요. 잠시 뒤 다시 눌러주세요.'); }
     // 결제 완료 화면이 '무엇을 · 얼마에'를 보여 주게 고른 것도 남김 (같은 브라우저로 돌아올 때만 — 개인정보는 이 기기 sessionStorage 에만)
     stash({ id: o.id, phone: o.phone, name: o.name, test: o.test, orderId: p.orderId, at: Date.now(), what: o.what || '', pick: x.key,
-      item: { text: optText(x), amount: p.amount } });
+      item: { text: optText(x), amount: p.amount }, coupon: o.coupon || '' });
     payWindow(p, o, why => {
       post({ action: 'pay_cancel', kind: 'apply', id: o.id, phone: o.phone, orderId: p.orderId }).catch(() => {});
       fail(`결제가 완료되지 않았어요${why ? ` (${why})` : ''}. 다시 눌러 결제할 수 있어요.`);

@@ -1120,3 +1120,23 @@ body.has-apply-bar .apply-bar{display:flex}
 /* 새 반 타임 칩 '잔여 N석' (2026-11-18 — 새 반을 반 카드로 합치며, apply.js drawSubNew) */
 .chips2 label:not(.off):not(.wl) span small{color:#0b7a4b}
 .chips2 label:not(.off):not(.wl) input:checked + span small{color:rgba(255,255,255,.85)}
+
+/* 쿠폰 코드 (2026-11-18 — 관리프로그램 프로모션, 대관·수강신청·원데이 공통) */
+.bk-coupon{display:flex;flex-direction:column;gap:6px}
+.bk-coupon[hidden]{display:none}
+.bk-coupon > label{font-size:14px;font-weight:600;color:var(--ink,#0f172a)}
+.ap-sec.bk-coupon{gap:8px}
+.bk-coupon-row{display:flex;gap:8px}
+.bk-coupon-row input{flex:1 1 auto;min-width:0;text-transform:uppercase;letter-spacing:.04em;height:46px;padding:0 14px;border:1px solid var(--line,#d6dbe6);border-radius:0;background:#fff;font-size:16px;font-family:inherit;-webkit-appearance:none;appearance:none}
+.bk-coupon-row input:focus{outline:2px solid #2f6bff;outline-offset:0;border-color:#2f6bff}
+.bk-coupon-row button{flex:0 0 auto;height:46px;padding:0 18px;font-size:15px;font-family:inherit;border-radius:0;border:1px solid #2f6bff;background:#fff;color:#2f6bff;font-weight:700;cursor:pointer}
+.bk-coupon-row button:disabled{opacity:.5}
+.bk-coupon-msg{margin:0;font-size:13px;color:#64748b}
+.bk-coupon-msg:empty{display:none}
+.bk-coupon-msg.ok{color:#1d4ed8;font-weight:600}
+.bk-coupon-msg.err{color:#dc2626;font-weight:600}
+.was{text-decoration:line-through;color:#94a3b8;font-weight:400;margin-right:4px}
+.ap-opt .p .was{display:block;font-size:12px}
+.ap-coupon-line{margin:8px 0 0;font-size:13px;font-weight:600;color:#1d4ed8}
+.ap-coupon-line.err{color:#dc2626}
+.ap-coupon-line:empty{display:none}

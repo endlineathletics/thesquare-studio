@@ -34,8 +34,39 @@
     const h = Number(start.slice(0, 2));
     return n.from < n.to ? (h >= n.from && h < n.to) : (h >= n.from || h < n.to);
   };
-  /** 칸(1코트 1시간) 금액 — 정가에 심야 칸이면 할인 (원 단위 반올림 — 관리프로그램 rental_slot_price 와 같게) */
-  const cellPrice = (c, start) => (nightAt(start) ? Math.round(priceAt(c) * (100 - SP.night.pct) / 100) : priceAt(c));
+  /* 자동 할인 (2026-11-18 — 관리프로그램 설정 › 프로모션 기간·시간 할인, rental_prices 의 autos. square/promo.py auto_best 와 같은 식:
+     이용하는 날·시작 시각이 맞는 할인 중 '중복'끼리는 차례대로, 나머지는 하나씩 — 가장 많이 깎이는 쪽. 10원 내림. 표시용 — 실제 금액은 서버가 다시) */
+  const wdMon = d => (toDate(d).getDay() + 6) % 7;      // 월=0 (관리프로그램 weekdays '0123456')
+  const autoHit = (a, date, start) => {
+    if ((a.from && date < a.from) || (a.to && date > a.to)) return false;
+    if (a.days && !a.days.includes(String(wdMon(date)))) return false;
+    if (a.h1 == null || a.h2 == null || a.h1 === a.h2) return true;
+    const h = Number(start.slice(0, 2));
+    return a.h1 < a.h2 ? (h >= a.h1 && h < a.h2) : (h >= a.h1 || h < a.h2);
+  };
+  const offOf = (a, amt) => {
+    if (amt <= 0) return 0;
+    if (a.type === 'won') return Math.min(amt, a.value);
+    let o = Math.floor(amt * a.value / 100 / 10) * 10;
+    if (a.max) o = Math.min(o, a.max);
+    return Math.min(o, amt);
+  };
+  function autoOff(date, start, base) {
+    const hit = (SP.autos || []).filter(a => autoHit(a, date, start));
+    let best = 0;
+    hit.filter(a => !a.stack).forEach(a => { best = Math.max(best, offOf(a, base)); });
+    const st = hit.filter(a => a.stack).sort((x, y) => offOf(y, base) - offOf(x, base));
+    if (st.length) { let left = base; st.forEach(a => { left -= offOf(a, left); }); best = Math.max(best, base - left); }
+    return best;
+  }
+  /** 칸(1코트 1시간) 금액 — x = {date, start}. 관리프로그램이 autos 를 주면 그 할인, 옛 관리프로그램이면 옛 심야 할인(원 단위 반올림) */
+  const cellPrice = (c, x) => {
+    const b = priceAt(c);
+    if (SP.autos) return b - autoOff(x.date, x.start, b);
+    return nightAt(x.start) ? Math.round(b * (100 - SP.night.pct) / 100) : b;
+  };
+  /** 할인 안내 한 줄 ('매일 밤 12시~아침 6시 20% 할인 · …', 없으면 '') */
+  const promoText = () => (SP.autos ? SP.autos.map(a => a.text).join(' · ') : nightText());
   /** '밤 12시~아침 6시 20% 할인' (없으면 '') */
   function nightText() {
     const n = SP.night;
@@ -126,19 +157,19 @@
   const state = { date: todayStr(), month: '', sel: null, focus: null, scroll: true, lost: null, sending: false };
   const hoursOf = sel => sel.e - sel.s + 1;          // 칸 수 = 시간 수 (칸 하나 = 1시간 단위)
   const cellsOf = sel => sel.courts.length * hoursOf(sel);
-  const priceOf = sel => cellsIn(sel).reduce((t, x) => t + sel.courts.reduce((u, c) => u + cellPrice(c, x.start), 0), 0);
+  const priceOf = sel => cellsIn(sel).reduce((t, x) => t + sel.courts.reduce((u, c) => u + cellPrice(c, x), 0), 0);
   /** 금액 내역 — 칸 금액이 모두 같으면 "1코트 1시간 52,800원 × 4", 섞이면 "52,800원 × 2 + 42,240원 × 2" (같은 금액끼리 칸 수를 묶음 · 코트·시간 순)
       심야 할인 칸이 있으면 끝에 "(밤 12시~아침 6시 20% 할인)" */
   function priceNote(sel) {
     const by = new Map();
     let night = false;
     sel.courts.forEach(c => cellsIn(sel).forEach(x => {
-      const p = cellPrice(c, x.start);
-      if (nightAt(x.start)) night = true;
+      const p = cellPrice(c, x);
+      if (p < priceAt(c)) night = true;
       by.set(p, (by.get(p) || 0) + 1);
     }));
     const base = by.size === 1 ? `${SP.unit} ${won([...by.keys()][0])} × ${cellsOf(sel)}` : [...by].map(([p, n]) => `${won(p)} × ${n}`).join(' + ');
-    return night ? `${base} (${nightText()})` : base;
+    return night ? `${base} (${promoText()})` : base;
   }
   function timeText(sel) { return `${rangeOnly(sel)} (${hoursOf(sel)}시간)`; }
   /** "22:00~24:00" · 자정을 넘기면 "22:00~다음 날 02:00" */
@@ -614,7 +645,7 @@
     const sel = state.sel;
     $('bkBar').classList.toggle('has', !!sel);
     $('bkBarMain').textContent = sel ? [dayLabel(sel.date), NC > 1 ? courtText(sel.courts) : ''].filter(Boolean).join(' · ') : '예약 시간을 선택하세요';
-    $('bkBarSub').textContent = sel ? `${timeText(sel)} · ${won(priceOf(sel))}` : `원하는 ${NC > 1 ? '코트를' : '시간을'} 누르면 선택됩니다`;
+    $('bkBarSub').textContent = sel ? `${timeText(sel)} · ${won(payAmount(sel))}` : `원하는 ${NC > 1 ? '코트를' : '시간을'} 누르면 선택됩니다`;
     $('bkGo').disabled = !sel;
   }
   function renderSel() {
@@ -626,12 +657,55 @@
           ${NC > 1 ? `<div><dt>코트</dt><dd>${esc(courtText(sel.courts))}${sel.courts.length === NC ? ` <small>(${esc(courtLabel(ALL))})</small>` : ''}</dd></div>` : ''}
           <div><dt>시간</dt><dd>${esc(timeText(sel))}</dd></div>
           <div><dt>금액</dt><dd><b class="bk2-won">${won(priceOf(sel))}</b><small>${esc(priceNote(sel))}</small></dd></div>
+          ${state.coupon && state.coupon.key === couponKey(sel) ? `<div><dt>쿠폰</dt><dd>${esc(state.coupon.code)} −${won(state.coupon.off)} → <b class="bk2-won">${won(state.coupon.total)}</b></dd></div>` : ''}
         </dl>
         <button type="button" class="bk2-edit" data-edit>시간 바꾸기 ↑</button>`
       : `<p class="bk2-sel-empty">아직 고른 시간이 없어요. 위 표에서 ${NC > 1 ? '코트와 ' : ''}시간을 골라주세요.</p>
         <button type="button" class="bk2-edit" data-edit>시간 고르기 ↑</button>`;
   }
-  function update() { renderCal(); renderMap(); renderGrid(); renderBar(); renderSel(); validate(); }
+  function update() { couponSync(); renderCal(); renderMap(); renderGrid(); renderBar(); renderSel(); validate(); }
+
+  /* ---------- 쿠폰 코드 (2026-11-18 — 관리프로그램 설정 › 프로모션. 대관에 쓸 수 있는 쿠폰이 있을 때만 칸이 보임: rental_prices 의 coupon) ----------
+     [적용] → api 'coupon_check'(고른 칸) → 할인 금액 · 결제 금액. 시간을 바꾸면 적용이 풀려 다시 [적용]. 신청(book)에 코드를 같이 보내고
+     실제 금액은 서버가 칸마다 다시 계산 (선착순이 끝났으면 그때 오류) */
+  const couponKey = sel => (sel ? JSON.stringify([sel.date, sel.courts, sel.s, sel.e]) : '');
+  function couponShow(on) { const b = $('bkCoupon'); if (b) b.hidden = !on; if (!on) { state.coupon = null; if (form.coupon) form.coupon.value = ''; } }
+  function couponMsg(t, cls) { const m = $('bkCouponMsg'); if (m) { m.className = 'bk-coupon-msg ' + (cls || ''); m.textContent = t; } }
+  function couponSync() {
+    if (state.coupon && state.coupon.key !== couponKey(state.sel)) {
+      state.coupon = null;
+      couponMsg(state.sel ? '시간이 바뀌었어요 — 쿠폰 [적용]을 다시 눌러 주세요' : '', 'err');
+    }
+  }
+  async function couponApply() {
+    const code = (form.coupon.value || '').trim(), sel = state.sel;
+    if (!code) { couponMsg('쿠폰 코드를 적어 주세요', 'err'); return; }
+    if (!sel) { couponMsg('예약 시간을 먼저 골라 주세요', 'err'); return; }
+    const items = sel.courts.flatMap(c => cellsIn(sel).map(x => ({ date: x.date, court: c, start: x.start })));
+    const btn = $('bkCouponBtn');
+    btn.disabled = true;
+    try {
+      const r = await post({ action: 'coupon_check', target: 'rental', code, space, items });
+      if (state.sel !== sel) return;
+      if (r.ok && r.valid) {
+        state.coupon = { code: r.code, off: r.couponOff, total: r.total, key: couponKey(sel) };
+        couponMsg(`쿠폰 ${r.code} 적용 — ${won(r.couponOff)} 할인 · 결제 금액 ${won(r.total)}`, 'ok');
+      } else {
+        state.coupon = null;
+        couponMsg((r && r.message) || '쓸 수 없는 쿠폰이에요', 'err');
+      }
+      renderBar(); renderSel();
+    } catch (e) {
+      couponMsg('쿠폰을 확인하지 못했어요 — 잠시 뒤 다시 눌러 주세요', 'err');
+    } finally { btn.disabled = false; }
+  }
+  const payAmount = sel => (state.coupon && state.coupon.key === couponKey(sel) ? state.coupon.total : priceOf(sel));
+  function couponInit() {                       // form 이 정해진 뒤 (맨 아래 시작 부분에서 부름)
+    if (!$('bkCouponBtn')) return;
+    $('bkCouponBtn').addEventListener('click', couponApply);
+    form.coupon.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); couponApply(); } });
+    form.coupon.addEventListener('input', () => { if (state.coupon) { state.coupon = null; couponMsg('', ''); renderBar(); renderSel(); } });
+  }
 
   /** 표로 돌아가기 — 담은(또는 막혀서 지운) 날짜로 바꿔 보여주고 그 시작 칸에 포커스 */
   function backToGrid() {
@@ -820,7 +894,7 @@
         title: '예약·결제 전에 확인해 주세요',
         rows: [['공간', SP.name], ['날짜', dateText(sel)], NC > 1 ? ['코트', courtText(sel.courts)] : null, ['시간', timeText(sel)],
           ['이름', name], ['연락처', phone]],
-        amount: priceOf(sel),
+        amount: payAmount(sel),
         note: isPayTest() ? '시험 주소예요 — 테스트 결제창이 열려요.' : '카드 결제가 끝나면 바로 확정되고, 입력하신 번호로 확정 문자가 가요.',
       });
       if (!yes) return;
@@ -835,7 +909,8 @@
       if (held) await release(held);   // 지난번에 못 푼 결제 대기 칸부터 (같은 시간을 다시 고르면 내 신청과 겹쳐 '그 사이 예약됨'이 되지 않게)
       // test = 시험 주소(?paytest=1) — 관리프로그램이 운영 결제처럼 '결제 전'으로 받아 결제가 끝나야 신청으로 드러냄 (2026-10-19)
       const r = await post({ action: 'book', space, items, name, phone, people: form.people.value, memo: form.memo.value.trim(), test: isPayTest(),
-        guide: guide.version ? { version: guide.version } : undefined });
+        guide: guide.version ? { version: guide.version } : undefined,
+        coupon: form.coupon && !$('bkCoupon').hidden ? (form.coupon.value || '').trim() || undefined : undefined });
       if (r.ok) {
         // 서버는 신청을 받으면서 그 시간을 이미 잡아 둔다(확인 전) — 결제하는 동안 다른 사람이 같은 칸을 못 잡음.
         // 결제 흐름이 켜져 있으면 결제창으로 (끝은 결과 화면 이동 또는 payStop — 그때까지 선택 · 입력은 그대로)
@@ -883,6 +958,10 @@
           lose(t, sel);   // 보낸 신청을 지우고 그 날 예약 현황을 다시 불러옴 (낭독은 아래 결과 안내 한 번)
           showMsg(`${esc(t)} <button type="button" class="bk2-edit" data-edit>시간 다시 고르기 ↑</button>`, 'err');
         };
+      } else if (r.error === 'coupon') {           // 쿠폰을 그 사이 못 쓰게 됨 (선착순 끝 등) — 칸은 안 잡힘, 코드를 지우거나 고쳐 다시
+        state.coupon = null;
+        couponMsg(r.message || '쓸 수 없는 쿠폰이에요', 'err');
+        showMsg(`${esc(r.message || '쓸 수 없는 쿠폰이에요')} — 쿠폰 코드를 지우거나 고친 뒤 다시 [결제하기]를 눌러 주세요.`, 'err');
       } else if (r.error === 'too_many_people') {
         showMsg(`인원은 코트당 최대 ${PPC || 8}명이에요 — 고른 코트로는 ${esc(r.max || peopleMax())}명까지 신청할 수 있어요.`, 'err');
       } else if (r.error === 'too_many') {
@@ -1197,7 +1276,7 @@
     const by = [];
     ALL.forEach(c => { const last = by[by.length - 1]; if (last && last.p === priceAt(c)) last.cs.push(c); else by.push({ p: priceAt(c), cs: [c] }); });
     const parts = by.map((g, i) => `${i === 0 ? SP.unit : (g.cs.length === 1 ? SP.courts[g.cs[0]] : courtLabel(g.cs))} ${won(g.p)}`);
-    const n = nightText();
+    const n = promoText();
     return parts.join(' · ') + (n ? ` · ${n}` : '');
   }
   function showPriceLine() { document.querySelectorAll(`[data-rental-price="${space}"]`).forEach(el => { el.textContent = priceLine(); }); }
@@ -1210,6 +1289,8 @@
       SP.prices = r.prices.slice();
       SP.price = r.prices[0];
       if (r.night) SP.night = r.night;
+      if (Array.isArray(r.autos)) SP.autos = r.autos;          // 프로모션 자동 할인 (2026-11-18 — 있으면 night 대신)
+      couponShow(!!r.coupon);
       showPriceLine();
       update();
     } catch (e) { /* 못 받으면 기본값 그대로 — 신청 때 관리프로그램이 다시 계산 */ }
@@ -1252,6 +1333,7 @@
   ensureDate();
   $('bkGuide').textContent = SP.note || '';
   if (SP.title) $('bkTitle').textContent = SP.title;
+  couponInit();
   update();
   loadPrices();
   load(state.date);

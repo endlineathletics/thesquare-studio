@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261118e">
+<link rel="stylesheet" href="assets/style.css?v=20261118p">
 </head>
 <body data-page="badminton" data-oneday="1" class="has-apply-bar">
 
@@ -61,6 +61,11 @@
           <div class="od-times" id="odTimes"></div>
           <span class="msg">날짜와 시간을 선택해주세요.</span>
         </div>
+      </div>
+      <div class="ap-sec bk-coupon" id="odCoupon" hidden><!-- 2026-11-18 쿠폰 코드 — 원데이에 쓸 수 있는 쿠폰이 있을 때만 (oneday.js — oneday_slots 의 coupon) -->
+        <label for="odCouponIn">쿠폰 코드</label>
+        <div class="bk-coupon-row"><input id="odCouponIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="코드가 있으면 입력"><button type="button" id="odCouponBtn">적용</button></div>
+        <p class="bk-coupon-msg" id="odCouponMsg" aria-live="polite"></p>
       </div>
       <div class="ap-sec">
         <div class="ap-h"><b>03</b>동의</div>
@@ -122,6 +127,6 @@
 <script src="assets/apply-config.js?v=20261111a"></script>
 <script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261111c"></script>
-<script src="assets/oneday.js?v=20261118a"></script>
+<script src="assets/oneday.js?v=20261118p"></script>
 </body>
 </html>

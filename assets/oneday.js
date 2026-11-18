@@ -112,6 +112,8 @@
     if (!r || !r.ok) { $('odTimes').innerHTML = `<p class="ap-note">시간을 불러오지 못했어요. 잠시 뒤 다시 골라 주세요. 계속 안 되면 ${esc(CFG.phone)}로 연락 주세요.</p>`; return; }
     if (!r.enabled && !isPayTest()) { $('odTimes').innerHTML = `<p class="ap-note">지금은 온라인 원데이 신청을 받지 않아요. ${esc(CFG.phone)}로 연락 주세요.</p>`; $('odDays').innerHTML = ''; return; }
     st.days = r.days || [];
+    $('odCoupon').hidden = !r.coupon;                       // 쿠폰 칸 (2026-11-18 — 원데이에 쓸 수 있는 쿠폰이 있을 때만)
+    if (!r.coupon) st.coupon = null;
     $('odNote').innerHTML = '원데이는 <b>수업 시작 24시간 전까지</b> 신청할 수 있어요 (그 안의 시간은 목록에 나오지 않아요). ' + (r.byGrade ? '<b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요.' : '<b>마감</b>은 정원이 찬 시간이에요.');   // 24시간 — 관리앱 ONEDAY_CUTOFF_MIN (2026-11-18)
     const keep = st.days.find(x => x.d === st.day && x.slots.some(s => s.ok));
     st.day = keep ? keep.d : ((st.days.find(x => x.slots.some(s => s.ok)) || {}).d || '');
@@ -133,7 +135,7 @@
     $('odTimes').innerHTML = `<div class="chips2">${day.slots.map(s => {
       const on = st.slot && st.slot.id === s.id;
       return `<label${s.ok ? '' : ' class="off"'}><input type="radio" name="odslot" value="${s.id}"${on ? ' checked' : ''}${s.ok ? '' : ' disabled'}>`
-        + `<span>${esc(s.time)}–${esc(s.end)} · ${esc(s.cls)}${s.ok ? ` <small>${won(s.price)}</small>` : '<small>마감</small>'}</span></label>`;
+        + `<span>${esc(s.time)}–${esc(s.end)} · ${esc(s.cls)}${s.ok ? ` <small>${s.was ? `<s class="was">${won(s.was)}</s>` : ''}${won(s.price)}</small>` : '<small>마감</small>'}</span></label>`;
     }).join('')}</div>`;
     $('odTimes').querySelectorAll('input').forEach(i => i.onchange = () => {
       st.slot = day.slots.find(s => String(s.id) === i.value) || null;
@@ -142,6 +144,30 @@
   }
   form.grade.addEventListener('change', () => { setErr('grade', false); load(); sum(); });
 
+  /* ---------- 쿠폰 코드 (2026-11-18 — 관리프로그램 설정 › 프로모션) — 날짜·시간을 고른 뒤 [적용] → coupon_check. 시간을 바꾸면 다시 [적용] ---------- */
+  const couponKey = p => (p ? `${p.day.d}|${p.slot.id}` : '');
+  const couponOn = p => !!(st.coupon && st.coupon.key === couponKey(p));
+  const amountOf = p => (couponOn(p) ? st.coupon.total : p.slot.price);
+  const cmsg = (t, cls) => { const m = $('odCouponMsg'); m.className = 'bk-coupon-msg ' + (cls || ''); m.textContent = t; };
+  async function couponApply() {
+    const code = $('odCouponIn').value.trim(), p = picked();
+    if (!code) return cmsg('쿠폰 코드를 적어 주세요', 'err');
+    if (!p) return cmsg('날짜와 시간을 먼저 골라 주세요', 'err');
+    let r = null;
+    try { r = await post({ action: 'coupon_check', target: 'oneday', code, slotId: p.slot.id, date: p.day.d }); } catch (e) { /* 아래 */ }
+    if (r && r.ok && r.valid) {
+      st.coupon = { code: r.code, off: r.couponOff, total: r.total, key: couponKey(p) };
+      cmsg(`쿠폰 ${r.code} 적용 — ${won(r.couponOff)} 할인 · 결제 금액 ${won(r.total)}`, 'ok');
+    } else {
+      st.coupon = null;
+      cmsg((r && r.message) || '쿠폰을 확인하지 못했어요 — 잠시 뒤 다시 눌러 주세요', 'err');
+    }
+    sum();
+  }
+  $('odCouponBtn').addEventListener('click', couponApply);
+  $('odCouponIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); couponApply(); } });
+  $('odCouponIn').addEventListener('input', () => { if (st.coupon) { st.coupon = null; cmsg('', ''); sum(); } });
+
   function picked() {
     const day = st.days.find(x => x.d === st.day);
     return st.slot && day ? { day, slot: st.slot } : null;
@@ -149,7 +175,8 @@
   function sum() {
     const p = picked();
     const rows = [['이름', form.name.value.trim()], ['연락처', form.phone.value], ['급수', form.grade.value],
-      ['일시', p ? `${p.day.label} ${p.slot.time}–${p.slot.end}` : ''], ['수업', p ? p.slot.cls : ''], ['금액', p ? won(p.slot.price) : '']];
+      ['일시', p ? `${p.day.label} ${p.slot.time}–${p.slot.end}` : ''], ['수업', p ? p.slot.cls : ''], ['금액', p ? won(amountOf(p)) : '']];
+    if (p && couponOn(p)) rows.push(['쿠폰', `${st.coupon.code} −${won(st.coupon.off)}`]);
     $('odSum').innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd${v ? '' : ' class="empty"'}>${esc(v || '-')}</dd>`).join('');
   }
   sum();
@@ -167,10 +194,12 @@
       check: '레슨 이용수칙과 결석·시간 변경·환불 규정을 확인했습니다.', okText: '확인하고 신청 계속하기' });
     if (!g) return;
     const p = picked();
-    const o = { name, phone, grade: form.grade.value, slot: p.slot, day: p.day, test: isPayTest() };
+    if (st.coupon && !couponOn(p)) { st.coupon = null; cmsg('시간이 바뀌었어요 — 쿠폰 [적용]을 다시 눌러 주세요', 'err'); sum(); return; }
+    const o = { name, phone, grade: form.grade.value, slot: p.slot, day: p.day, test: isPayTest(),
+      coupon: !$('odCoupon').hidden ? $('odCouponIn').value.trim() : '' };
     const yes = await window.PAYUI.confirm({ title: '결제 전에 확인해 주세요',
       rows: [['원데이', `${p.day.label} ${p.slot.time}–${p.slot.end}\n${p.slot.cls} ${p.slot.days}`], ['급수', o.grade], ['이름', name], ['연락처', phone]],
-      amount: p.slot.price, note: '결제하면 바로 신청되고, 입력하신 번호로 안내 문자가 가요.' });
+      amount: amountOf(p), note: '결제하면 바로 신청되고, 입력하신 번호로 안내 문자가 가요.' });
     if (yes) pay(o);
   });
 
@@ -181,10 +210,11 @@
     let p;
     try {
       p = await post({ action: 'pay_prepare', kind: 'oneday', name: o.name, phone: o.phone, grade: o.grade, slotId: o.slot.id, date: o.day.d,
-        clientId: st.cid, test: o.test, agreeRefund: true });
+        clientId: st.cid, test: o.test, agreeRefund: true, coupon: o.coupon || undefined });
     } catch (e) { return fail('인터넷 연결을 확인하고 다시 눌러주세요.'); }
     if (!p.ok) {
       if (p.error === 'closed') { st.slot = null; load(); sum(); }
+      if (p.error === 'coupon') { st.coupon = null; cmsg(p.message || '쓸 수 없는 쿠폰이에요', 'err'); sum(); }
       return fail(p.message || ERR[p.error] || '결제를 시작하지 못했어요. 잠시 뒤 다시 눌러주세요.');
     }
     if (!p.enabled) return fail(`지금은 온라인 원데이 신청을 받지 않아요. ${CFG.phone}로 연락 주세요.`);
