@@ -695,7 +695,7 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
    배드민턴 레슨 탭에서만: main.js 가 body.has-apply-bar 를 켜고 끔. 페이지 맨 아래(푸터)가 막대에 가리지 않게 그만큼 띄움 */
 .apply-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;
   height:calc(var(--apply-bar-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--blue)}
-/* 2026-11-18 — 반으로 나눔: 왼쪽 원데이(흰 바탕·파란 글씨·파란 선) · 오른쪽 수강신청(파란 바탕 흰 글씨, 전과 같음) */
+/* 2026-11-18 — 반으로 나눔: 왼쪽 수강신청(파란 바탕 흰 글씨, 전과 같음) · 오른쪽 원데이(흰 바탕·파란 글씨·파란 선) */
 .apply-bar a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 12px;
   font:800 18px var(--sans);letter-spacing:-.01em;white-space:nowrap;transition:background .15s}
 .apply-bar .ab-go{background:var(--blue);color:#fff}
