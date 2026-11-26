@@ -402,6 +402,12 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 .atb-n{font-size:13px;color:var(--ink-2)}
 .atb-co{margin-top:6px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
 .atb-co em{font-style:normal;font:700 10.5px 'Inter';letter-spacing:.12em;color:var(--blue);border:1px solid currentColor;padding:2px 6px}
+/* 새 반 표 (2026-11-27 프라이빗반·금요일반) — 줄마다 요일이 달라 머리줄 없이 칸 안에 요일을 보여 줌 */
+.atb-sub{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:34px 0 14px;font-size:20px;font-weight:800;letter-spacing:-.03em}
+.atb-sub b{font:700 11px 'Inter';letter-spacing:.22em;color:#fff;background:var(--blue);padding:3px 7px}
+.atb-sub span{font-size:13px;font-weight:500;letter-spacing:0;color:var(--ink-2)}
+.atb-new .atb-d{display:block;font-size:13px;font-weight:800;color:var(--ink)}
+.atb-new .atb-l b{font-size:19px}
 @media (max-width:720px){
   .atb-h{display:none}
   .atb-r{grid-template-columns:1fr 1fr}
@@ -411,6 +417,10 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .atb-d{display:block;font-size:12px;font-weight:800;color:var(--ink)}
   .atb-t{font-size:18px}.atb-t i{margin:0 3px}
   .atb-co{font-size:13px;flex-direction:column;align-items:flex-start;gap:4px}
+  .atb-new .atb-l{flex-wrap:wrap;justify-content:flex-start;gap:2px 10px}
+  .atb-new .atb-l b{font-size:17px}
+  .atb-new .atb-l span{flex-basis:100%}
+  .atb-sub{font-size:18px;margin-top:28px}
 }
 
 /* reveal */
