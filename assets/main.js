@@ -227,3 +227,16 @@
   bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('.lp-x')) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
+
+/* ---------- 레슨 성인·주니어 (2026-11-27) ----------
+   badminton.html 레슨 탭 맨 위 [성인][주니어] (#laSeg) — #academy 의 data-aud 를 바꾸면 style.css 가 data-a 가 다른 반 소개 카드·색 안내·시간표 줄을 숨긴다. */
+(function () {
+  const seg = document.getElementById('laSeg'), sec = document.getElementById('academy');
+  if (!seg || !sec) return;
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    sec.dataset.aud = b.dataset.a;
+    seg.querySelectorAll('button').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
+    sec.querySelectorAll('.lb-c.rv, .lt-soon.rv').forEach(x => x.classList.add('in'));   // 숨어 있던 카드는 스크롤 등장 효과를 못 받았으니 바로 보이게
+  });
+})();
