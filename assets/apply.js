@@ -567,7 +567,7 @@
         rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', optText(x)], ['이름', o.name], ['연락처', o.phone],
           ['입금 계좌', `${CFG.bank.name} ${CFG.bank.account} (${CFG.bank.holder})`]],
         amount: x.bank != null ? x.bank : x.amount, okText: '네, 입금했어요',
-        note: '담당자가 입금을 확인하면 수강 등록이 끝나고 안내 문자가 가요. 그 전까지 자리는 잡아 둬요.',
+        note: '담당자가 입금을 확인하면 수강 등록이 끝나고 안내 문자가 가요. 그 전까지 자리는 잡아 둬요. 48시간 안에 입금이 확인되지 않으면 신청이 자동으로 취소돼요.',
       });
       if (!yes) return;
       st.busy = true; sync(); done.disabled = true; done.textContent = '보내는 중…'; msg.textContent = '';
@@ -585,10 +585,12 @@
       const wrap = $('applyDone');
       wrap.innerHTML = window.PAYUI.done({ title: '입금 확인을 요청했어요', sub: '담당자가 입금을 확인하면 수강 등록이 끝나요.',
         rows: [['종목', TYPE_NAME + (o.what ? ` · ${o.what}` : '')], ['수강', j.what || optText(x)], ['입금 금액', won(j.amount)],
-          ['입금 계좌', `${j.bank} ${j.account} (${j.holder})`], ['신청번호', o.id]],
+          ['입금 계좌', `${j.bank} ${j.account} (${j.holder})`]].concat(j.deadline ? [['입금 기한', j.deadline + '까지']] : [], [['신청번호', o.id]]),
         steps: ['아직 입금하지 않으셨다면 위 계좌로 입금해 주세요. 입금자명은 수강생 이름으로 해 주세요.',
           `입력하신 번호(${window.PAYUI.maskPhone(o.phone)})로 입금 안내 문자를 보내드려요.`,
-          '입금이 확인되면 등록 완료 안내와 앱 로그인 링크가 가요. 그 전까지 자리는 잡아 둬요.'],
+          '입금이 확인되면 등록 완료 안내와 앱 로그인 링크가 가요. 그 전까지 자리는 잡아 둬요.',
+          /* 2026-11-27 자동 취소 — 관리프로그램 apply_transfer 응답 deadline('11/29(일) 14:00')·holdHours */
+          `${j.deadline ? j.deadline + '까지' : (j.holdHours || 48) + '시간 안에'} 입금이 확인되지 않으면 신청이 자동으로 취소돼요. 취소 전에 문자로 한 번 더 알려 드려요.`],
         foot: `입금이 늦어지거나 바꿀 게 있으면 ${CFG.phone}로 연락 주세요.` })
         + `<div class="acts"><a class="pri" href="${TYPE}.html">${TYPE_NAME} 페이지로</a></div>`;
       wrap.scrollIntoView({ block: 'start' });
@@ -668,6 +670,7 @@
           <div class="ap-xfer-acct"><span><b>${esc(CFG.bank.name)} <span class="nw">${esc(CFG.bank.account)}</span></b><br><small>예금주 ${esc(CFG.bank.holder)}</small></span>
             <button type="button" class="ap-xfer-copy" id="xferCopy">복사</button></div>
           <p class="ap-pay-note">입금자명은 수강생 이름으로 해 주세요. 입금한 뒤 아래 버튼을 눌러 주세요 — 담당자가 입금을 확인하면 수강 등록이 끝나요.</p>
+          <p class="ap-pay-note"><b>신청 후 48시간 안에 입금이 확인되지 않으면 신청이 자동으로 취소돼요.</b> 취소 전에 문자로 한 번 더 알려 드려요.</p>
           <button type="button" class="ap-paybtn" id="xferDone">입금했어요</button>
         </div>` : ''}
         <p class="ap-pay-hint" id="payHint">환불 규정에 동의하면 결제할 수 있어요.</p>` : `<p class="ap-pay-msg">지금은 모두 마감이에요. 처음부터 다시 신청하면서 대기할 시간을 골라 주세요.</p>${againLink()}`}
