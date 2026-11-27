@@ -169,3 +169,61 @@
     setDay(day);
   }
 })();
+
+/* ---------- 레슨 시간표 창 (2026-11-27) ----------
+   badminton.html 레슨 시간표(table.lt)의 칸(.lt-b)을 누르면 그 타임 코치 사진·이력 + 반 설명 + [레슨 등록][원데이 신청] 창(#ltPop, style.css .lp-*).
+   반 설명·코치 이력은 여기 CL · CO 에 — 반 소개(badminton.html .lc)·강사진 소개와 같은 글이니 바꿀 땐 같이 고친다.
+   사진 없는 코치는 이름 첫 글자 칸. */
+(function () {
+  const tb = document.querySelector('table.lt'), bg = document.getElementById('ltPop');
+  if (!tb || !bg) return;
+  const pop = bg.querySelector('.lp');
+  const CO = {
+    '김동욱': ['김동욱 헤드코치', 'kim-dongwook.jpg?v=4', ['국가대표 후보선수 출신', '前 YONEX 선수단', '前 국군체육부대(상무) 선수단']],
+    '김민지': ['김민지 코치', 'kim-minji.jpg?v=5', ['배드민턴 국가대표 (4년, 복식 전공)', '김천시청 배드민턴 선수 (2018~2025)', '2025 스코틀랜드 · 아일랜드 오픈 여자복식 1위']],
+    '이동찬': ['이동찬 코치', 'lee-dongchan.jpg?v=4', ['배드민턴 주니어 국가대표 출신', '한국체육대학교 체육학과 졸업', '전국소년체육대회 단체전 1위']],
+    '이동혁': ['이동혁 코치', 'lee-donghyeok.jpg?v=4', ['前 일본 Nagai Badminton Team 선수', '이천제일고등학교 졸업', '이천중학교 졸업']],
+    '김현규': ['김현규 코치', 'kim-hyungyu.jpg?v=5', ['前 광주은행 선수 (2020~2022)', '前 당진시청 선수 (2023)', '前 제주특별자치도청 선수 (2024)']],
+  };
+  const W = '일주일에 하루라도 꾸준히 배우고 싶은 분들을 위한 수업입니다. 기본기와 실전 감각을 차근차근 쌓아갑니다.';
+  const AE = '오전 10:00–13:00 · 저녁 18:30–22:30';
+  const CL = {
+    gen: ['ADULT · REGULAR', '성인 일반반', '수준에 맞는 기본기부터 복식 실전까지, 단계별로 실력을 쌓는 수업입니다. 올바른 자세와 풋워크, 경기에서 활용할 수 있는 기술을 배웁니다.', '<b>월·수</b> 또는 <b>화·목</b> · 주 2회 (월 8회)', AE, '오전 <b>월 25만원</b> · 저녁 <b>월 35만원</b>'],
+    one: ['ADULT · ONCE A WEEK', '성인 주 1회반', W, '<b>금요일</b> · 주 1회 (월 4회)', AE, '오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b>'],
+    prv: ['ADULT · PRIVATE', '성인 프라이빗반', '3인 소수정예로 자세 교정과 개인별 약점 보완에 집중합니다. 각자의 수준과 목표에 맞춰 세심하게 지도합니다.', '오전 <b>월 / 금</b> · 저녁 <b>월 / 목</b> · 주 1회 (월 4회)', AE, '오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b>'],
+    jr: ['JUNIOR · REGULAR', '일반 유소년반', '즐겁게 배드민턴 기본 자세와 기술을 익히고, 학교 배드민턴 수행평가에 필요한 동작을 미리 배우고 연습하는 수업입니다. 기초 체력과 자신감도 함께 키웁니다.', '<b>월·화·수·목</b> 중 하나 · 주 1회 (월 4회)', '15:00–18:00', '<b>월 15만원</b>'],
+    pf: ['JUNIOR · PERFORMANCE', '주니어 퍼포먼스반', '정확한 기본기와 풋워크, 경기 상황별 기술을 집중적으로 훈련합니다. 기술 완성도와 실전 경기력을 높이고 싶은 주니어를 위한 수업입니다.', '<b>월 / 금</b> 중 하나 · 주 1회 (월 4회)', '15:00–18:00', '<b>월 20만원</b>'],
+  };
+  const DAY = ['월', '화', '수', '목', '금'];
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const coach = n => {
+    const c = CO[n] || [n + ' 코치', '', []];
+    return `<div class="lp-c">${c[1] ? `<img src="images/coach/${c[1]}" alt="${esc(c[0])}">` : `<i class="ph" aria-hidden="true">${esc(n[0] || '')}</i>`}<b>${esc(c[0])}</b>${c[2].length ? `<ul>${c[2].map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>`;
+  };
+  let last = null;
+  function open(b) {
+    const k = Object.keys(CL).find(x => b.classList.contains('lk-' + x)); if (!k) return;
+    const c = CL[k], tr = b.closest('tr'), i = [...tr.children].indexOf(b.closest('td')) - 1;
+    const t = tr.querySelector('.lt-tm b').textContent, e = tr.querySelector('.lt-tm small').textContent.replace('– ', '');
+    const cos = b.querySelector('em').textContent.split(' · ').map(x => x.trim()).filter(Boolean);
+    tb.querySelectorAll('.lt-b.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
+    pop.innerHTML = `<div class="lp-co"><div class="lp-h">이 타임 코치</div><div class="lp-cs n${cos.length}">${cos.map(coach).join('')}</div></div>
+      <div class="lp-in lk-${k}"><div class="lp-en">${c[0]}</div><div class="lp-t" id="ltPopT">${c[1]}</div><div><span class="lp-when">${DAY[i]}요일 ${t}–${e}</span></div><p class="lp-d">${c[2]}</p>
+      <div class="lp-i"><div><em>요일</em><span>${c[3]}</span></div><div><em>시간</em><span>${c[4]}</span></div><div><em>수강료</em><span>${c[5]}</span></div></div>
+      <div class="lp-btn"><a class="lp-go" href="badminton-apply.html">레슨 등록 <span aria-hidden="true">→</span></a><a href="oneday.html">원데이 신청 <span aria-hidden="true">→</span></a></div></div>
+      <button type="button" class="lp-x" aria-label="닫기">×</button>`;
+    last = b; bg.hidden = false; document.body.style.overflow = 'hidden'; pop.scrollTop = 0;
+    pop.querySelector('.lp-x').focus({ preventScroll: true });
+  }
+  function close() {
+    if (bg.hidden) return;
+    bg.hidden = true; document.body.style.overflow = '';
+    tb.querySelectorAll('.lt-b.on').forEach(x => x.classList.remove('on'));
+    if (last) last.focus({ preventScroll: true });
+  }
+  tb.querySelectorAll('.lt-b').forEach(b => { b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-haspopup', 'dialog'); });
+  tb.addEventListener('click', e => { const b = e.target.closest('.lt-b'); if (b) open(b); });
+  tb.addEventListener('keydown', e => { const b = e.target.closest('.lt-b'); if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(b); } });
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('.lp-x')) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
