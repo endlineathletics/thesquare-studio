@@ -524,6 +524,25 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
 
 /* ---------- 수강신청 03 단계별 고르기 (2026-11-28 시안 A — apply.js drawSteps) ----------
    01 누가 · 02 어떤 반 = 버튼(.pf-ch), 03 요일·시간대 = 반 라디오(.pfo label), 04 타임 · 05 코치 = 예전 칩(.chips2). 고른 것 = 파란 바탕 */
+/* 수강신청 진행 상황 바 — 화면 위(메뉴 바로 아래)에 붙어 다님. 끝난 단계 = 파란 줄 + ✓, 지금 단계 = 파란 줄 + 굵은 글씨 */
+.ap-prog{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;position:sticky;top:66px;z-index:40;margin:0 0 18px;padding:24px 0 10px;background:var(--paper-2)}
+.ap-prog li{display:flex;align-items:center;gap:9px;padding-top:11px;border-top:4px solid #d5d9e1;font-size:15px;font-weight:700;color:var(--ink-3);letter-spacing:-.02em}
+.ap-prog li b{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#d5d9e1;color:#fff;font:700 12.5px 'Inter'}
+.ap-prog li.on,.ap-prog li.done{border-top-color:var(--blue)}
+.ap-prog li.on{color:var(--ink);font-weight:800}
+.ap-prog li.on b,.ap-prog li.done b{background:var(--blue)}
+.ap-prog li.done{color:var(--blue)}
+.ap-prog li.done b{font-size:0}
+.ap-prog li.done b::after{content:"✓";font-size:13px}
+@media (max-width:1020px){.ap-prog{top:58px}}
+@media (max-width:720px){.ap-prog{gap:5px;padding:20px 0 8px;margin-bottom:12px}.ap-prog li{font-size:13.5px;gap:6px;padding-top:9px}.ap-prog li b{width:21px;height:21px;font-size:11.5px}}
+.ap-star{grid-column:1 / -1;margin-top:-4px;font-size:14px;line-height:1.6;font-weight:600;color:#23262e}     /* 급수 아래 안내 — 줄 전체 · 진하게 · 앞에 * (2026-11-28) */
+.ap-next{margin-top:34px}
+.ap-next[hidden],.ap-step2[hidden],.bk-submit[hidden]{display:none}
+.ap-next button{font:inherit;cursor:pointer;width:100%;height:58px;border:0;background:var(--blue);color:#fff;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.ap-next button:hover{filter:brightness(1.08)}
+.ap-next .bk-msg{margin-top:10px}
+.ap-step2{margin-top:38px;padding-top:34px;border-top:1px solid var(--line);scroll-margin-top:150px}     /* = .ap-sec + .ap-sec 간격 (묶음 때문에 첫 칸이 형제가 아니게 돼서) */
 .pf-st{display:grid;grid-template-columns:132px 1fr;gap:0 18px;padding:18px 0;border-top:1px solid var(--line)}
 .pf > .pf-st:first-child{border-top:0;padding-top:6px}
 .pf-st[hidden],.pf-sub[hidden],.pfo label[hidden]{display:none}
@@ -918,6 +937,7 @@ body.has-apply-bar .apply-bar{display:flex}
 .agree-box th,.agree-box td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
 .agree-box th{width:92px;background:#f9fafb;font-weight:700;color:var(--ink)}
 .ap-side{position:sticky;top:100px;display:grid;gap:14px}
+body[data-apply] .ap-side{top:140px}     /* 수강신청만 — 진행 상황 바(.ap-prog) 아래에 오게 (원데이 화면은 그대로) */
 .ap-sum{background:var(--navy);color:#fff;padding:26px}
 .ap-sum h3{font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--blue-2);font-family:'Inter'}
 .ap-sum .ttl{font-size:21px;font-weight:800;margin-top:6px;letter-spacing:-.02em}

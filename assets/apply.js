@@ -333,6 +333,44 @@
     form.querySelectorAll('.fld').forEach(el => el.classList.toggle('err', errs.includes(el.dataset.f)));
   }
 
+  /* ---------- 2단계 열기 (2026-11-28) ----------
+     처음엔 01 기본 정보 · 02 배드민턴 정보만 보인다. 다 채우고 [다음]을 누르면 03 희망 반 · 04 동의(#apStep2)와 신청 버튼이 열린다
+     (사용자 "반 정보는 아예 보이지 않게 하고, 완료 후 아래 다음 버튼 누르면 반 선택") — 빠진 칸이 있으면 그 칸을 빨갛게 하고 그리로 간다 */
+  const STEP1 = ['name', 'gender', 'age', 'phone', 'region', 'grade', 'experience', 'gName', 'gRel', 'gAgree'];
+  // 위 진행 상황 바(#apProg) — n 번째가 지금 단계, 앞 단계는 끝난 것으로
+  function setStep(n) {
+    const p = $('apProg'); if (!p) return;
+    [...p.children].forEach((li, i) => {
+      li.classList.toggle('done', i < n - 1); li.classList.toggle('on', i === n - 1);
+      if (i === n - 1) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    });
+  }
+  // 신청서가 닫히고 결제·완료 화면(#applyDone)으로 넘어가면 3단계, 다시 신청서로 돌아오면 2단계
+  if ($('applyWrap') && window.MutationObserver) {
+    new MutationObserver(() => setStep($('applyWrap').hidden ? 3 : ($('apStep2') && !$('apStep2').hidden ? 2 : 1)))
+      .observe($('applyWrap'), { attributes: true, attributeFilter: ['hidden'] });
+  }
+  if ($('apStep2') && $('apNextBtn')) {
+    $('applySubmit').hidden = true;
+    $('apNextBtn').addEventListener('click', () => {
+      const errs = check(collect()).filter(e => STEP1.includes(e));
+      markErrors(errs);
+      if (errs.length) {
+        $('apNextMsg').textContent = '위 정보를 모두 입력해 주세요.';
+        const first = form.querySelector('.fld.err');
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const inp = first.querySelector('input,select'); if (inp) setTimeout(() => inp.focus({ preventScroll: true }), 300);
+        return;
+      }
+      $('apNextMsg').textContent = '';
+      $('apNext').hidden = true;
+      $('apStep2').hidden = false;
+      setStep(2);
+      $('applySubmit').hidden = false;
+      $('apStep2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   /* ---------- 요약 ---------- */
   function lines(v) {
     const L = [
@@ -877,6 +915,9 @@
   }
   /* 신청 화면을 열면(수강신청 막대) 안내 먼저 — 결제를 마치고 돌아온 주소는 결과 화면이라 빼고, 취소하면 들어온 곳인 레슨 탭으로 */
   if (CFG.api && window.PAYUI && !/[?&]pay=/.test(location.search)) {
+    // 2026-11-28 사용자 "매번 열어 줘" — 같은 탭에서 이미 확인했어도 신청 화면을 열 때마다 다시 묻는다(전에 확인한 기록을 지우고 시작).
+    // 여기서 확인하면 다시 기록되니 [신청하고 결제하기]를 누를 때·결제 단계에서는 또 묻지 않는다
+    try { sessionStorage.removeItem('guide:refund_class'); } catch (e) { /* 못 지워도 그대로 진행 */ }
     askGuide().then(g => { if (!g) location.href = `${TYPE}.html#academy`; });
   }
 

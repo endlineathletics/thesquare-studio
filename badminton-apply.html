@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261128d">
+<link rel="stylesheet" href="assets/style.css?v=20261128f">
 </head>
 <body data-page="badminton" data-apply="badminton" class="has-apply-bar">
 
@@ -40,6 +40,12 @@
 
 <section class="bg-soft tight">
   <div class="wrap">
+    <!-- 진행 상황 (2026-11-28 사용자 "위에 진행상황 바, 내가 무슨 단계인지") — 1 정보 입력 → 2 반·시간 선택 → 3 결제 (apply.js setStep, 화면 위에 붙어 다님) -->
+    <ol class="ap-prog" id="apProg" aria-label="신청 진행 상황">
+      <li class="on" aria-current="step"><b>1</b><span>정보 입력</span></li>
+      <li><b>2</b><span>반 · 시간 선택</span></li>
+      <li><b>3</b><span>결제</span></li>
+    </ol>
     <div id="applyWrap">
     <form class="apply" id="applyForm" novalidate onsubmit="return false">
       <div class="ap-card">
@@ -69,10 +75,17 @@
       <div class="ap-sec">
         <div class="ap-h"><b>02</b>배드민턴 정보</div>
         <div class="ap-grid">
-          <div class="fld" data-f="grade"><span class="lb">급수<i>*</i></span><select name="grade"><option value="">선택해주세요</option><option value="입문">입문 (처음 배워요)</option><option>초심</option><option>D조</option><option>C조</option><option>B조</option><option>A조</option></select><span class="hint">효과적인 수업을 위해 비슷한 급수끼리 반을 묶어 진행해요. 고르신 급수와 현재 정원 현황에 따라 신청할 수 있는 반·시간이 다르게 보일 수 있어요.</span><span class="msg">급수를 선택해주세요.</span></div>
+          <div class="fld" data-f="grade"><span class="lb">급수<i>*</i></span><select name="grade"><option value="">선택해주세요</option><option value="입문">입문 (처음 배워요)</option><option>초심</option><option>D조</option><option>C조</option><option>B조</option><option>A조</option></select><span class="msg">급수를 선택해주세요.</span></div>
           <div class="fld" data-f="experience"><span class="lb">배드민턴 경력<i>*</i></span><select name="experience"><option value="">선택해주세요</option><option>처음이에요 (경력 없음)</option><option>6개월 미만</option><option>6개월 ~ 1년</option><option>1 ~ 3년</option><option>3 ~ 5년</option><option>5년 이상</option></select><span class="msg">경력을 선택해주세요.</span></div>
+          <p class="ap-star">* 효과적인 수업을 위해 비슷한 급수끼리 반을 묶어 진행해요. 고르신 급수와 현재 정원 현황에 따라 신청할 수 있는 반·시간이 다르게 보일 수 있어요.</p>
         </div>
       </div>
+      <!-- 2026-11-28 사용자 "반 정보는 아예 안 보이게, 정보 입력 후 [다음]을 누르면 반 선택" — 01·02 를 다 채우고 [다음]을 눌러야 03~04 와 신청 버튼이 열림 (apply.js '2단계 열기') -->
+      <div class="ap-next" id="apNext">
+        <button type="button" id="apNextBtn">다음 · 반 선택하기 <span aria-hidden="true">↓</span></button>
+        <p class="bk-msg err" id="apNextMsg" role="alert"></p>
+      </div>
+      <div class="ap-step2" id="apStep2" hidden>
       <div class="ap-sec">
         <div class="ap-h"><b>03</b>희망 반 · 시간 · 코치 <small>위에서부터 차례로 골라 주세요</small></div>
         <!-- 2026-11-28 단계별 고르기: 01 누가 → 02 어떤 반 → 03 요일·시간대(반, input[name=cls]) → 04 타임 → 05 코치 (apply.js drawSteps) -->
@@ -111,6 +124,7 @@
           </div>
           <span class="msg">개인정보 수집·이용 및 알림 수신에 동의해주세요.</span>
         </div>
+      </div>
       </div>
       </div>
       <aside class="ap-side">
@@ -157,6 +171,6 @@
 <script src="assets/apply-config.js?v=20261112a"></script>
 <script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261101s"></script>
-<script src="assets/apply.js?v=20261128a"></script>
+<script src="assets/apply.js?v=20261128d"></script>
 </body>
 </html>
