@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261128a">
+<link rel="stylesheet" href="assets/style.css?v=20261128c">
 <link rel="stylesheet" href="assets/booking.css?v=20261118p">
 </head>
 <body data-page="badminton">
@@ -172,48 +172,80 @@
       <button type="button" role="tab" data-k="jr" class="lk-jr" aria-selected="false"><i></i>일반 유소년반</button>
       <button type="button" role="tab" data-k="pf" class="lk-pf" aria-selected="false"><i></i>주니어 퍼포먼스반</button>
     </div>
+    <!-- 반 소개 줄: 시간은 타임별(1타임 = 1시간), 코치 줄의 색 네모 = 시간표 칸 색 (.lt-sw.v2…) -->
     <div class="lr rv" id="lrList">
       <div class="lr-r lk-gen" data-k="gen">
-        <div class="lr-n"><span class="lr-q q2">주 2회</span><b>성인 일반반</b><small>월 8회</small></div>
-        <p class="lr-d">수준에 맞는 기본기부터 복식 실전까지, 단계별로 실력을 쌓는 수업입니다. 올바른 자세와 풋워크, 경기에서 활용할 수 있는 기술을 배웁니다.</p>
-        <div class="lr-i"><div><em>요일</em><span><b>월·수</b> 또는 <b>화·목</b></span></div><div><em>시간</em><span>오전 10:00–13:00 · 저녁 18:30–22:30</span></div><div><em>수강료</em><span>오전 <b>월 25만원</b> · 저녁 <b>월 35만원</b></span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q2">주 2회</span><b>성인 일반반</b><small>월 8회</small></div>
+          <p class="lr-d">수준에 맞는 기본기부터 복식 실전까지, 단계별로 실력을 쌓는 수업입니다. 올바른 자세와 풋워크, 경기에서 활용할 수 있는 기술을 배웁니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>코치</em><span class="lr-co"><span class="lt-sw"><i></i>김민지 · 김현규<small>월·수 오전</small></span><span class="lt-sw v2"><i></i>이동찬 · 이동혁<small>화·목 오전</small></span><span class="lt-sw v3"><i></i>김동욱 · 김민지<small>월·수 저녁</small></span><span class="lt-sw v4"><i></i>김동욱 · 이동찬<small>화·목 저녁</small></span></span></div>
+          <div><em>요일</em><span><b>월·수</b> 또는 <b>화·목</b></span></div>
+          <div><em>시간</em><span class="lr-tm"><small>1타임 = 1시간</small><span class="lr-tl"><b>오전</b><i>오전 10:00~오전 11:00</i><i>오전 11:00~오후 12:00</i><i>오후 12:00~오후 1:00</i></span><span class="lr-tl"><b>저녁</b><i>오후 6:30~오후 7:30</i><i>오후 7:30~오후 8:30</i><i>오후 8:30~오후 9:30</i><i>오후 9:30~오후 10:30</i></span></span></div>
+          <div><em>수강료</em><span>오전 <b>월 25만원</b> · 저녁 <b>월 35만원</b></span></div>
+        </div>
       </div>
       <div class="lr-r lk-one" data-k="one">
-        <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 주 1회반</b><small>월 4회</small></div>
-        <p class="lr-d">일주일에 하루라도 꾸준히 배우고 싶은 분들을 위한 수업입니다. 기본기와 실전 감각을 차근차근 쌓아갑니다.</p>
-        <div class="lr-i"><div><em>요일</em><span><b>금요일</b></span></div><div><em>시간</em><span>오전 10:00–13:00 · 저녁 18:30–22:30</span></div><div><em>수강료</em><span>오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b></span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 주 1회반</b><small>월 4회</small></div>
+          <p class="lr-d">일주일에 하루라도 꾸준히 배우고 싶은 분들을 위한 수업입니다. 기본기와 실전 감각을 차근차근 쌓아갑니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>코치</em><span class="lr-co"><span class="lt-sw"><i></i>이동욱<small>금 오전 · 저녁</small></span></span></div>
+          <div><em>요일</em><span><b>금요일</b></span></div>
+          <div><em>시간</em><span class="lr-tm"><small>1타임 = 1시간</small><span class="lr-tl"><b>오전</b><i>오전 10:00~오전 11:00</i><i>오전 11:00~오후 12:00</i><i>오후 12:00~오후 1:00</i></span><span class="lr-tl"><b>저녁</b><i>오후 6:30~오후 7:30</i><i>오후 7:30~오후 8:30</i><i>오후 8:30~오후 9:30</i><i>오후 9:30~오후 10:30</i></span></span></div>
+          <div><em>수강료</em><span>오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b></span></div>
+        </div>
       </div>
       <div class="lr-r lk-wk" data-k="wk">
-        <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 주말반</b><small>월 4회</small></div>
-        <p class="lr-d">일주일에 하루라도 꾸준히 배우고 싶은 분들을 위한 수업입니다. 기본기와 실전 감각을 차근차근 쌓아갑니다.</p>
-        <div class="lr-i"><div><em>요일</em><span><b>일요일</b></span></div><div><em>시간</em><span><b>12월 둘째 주</b> 오픈 예정</span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 주말반</b><small>월 4회</small></div>
+          <p class="lr-d">일주일에 하루라도 꾸준히 배우고 싶은 분들을 위한 수업입니다. 기본기와 실전 감각을 차근차근 쌓아갑니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>요일</em><span><b>일요일</b></span></div>
+          <div><em>시간</em><span><b>12월 둘째 주</b> 오픈 예정</span></div>
+        </div>
       </div>
       <div class="lr-r lk-prv" data-k="prv">
-        <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 프라이빗반</b><small>월 4회</small></div>
-        <p class="lr-d">3인 소수정예로 자세 교정과 개인별 약점 보완에 집중합니다. 각자의 수준과 목표에 맞춰 세심하게 지도합니다.</p>
-        <div class="lr-i"><div><em>요일</em><span>오전 <b>월 / 금</b> · 저녁 <b>월 / 목</b></span></div><div><em>시간</em><span>오전 10:00–13:00 · 저녁 18:30–22:30</span></div><div><em>수강료</em><span>오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b></span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q1">주 1회</span><b>성인 프라이빗반</b><small>월 4회</small></div>
+          <p class="lr-d">3인 소수정예로 자세 교정과 개인별 약점 보완에 집중합니다. 각자의 수준과 목표에 맞춰 세심하게 지도합니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>코치</em><span class="lr-co"><span class="lt-sw"><i></i>이동찬<small>월 오전</small></span><span class="lt-sw v2"><i></i>김나영<small>금 오전 · 목 저녁</small></span><span class="lt-sw v3"><i></i>이슬<small>월 저녁</small></span></span></div>
+          <div><em>요일</em><span>오전 <b>월 / 금</b> · 저녁 <b>월 / 목</b></span></div>
+          <div><em>시간</em><span class="lr-tm"><small>1타임 = 1시간</small><span class="lr-tl"><b>오전</b><i>오전 10:00~오전 11:00</i><i>오전 11:00~오후 12:00</i><i>오후 12:00~오후 1:00</i></span><span class="lr-tl"><b>저녁</b><i>오후 6:30~오후 7:30</i><i>오후 7:30~오후 8:30</i><i>오후 8:30~오후 9:30</i><i>오후 9:30~오후 10:30</i></span></span></div>
+          <div><em>수강료</em><span>오전 <b>월 20만원</b> · 저녁 <b>월 25만원</b></span></div>
+        </div>
       </div>
       <div class="lr-r lk-jr" data-k="jr">
-        <div class="lr-n"><span class="lr-q q1">주 1회</span><b>일반 유소년반</b><small>월 4회</small></div>
-        <p class="lr-d">즐겁게 배드민턴 기본 자세와 기술을 익히고, 학교 배드민턴 수행평가에 필요한 동작을 미리 배우고 연습하는 수업입니다. 기초 체력과 자신감도 함께 키웁니다.</p>
-        <div class="lr-i"><div><em>요일</em><span><b>월·화·수·목</b> 중 하나</span></div><div><em>시간</em><span>15:00–18:00</span></div><div><em>수강료</em><span><b>월 15만원</b></span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q1">주 1회</span><b>일반 유소년반</b><small>월 4회</small></div>
+          <p class="lr-d">즐겁게 배드민턴 기본 자세와 기술을 익히고, 학교 배드민턴 수행평가에 필요한 동작을 미리 배우고 연습하는 수업입니다. 기초 체력과 자신감도 함께 키웁니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>코치</em><span class="lr-co"><span class="lt-sw"><i></i>김민지<small>월 · 수</small></span><span class="lt-sw v2"><i></i>이동찬<small>화 · 목</small></span></span></div>
+          <div><em>요일</em><span><b>월·화·수·목</b> 중 하나</span></div>
+          <div><em>시간</em><span class="lr-tm"><small>1타임 = 1시간</small><span class="lr-tl"><b>오후</b><i>오후 3:00~오후 4:00</i><i>오후 4:00~오후 5:00</i><i>오후 5:00~오후 6:00</i></span></span></div>
+          <div><em>수강료</em><span><b>월 15만원</b></span></div>
+        </div>
       </div>
       <div class="lr-r lk-pf" data-k="pf">
-        <div class="lr-n"><span class="lr-q q1">주 1회</span><b>주니어 퍼포먼스반</b><small>월 4회</small></div>
-        <p class="lr-d">정확한 기본기와 풋워크, 경기 상황별 기술을 집중적으로 훈련합니다. 기술 완성도와 실전 경기력을 높이고 싶은 주니어를 위한 수업입니다.</p>
-        <div class="lr-i"><div><em>요일</em><span><b>월 / 금</b> 중 하나</span></div><div><em>시간</em><span>15:00–18:00</span></div><div><em>수강료</em><span><b>월 20만원</b></span></div></div>
+        <div class="lr-h">
+          <div class="lr-n"><span class="lr-q q1">주 1회</span><b>주니어 퍼포먼스반</b><small>월 4회</small></div>
+          <p class="lr-d">정확한 기본기와 풋워크, 경기 상황별 기술을 집중적으로 훈련합니다. 기술 완성도와 실전 경기력을 높이고 싶은 주니어를 위한 수업입니다.</p>
+        </div>
+        <div class="lr-i">
+          <div><em>코치</em><span class="lr-co"><span class="lt-sw"><i></i>이슬<small>월</small></span><span class="lt-sw v2"><i></i>이동욱<small>금</small></span></span></div>
+          <div><em>요일</em><span><b>월 / 금</b> 중 하나</span></div>
+          <div><em>시간</em><span class="lr-tm"><small>1타임 = 1시간</small><span class="lr-tl"><b>오후</b><i>오후 3:00~오후 4:00</i><i>오후 4:00~오후 5:00</i><i>오후 5:00~오후 6:00</i></span></span></div>
+          <div><em>수강료</em><span><b>월 20만원</b></span></div>
+        </div>
       </div>
     </div>
-    <!-- 2026-11-27 시안 C: 관리자 레슨 화면처럼 타임별 표 (style.css .lt-*) — 정적 표라 반·코치가 바뀌면 여기를 손으로 고친다 -->
     <p class="lt-hint rv"><b>원하는 반을 눌러 보세요.</b> 수업 소개와 담당 코치를 보고 바로 신청할 수 있어요.</p>
-    <!-- 색 안내: 반마다 한 줄 — 같은 반이어도 코치가 다르면 색이 다름 (.v2~.v4, style.css) -->
-    <div class="lt-lg rv">
-      <div class="lt-lr lk-gen" data-k="gen"><b>성인 일반반</b><em class="q2">주 2회</em><span class="lt-sw"><i></i>김민지 · 김현규</span><span class="lt-sw v2"><i></i>이동찬 · 이동혁</span><span class="lt-sw v3"><i></i>김동욱 · 김민지</span><span class="lt-sw v4"><i></i>김동욱 · 이동찬</span></div>
-      <div class="lt-lr lk-one" data-k="one"><b>성인 주 1회반</b><em class="q1">주 1회</em><span class="lt-sw"><i></i>이동욱</span></div>
-      <div class="lt-lr lk-prv" data-k="prv"><b>성인 프라이빗반</b><em class="q1">주 1회</em><span class="lt-sw"><i></i>이동찬</span><span class="lt-sw v2"><i></i>김나영</span><span class="lt-sw v3"><i></i>이슬</span></div>
-      <div class="lt-lr lk-jr" data-k="jr"><b>일반 유소년반</b><em class="q1">주 1회</em><span class="lt-sw"><i></i>김민지</span><span class="lt-sw v2"><i></i>이동찬</span></div>
-      <div class="lt-lr lk-pf" data-k="pf"><b>주니어 퍼포먼스반</b><em class="q1">주 1회</em><span class="lt-sw"><i></i>이슬</span><span class="lt-sw v2"><i></i>이동욱</span></div>
-    </div>
     <div class="lt-w rv" id="ltWrap"><table class="lt">
       <thead><tr><th class="lt-tm"><span class="bk-sr">시간</span></th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th></tr></thead>
       <tbody>
