@@ -228,15 +228,28 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 
-/* ---------- 레슨 성인·주니어 (2026-11-27) ----------
-   badminton.html 레슨 탭 맨 위 [성인][주니어] (#laSeg) — #academy 의 data-aud 를 바꾸면 style.css 가 data-a 가 다른 반 소개 카드·색 안내·시간표 줄을 숨긴다. */
+/* ---------- 레슨 반 탭 (2026-11-28) ----------
+   badminton.html 레슨 탭의 반 탭(#lkTabs): [전체] = 반 소개 줄 전부 + 전체 시간표,
+   반 탭 = 그 반 소개 한 줄(#lrList .lr-r) + 색 안내 그 반 줄(.lt-lr) + 시간표에서 그 반 칸(.lt-b.lk-*)만 — 칸이 없는 타임 줄은 숨김.
+   주말반은 아직 시간표 칸이 없어 표 대신 오픈 예정 안내(#ltSoon)만. 숨김은 style.css .off */
 (function () {
-  const seg = document.getElementById('laSeg'), sec = document.getElementById('academy');
-  if (!seg || !sec) return;
-  seg.addEventListener('click', e => {
-    const b = e.target.closest('button[data-a]'); if (!b) return;
-    sec.dataset.aud = b.dataset.a;
-    seg.querySelectorAll('button').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
-    sec.querySelectorAll('.lb-c.rv, .lt-soon.rv').forEach(x => x.classList.add('in'));   // 숨어 있던 카드는 스크롤 등장 효과를 못 받았으니 바로 보이게
-  });
+  const tabs = document.getElementById('lkTabs'), tb = document.querySelector('table.lt');
+  if (!tabs || !tb) return;
+  const wrap = document.getElementById('ltWrap'), soon = document.getElementById('ltSoon'), hint = document.querySelector('.lt-hint');
+  const off = (el, v) => el && el.classList.toggle('off', !!v);
+  function pick(k) {
+    tabs.querySelectorAll('button').forEach(b => { const on = b.dataset.k === k; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('#lrList .lr-r, .lt-lg .lt-lr').forEach(r => off(r, k && r.dataset.k !== k));
+    let any = false, first = null;
+    tb.querySelectorAll('tbody tr').forEach(tr => {
+      let n = 0;
+      tr.querySelectorAll('.lt-b').forEach(b => { const hide = k && !b.classList.contains('lk-' + k); off(b, hide); if (!hide) n++; });
+      off(tr, !n); tr.classList.remove('first');
+      if (n) { any = true; first = first || tr; }
+    });
+    if (first) first.classList.add('first');
+    off(wrap, !any); off(hint, !any); off(document.querySelector('.lt-lg'), !any);
+    off(soon, k && k !== 'wk');
+  }
+  tabs.addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (b) pick(b.dataset.k); });
 })();

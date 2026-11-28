@@ -481,38 +481,40 @@ footer{background:var(--blue-deep);color:#fff;padding:70px 0 40px}
   .lc-sub{margin-top:52px;font-size:18px}
 }
 
-/* ---------- 레슨 탭: 성인/주니어 고르기 · 반 소개 카드 · 횟수 배지 (2026-11-27 시안 B) ----------
-   #academy[data-aud=adult|junior] — data-a 가 다른 카드·색 안내·시간표 줄은 숨김 (main.js '레슨 성인·주니어')
-   배지: 주 2회 = 검정(.q2), 주 1회 = 흰 바탕 검정 테두리(.q1) — 카드(.lb-q)·색 안내(.lt-lg em) 같은 모양 (시간표 칸 안에는 안 붙임) */
-.la-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:460px;margin-top:8px;padding:6px;background:var(--paper-2);border-radius:16px}
-.la-seg button{border:0;background:none;font:inherit;cursor:pointer;height:60px;border-radius:11px;font-size:19px;font-weight:800;letter-spacing:-.03em;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,color .15s}
-.la-seg button small{font:700 10.5px 'Inter';letter-spacing:.2em;opacity:.7}
-.la-seg button.on{background:var(--ink);color:#fff;box-shadow:0 4px 14px rgba(13,15,20,.18)}
-#academy[data-aud=adult] [data-a=junior]:not(button),#academy[data-aud=junior] [data-a=adult]:not(button){display:none}
-#academy[data-aud=junior] .lt tbody tr.lt-gs td{border-top:0}
+/* ---------- 레슨 탭: 반마다 탭 · 반 소개 한 줄 · 횟수 배지 (2026-11-28) ----------
+   [전체] = 반 소개 줄 전부 + 전체 시간표 / 반 탭 = 그 반 소개 한 줄 + 그 반 칸만 남긴 시간표 (main.js '레슨 반 탭' 이 .off 를 붙임)
+   배지: 주 2회 = 검정(.q2), 주 1회 = 흰 바탕 검정 테두리(.q1) — 반 소개(.lr-q)·색 안내(.lt-lr em) 같은 모양 */
+.off{display:none!important}
 .q2{background:var(--ink);color:#fff}
 .q1{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
-.lb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.lb-c{background:#fff;border-radius:16px;padding:26px 28px 28px;border:1px solid var(--line);border-top:5px solid var(--kc);box-shadow:0 6px 24px rgba(13,15,20,.06)}
-.lb-top{display:flex;align-items:center;gap:9px;margin-bottom:18px}
-.lb-q{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:17px;font-size:16px;font-weight:800;letter-spacing:-.02em}
-.lb-m{font-size:14.5px;font-weight:600;color:var(--ink-2)}
-.lb-c > small{font:700 11px 'Inter';letter-spacing:.2em;color:var(--k)}
-.lb-t{display:block;margin:6px 0 12px;font-size:25px;font-weight:800;letter-spacing:-.04em}
-.lb-d{font-size:17px;line-height:1.75;color:#23262e;letter-spacing:-.01em}
-.lb-i{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:8px;font-size:15.5px;color:#23262e}
-.lb-i div{display:grid;grid-template-columns:54px 1fr;gap:8px;line-height:1.5}
-.lb-i em{font-style:normal;font-size:13px;font-weight:700;color:var(--ink-2);padding-top:2px}
-.lb-i b{font-weight:800}
+.lk-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 16px}
+.lk-tabs button{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 18px;border:1.5px solid var(--line);border-radius:23px;background:#fff;font:inherit;font-size:16px;font-weight:800;letter-spacing:-.03em;color:var(--ink);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.lk-tabs button i{width:13px;height:13px;border-radius:4px;background:var(--kc)}
+.lk-tabs button:hover{border-color:var(--ink)}
+.lk-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.lr{display:grid;gap:8px;margin-bottom:14px}
+.lr-r{display:grid;grid-template-columns:230px 1fr 330px;gap:0 30px;align-items:center;padding:20px 24px;background:#fff;border:1px solid var(--line);border-left:6px solid var(--kc);border-radius:14px}
+.lr-n{display:flex;flex-wrap:wrap;align-items:center;gap:8px 9px}
+.lr-n b{flex-basis:100%;order:2;font-size:22px;font-weight:800;letter-spacing:-.04em}
+.lr-n small{font-size:14px;font-weight:600;color:var(--ink-2)}
+.lr-q{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:15px;font-size:14.5px;font-weight:800;letter-spacing:-.02em}
+.lr-d{font-size:16.5px;line-height:1.7;color:#23262e;letter-spacing:-.01em}
+.lr-i{display:grid;gap:6px;font-size:15px;color:#23262e}
+.lr-i div{display:grid;grid-template-columns:50px 1fr;gap:8px;line-height:1.5}
+.lr-i em{font-style:normal;font-size:13px;font-weight:700;color:var(--ink-2);padding-top:1px}
+.lr-i b{font-weight:800}
+.lt tbody tr.first td{border-top:0}
+@media(max-width:1020px){
+  .lr-r{grid-template-columns:1fr;gap:12px;padding:18px 20px}
+  .lr-n b{flex-basis:auto;order:0;font-size:21px;margin-right:2px}
+}
 @media(max-width:720px){
-  .la-seg{max-width:none}
-  .la-seg button{height:54px;font-size:17.5px}
-  .lb{grid-template-columns:1fr;gap:12px}
+  .lk-tabs{flex-wrap:nowrap;overflow-x:auto;margin:12px -16px 14px;padding:0 16px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .lk-tabs::-webkit-scrollbar{display:none}
+  .lk-tabs button{flex:none;height:42px;padding:0 15px;font-size:15px}
+  .lr-r{padding:16px 16px 18px}
+  .lr-d{font-size:16px}
   .lt-lr{padding:9px 12px;font-size:13.5px;gap:6px 12px}
-  .lt-lr > b{flex-basis:auto}
-  .lb-c{padding:20px 20px 22px}
-  .lb-t{font-size:23px}
-  .lb-d{font-size:16.5px}
 }
 
 /* reveal */
