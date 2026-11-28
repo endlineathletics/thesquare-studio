@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="assets/style.css?v=20261118p">
+<link rel="stylesheet" href="assets/style.css?v=20261128d">
 </head>
 <body data-page="badminton" data-apply="badminton" class="has-apply-bar">
 
@@ -74,15 +74,20 @@
         </div>
       </div>
       <div class="ap-sec">
-        <div class="ap-h"><b>03</b>희망 시간 &amp; 코치 <small>반을 고른 뒤 타임과 코치를 선택하세요</small></div>
+        <div class="ap-h"><b>03</b>희망 반 · 시간 · 코치 <small>위에서부터 차례로 골라 주세요</small></div>
+        <!-- 2026-11-28 단계별 고르기: 01 누가 → 02 어떤 반 → 03 요일·시간대(반, input[name=cls]) → 04 타임 → 05 코치 (apply.js drawSteps) -->
         <div class="fld" data-f="preference">
           <p class="ap-note pref-note" id="prefNote">급수를 먼저 고르시면 신청할 수 있는 시간이 열려요. <b>마감</b>은 정원이 찼거나 고르신 급수와 맞지 않는 시간이에요. 마감된 시간을 고르면 <b>보증금 10,000원으로 대기 신청</b>할 수 있어요.</p>
-          <div class="grp" id="prefGroups"></div>
-          <span class="msg">희망하는 반과 시간을 선택해주세요.</span>
-          <div class="sub-pick" id="prefSub" hidden>
-            <div><span class="lb2">희망 타임 (1타임 = 1시간)</span><div class="chips2" id="prefTimes"></div></div>
-            <div><span class="lb2">희망 코치</span><div class="chips2" id="prefCoach"></div></div>
+          <div class="pf">
+            <div class="pf-st"><div class="pf-l"><i>01</i>누가 배우나요</div><div class="pf-ch" id="pfA"></div></div>
+            <div class="pf-st" id="pfStepK" hidden><div class="pf-l"><i>02</i>어떤 반</div><div class="pf-ch big" id="pfK"></div></div>
+            <div class="pf-st" id="pfStepO" hidden><div class="pf-l"><i>03</i>요일 · 시간대</div><div class="pfo" id="prefGroups"></div></div>
+            <div class="pf-sub" id="prefSub" hidden>
+              <div class="pf-st"><div class="pf-l"><i>04</i>타임 <small>1타임 = 1시간</small></div><div class="chips2" id="prefTimes"></div></div>
+              <div class="pf-st"><div class="pf-l"><i>05</i>코치</div><div class="chips2" id="prefCoach"></div></div>
+            </div>
           </div>
+          <span class="msg">희망하는 반과 시간을 선택해주세요.</span>
         </div>
       </div>
       <div class="ap-sec bk-coupon" id="apCoupon" hidden><!-- 2026-11-18 쿠폰 코드 — 수강신청에 쓸 수 있는 쿠폰이 있을 때만 (apply.js couponInit), 금액은 결제 단계에서 -->
@@ -152,6 +157,6 @@
 <script src="assets/apply-config.js?v=20261112a"></script>
 <script src="assets/main.js?v=20261031a"></script>
 <script src="assets/pay-ui.js?v=20261101s"></script>
-<script src="assets/apply.js?v=20261127a"></script>
+<script src="assets/apply.js?v=20261128a"></script>
 </body>
 </html>

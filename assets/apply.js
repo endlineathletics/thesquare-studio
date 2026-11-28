@@ -72,24 +72,60 @@
     // 첫 달 남은 자리 (2026-11-18 사용자 "유소년반은 몇 명 남았는지 왜 안 떠?" — 관리프로그램 bd_slots months[].left, 옛 응답엔 없어 0 = 안 띄움)
     const slotLeft = (k, t) => { const ms = (avail[k] || {})[t.split('~')[0]]; return ms && ms.length && ms[0].ok ? (ms[0].left | 0) : 0; };
 
+    /* 2026-11-28 단계별 고르기 (시안 A — 사용자 "반이 많아지면서 너무 복잡해졌어"): 카드 16장 대신
+       01 누가(성인/주니어) → 02 어떤 반(종류) → 03 요일·시간대(= 예전 반 카드, input[name=cls] 그대로) → 04 타임 → 05 코치.
+       01·02 는 03 의 선택지를 걸러 보여 주기만 한다 — 보내는 값·마감·대기·급수 계산은 예전 그대로.
+       반 종류 이름은 홈페이지 레슨 탭과 같게(성인 일반반 …) — 신청서에 저장되는 반 이름은 관리프로그램 이름 그대로 */
+    const KIND = {
+      gen: ['성인 일반반', 2, '기본기부터 복식 실전까지'], one: ['성인 주 1회반', 1, '일주일에 하루, 꾸준히'], prv: ['성인 프라이빗반', 1, '3인 소수정예'],
+      jr: ['일반 유소년반', 1, '기본 자세 · 수행평가 대비'], pf: ['주니어 퍼포먼스반', 1, '3인 소수정예 · 집중 훈련'],
+    };
+    const AUD = { gen: 'adult', one: 'adult', prv: 'adult', jr: 'junior', pf: 'junior' };
+    const kindOfKey = k => k.startsWith('jr_') ? 'jr' : 'gen';
+    const kindOfNew = g => {
+      const x = g.items[0] || {}, jr = x.age === '유소년', pv = x.kind === '프라이빗';
+      return jr ? (pv ? 'pf' : 'jr') : pv ? 'prv' : (x.day === 'mw' || x.day === 'tt') ? 'gen' : 'one';
+    };
+    const band = t => { const h = parseInt(t, 10); return h < 13 ? '오전' : h < 18 ? '오후' : '저녁'; };
+    let selA = '', selK = '';
+    // 03 선택지 한 칸 — o: {key, kind, day, first, last, coaches, price, cls, full(글), checked, disabled}
+    const opt = o => `<label data-k="${esc(o.key)}" data-kind="${o.kind}" data-a="${AUD[o.kind]}"${o.cls ? ` class="${o.cls}"` : ''}><input type="radio" name="cls" value="${esc(o.key)}"${o.checked ? ' checked' : ''}${o.disabled ? ' disabled' : ''}>
+          <span class="pfo-c">${o.full ? `<em class="full">${o.full}</em>` : ''}<b>${esc(o.day)} ${band(o.first)}</b>
+          <small>${o.first}–${o.last} · ${esc(o.price)}</small><small>코치 ${esc(o.coaches.join(' · '))}</small></span></label>`;
     function drawCards() {
       const cur = form.cls && form.cls.value;
-      // 2026-11-18 관리프로그램 반 합치기 — 원래 반도 그룹마다 코치·모집으로 bd_open 에 나오면 그쪽 카드만 (이 정적 카드는 bd_open 을 못 받았을 때만)
+      // 2026-11-18 관리프로그램 반 합치기 — 원래 반도 그룹마다 코치·모집으로 bd_open 에 나오면 그쪽 것만 (이 정적 반은 bd_open 을 못 받았을 때만)
       $('prefGroups').innerHTML = list.filter(g => !nGroups['n:' + g.key]).map(g => {
         const cat = window.BD_CATS[g.key], full = classFull(g);
-        const first = g.times[0].split('~')[0], last = g.times[g.times.length - 1].split('~')[1];
-        return `<label data-k="${g.key}" style="--c:${cat.c};--bg:${cat.bg}"${full ? ' class="wl"' : ''}><input type="radio" name="cls" value="${g.key}"${cur === g.key ? ' checked' : ''}>
-          <span class="grp-card">${full ? '<em class="full">마감 · 대기</em>' : ''}<b>${esc(g.cls)}</b><span class="d">${g.dayLabel}${g.days.length === 1 ? ' · 주 1회' : ''}</span>
-          <span class="t">${first} – ${last} · ${g.times.length}타임</span>
-          <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(cat.price || '')}</span></span></label>`;
+        return opt({ key: g.key, kind: kindOfKey(g.key), day: g.dayLabel, first: g.times[0].split('~')[0], last: g.times[g.times.length - 1].split('~')[1],
+          coaches: g.coaches, price: cat.price || '', cls: full ? 'wl' : '', full: full ? '마감 · 대기' : '', checked: cur === g.key });
       }).join('') + nList().map(g => {
-        const full = !g.items.some(x => x.ok), first = g.slots[0].t.split('~')[0], last = g.slots[g.slots.length - 1].t.split('~')[1];
-        return `<label data-k="${esc(g.key)}" style="--c:${g.c};--bg:${g.bg}"${full ? ' class="off"' : ''}><input type="radio" name="cls" value="${esc(g.key)}"${cur === g.key && !full ? ' checked' : ''}${full ? ' disabled' : ''}>
-          <span class="grp-card">${full ? '<em class="full">마감</em>' : ''}<b>${esc(g.title)}</b><span class="d">${esc(g.dayLabel)} · ${g.dayLabel.includes('·') ? '주 2회' : '주 1회'}</span>
-          <span class="t">${first} – ${last} · ${g.slots.length}타임</span>
-          <span class="c">코치 ${esc(g.coaches.join(' · '))}</span><span class="p">${esc(g.price)}</span></span></label>`;
+        const full = !g.items.some(x => x.ok);
+        return opt({ key: g.key, kind: kindOfNew(g), day: g.dayLabel, first: g.slots[0].t.split('~')[0], last: g.slots[g.slots.length - 1].t.split('~')[1],
+          coaches: g.coaches, price: g.price, cls: full ? 'off' : '', full: full ? '마감' : '', checked: cur === g.key && !full, disabled: full });
       }).join('');
+      drawSteps();
     }
+    // 01·02 버튼을 그리고, 03 은 고른 종류의 선택지만 보이게. 이미 고른 반이 있으면(앱에서 ?g= 로 열었을 때 등) 그 반의 대상·종류를 따른다
+    function drawSteps() {
+      const labels = [...$('prefGroups').querySelectorAll('label')];
+      const cur = labels.find(l => l.querySelector('input').checked);
+      if (cur) { selA = cur.dataset.a; selK = cur.dataset.kind; }
+      const kinds = Object.keys(KIND).filter(k => labels.some(l => l.dataset.kind === k));
+      if (selK && !kinds.includes(selK)) selK = '';
+      const btn = (on, attr, html) => `<button type="button" ${attr} class="${on ? 'on' : ''}" aria-pressed="${on}">${html}</button>`;
+      $('pfA').innerHTML = [['adult', '성인'], ['junior', '주니어 <small>유소년</small>']].filter(([a]) => kinds.some(k => AUD[k] === a))
+        .map(([a, t]) => btn(selA === a, `data-a="${a}"`, t)).join('');
+      $('pfK').innerHTML = kinds.filter(k => AUD[k] === selA)
+        .map(k => btn(selK === k, `data-kind="${k}"`, `<span>${KIND[k][0]}<i class="pf-q q${KIND[k][1]}">주 ${KIND[k][1]}회</i></span><small>${KIND[k][2]}</small>`)).join('');
+      $('pfStepK').hidden = !selA;
+      $('pfStepO').hidden = !selK;
+      labels.forEach(l => { l.hidden = l.dataset.kind !== selK; });
+    }
+    // 대상·종류를 바꾸면 앞서 고른 반(요일·시간대)은 푼다
+    const unpick = () => { const c = form.querySelector('input[name="cls"]:checked'); if (c) c.checked = false; drawSub(); updateSummary(); syncWait(); };
+    $('pfA').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (!b || b.dataset.a === selA) return; unpick(); selA = b.dataset.a; selK = ''; drawSteps(); });
+    $('pfK').addEventListener('click', e => { const b = e.target.closest('button[data-kind]'); if (!b || b.dataset.kind === selK) return; unpick(); selK = b.dataset.kind; drawSteps(); });
 
     // 마감된 시간도 고를 수 있다 — 고르면 대기 신청 (2026-11-02). '상관없음'은 줄 설 타임이 없어 반 전체가 마감이면 막음
     // o.noWait — 새 반은 대기 신청이 없어 마감이면 못 고름 · o.note — 마감 아닐 때 밑 글(새 반 '잔여 N석')
@@ -203,6 +239,7 @@
           const it = form.querySelector(`input[name="cls"][value="${CSS.escape('n:' + w.classKey)}"]`);
           if (it && !it.disabled) {
             it.checked = true;
+            drawSteps();
             drawSub();
             const set = (name, v) => { const x = form.querySelector(`input[name="${name}"][value="${CSS.escape(v)}"]`); if (x && !x.disabled) x.checked = true; };
             set('time', `${w.start}~${w.end}`);
